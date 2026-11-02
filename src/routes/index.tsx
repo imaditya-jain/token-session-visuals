@@ -1,24 +1,30 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-// No head() here: the home route inherits title/description/og/twitter from
-// __root.tsx, and ships no og:image so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
-export const Route = createFileRoute("/")({
-  component: Index,
-});
+import HomePage from "@/components/storefront/HomePage";
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
-function Index() {
-  return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
-    </div>
-  );
-}
+export const Route = createFileRoute("/")({
+  head: () => ({
+    meta: [
+      { title: "Fernwood — Premium Plants & Garden Essentials" },
+      {
+        name: "description",
+        content:
+          "Shop lush house plants, succulents, handmade pots and garden tools at Fernwood — a premium botanical store for greener living.",
+      },
+      { property: "og:title", content: "Fernwood — Premium Plants & Garden Essentials" },
+      {
+        property: "og:description",
+        content:
+          "Bring color and life to your home. House plants, succulents, pots and tools from Fernwood's nursery to your door.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "Fernwood — Premium Plants & Garden Essentials" },
+      {
+        name: "twitter:description",
+        content: "Bring color and life to your home with Fernwood's premium plants and pots.",
+      },
+    ],
+  }),
+  component: HomePage,
+});
