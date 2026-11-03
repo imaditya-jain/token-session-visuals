@@ -1,6 +1,6 @@
 import { ArrowRight } from "lucide-react";
 
-import { bestSellers, collections, formatPrice } from "@/data/catalog";
+import { bestSellers, collections, formatPrice, testimonials } from "@/data/catalog";
 import ProductCard from "@/components/storefront/ProductCard";
 import promoImage from "@/assets/promo-repotting.jpg";
 import seasonalImage from "@/assets/seasonal-greenhouse.jpg";

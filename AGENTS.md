@@ -8,3 +8,5 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- Storefront catalog content (products, collections, testimonials, nav) lives in src/data/catalog.ts; the UI consumes it only through that module so it can later be swapped for database-backed data (admin panel phase) without touching components.
