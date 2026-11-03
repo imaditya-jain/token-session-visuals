@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { Menu, Search, ShoppingBag, User, X, ChevronDown } from "lucide-react";
 
 import { navLinks } from "@/data/catalog";
@@ -9,6 +10,8 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+
+const isRouteLink = (href: string) => href.startsWith("/");
 
 function SearchOverlay({ open, onClose }: { open: boolean; onClose: () => void }) {
   if (!open) return null;
