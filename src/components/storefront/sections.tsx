@@ -99,7 +99,8 @@ export function BestSellers() {
         </div>
         <div className="mt-10 text-center">
           <Link
-            to="/collections/house-plants"
+            to="/collections/$slug"
+            params={{ slug: "house-plants" }}
             className="inline-flex items-center gap-2 rounded-md border border-forest bg-transparent px-7 py-3 text-sm font-semibold text-forest transition-colors hover:bg-forest hover:text-cream"
           >
             View all plants <ArrowRight className="size-4" aria-hidden />

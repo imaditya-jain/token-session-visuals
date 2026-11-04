@@ -29,13 +29,15 @@ export default function Hero() {
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Link
-              to="/collections/house-plants"
+              to="/collections/$slug"
+              params={{ slug: "house-plants" }}
               className="inline-flex items-center justify-center rounded-md bg-cream px-7 py-3 text-sm font-semibold text-forest-deep shadow-md transition-all hover:bg-cream/90 hover:shadow-lg"
             >
               Shop indoor plants
             </Link>
             <Link
-              to="/collections/succulents-cacti"
+              to="/collections/$slug"
+              params={{ slug: "succulents-cacti" }}
               className="inline-flex items-center justify-center rounded-md border border-cream/50 bg-cream/15 px-7 py-3 text-sm font-semibold text-cream backdrop-blur-sm transition-all hover:bg-cream/25"
             >
               Shop succulents
