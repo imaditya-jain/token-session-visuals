@@ -70,17 +70,29 @@ export default function Header() {
                 <SheetTitle className="font-display text-2xl text-cream">Fernwood</SheetTitle>
               </SheetHeader>
               <nav className="flex flex-col px-6 py-6">
-                {navLinks.map((link) => (
-                  <a
-                    key={link.label}
-                    href={link.href}
-                    onClick={() => setMenuOpen(false)}
-                    className="flex items-center justify-between border-b border-cream/10 py-4 font-display text-xl text-cream transition-colors hover:text-sage"
-                  >
-                    {link.label}
-                    <ChevronDown className="size-4 -rotate-90 text-sage" />
-                  </a>
-                ))}
+                {navLinks.map((link) =>
+                  isRouteLink(link.href) ? (
+                    <Link
+                      key={link.label}
+                      to={link.href}
+                      onClick={() => setMenuOpen(false)}
+                      className="flex items-center justify-between border-b border-cream/10 py-4 font-display text-xl text-cream transition-colors hover:text-sage"
+                    >
+                      {link.label}
+                      <ChevronDown className="size-4 -rotate-90 text-sage" />
+                    </Link>
+                  ) : (
+                    <a
+                      key={link.label}
+                      href={link.href}
+                      onClick={() => setMenuOpen(false)}
+                      className="flex items-center justify-between border-b border-cream/10 py-4 font-display text-xl text-cream transition-colors hover:text-sage"
+                    >
+                      {link.label}
+                      <ChevronDown className="size-4 -rotate-90 text-sage" />
+                    </a>
+                  ),
+                )}
               </nav>
               <div className="mt-auto px-6 pb-8 text-sm text-sage">
                 <p className="font-medium text-cream">Need help choosing?</p>
@@ -99,16 +111,27 @@ export default function Header() {
 
           {/* Desktop nav */}
           <nav className="hidden items-center gap-8 text-sm font-medium lg:flex">
-            {navLinks.map((link) => (
-              <a
-                key={link.label}
-                href={link.href}
-                className="group relative text-foreground/90 transition-colors hover:text-forest"
-              >
-                {link.label}
-                <span className="absolute -bottom-1 left-0 h-px w-0 bg-clay transition-all duration-300 group-hover:w-full" />
-              </a>
-            ))}
+            {navLinks.map((link) =>
+              isRouteLink(link.href) ? (
+                <Link
+                  key={link.label}
+                  to={link.href}
+                  className="group relative text-foreground/90 transition-colors hover:text-forest"
+                >
+                  {link.label}
+                  <span className="absolute -bottom-1 left-0 h-px w-0 bg-clay transition-all duration-300 group-hover:w-full" />
+                </Link>
+              ) : (
+                <a
+                  key={link.label}
+                  href={link.href}
+                  className="group relative text-foreground/90 transition-colors hover:text-forest"
+                >
+                  {link.label}
+                  <span className="absolute -bottom-1 left-0 h-px w-0 bg-clay transition-all duration-300 group-hover:w-full" />
+                </a>
+              ),
+            )}
           </nav>
 
           {/* Actions */}
