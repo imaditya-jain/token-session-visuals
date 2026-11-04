@@ -347,11 +347,11 @@ export const bestSellers: Product[] = [
   "p1",
   "p2",
   "p3",
-  "p8",
+  "p4",
   "p5",
   "p6",
-  "p14",
-  "p18",
+  "p7",
+  "p8",
 ].map((id) => products.find((p) => p.id === id)!);
 
 export const getCollection = (slug: string) =>
