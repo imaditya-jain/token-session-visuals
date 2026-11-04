@@ -164,9 +164,6 @@ function CollectionPage() {
     let list = allProducts;
     if (inStockOnly && !outOfStockOnly) list = list.filter((p) => p.inStock);
     if (outOfStockOnly && !inStockOnly) list = list.filter((p) => !p.inStock);
-    if (!inStockOnly && !outOfStockOnly && (priceFrom || priceTo)) {
-      // no availability filter — fall through to price only
-    }
     const from = parseFloat(priceFrom);
     const to = parseFloat(priceTo);
     if (!Number.isNaN(from)) list = list.filter((p) => p.price >= from);
