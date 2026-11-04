@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { ArrowRight } from "lucide-react";
 
 import { bestSellers, collections, formatPrice, testimonials } from "@/data/catalog";
@@ -51,9 +52,10 @@ export function Collections() {
       />
       <div className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
         {collections.map((collection) => (
-          <a
+          <Link
             key={collection.slug}
-            href="#best-sellers"
+            to="/collections/$slug"
+            params={{ slug: collection.slug }}
             className="group relative overflow-hidden rounded-2xl bg-sand shadow-sm ring-1 ring-border/60"
           >
             <img
@@ -74,7 +76,7 @@ export function Collections() {
                 Explore <ArrowRight className="size-3.5" aria-hidden />
               </span>
             </div>
-          </a>
+          </Link>
         ))}
       </div>
     </section>
@@ -96,12 +98,12 @@ export function BestSellers() {
           ))}
         </div>
         <div className="mt-10 text-center">
-          <a
-            href="#collections"
+          <Link
+            to="/collections/house-plants"
             className="inline-flex items-center gap-2 rounded-md border border-forest bg-transparent px-7 py-3 text-sm font-semibold text-forest transition-colors hover:bg-forest hover:text-cream"
           >
             View all plants <ArrowRight className="size-4" aria-hidden />
-          </a>
+          </Link>
         </div>
       </div>
     </section>

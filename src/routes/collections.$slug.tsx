@@ -1,6 +1,6 @@
 import { createFileRoute, notFound, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { Check, ChevronDown, X } from "lucide-react";
+import { ChevronDown, X } from "lucide-react";
 
 import Header from "@/components/storefront/Header";
 import ProductCard from "@/components/storefront/ProductCard";
