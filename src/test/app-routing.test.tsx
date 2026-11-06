@@ -14,4 +14,12 @@ describe("App routing", () => {
 
     expect(matches.at(-1)?.routeId).not.toBe(rootRouteId);
   });
+
+  it("matches product detail pages by product slug", () => {
+    const router = createRouter({ routeTree, context: { queryClient: new QueryClient() } });
+
+    const matches = router.matchRoutes("/products/monstera-deliciosa");
+
+    expect(matches.at(-1)?.routeId).toBe("/products/$slug");
+  });
 });

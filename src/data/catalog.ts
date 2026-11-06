@@ -357,6 +357,8 @@ export const bestSellers: Product[] = [
 export const getCollection = (slug: string) =>
   collections.find((c) => c.slug === slug);
 
+export const getProduct = (slug: string) => products.find((product) => product.slug === slug);
+
 export const getCollectionProducts = (slug: string) =>
   products.filter((p) => p.collectionSlugs.includes(slug));
 

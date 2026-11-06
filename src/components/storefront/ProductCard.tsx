@@ -1,4 +1,5 @@
 import { ShoppingBag } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 
 import { formatPrice, type Product } from "@/data/catalog";
 
@@ -9,16 +10,23 @@ export default function ProductCard({ product }: { product: Product }) {
   return (
     <article className="group relative flex flex-col overflow-hidden rounded-xl bg-card shadow-sm ring-1 ring-border/60 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
       <div className="relative overflow-hidden bg-sand">
-        <img
-          src={product.image}
-          alt={product.name}
-          loading="lazy"
-          width={800}
-          height={1000}
-          className={`aspect-[4/5] w-full object-cover transition-transform duration-500 ease-out group-hover:scale-105 ${
-            soldOut ? "opacity-55" : ""
-          }`}
-        />
+        <Link
+          to="/products/$slug"
+          params={{ slug: product.slug }}
+          aria-label={`View ${product.name}`}
+          className="block"
+        >
+          <img
+            src={product.image}
+            alt={product.name}
+            loading="lazy"
+            width={800}
+            height={1000}
+            className={`aspect-[4/5] w-full object-cover transition-transform duration-500 ease-out group-hover:scale-105 ${
+              soldOut ? "opacity-55" : ""
+            }`}
+          />
+        </Link>
 
         {soldOut ? (
           <span className="absolute left-3 top-3 rounded-md bg-foreground/70 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-cream">
@@ -61,7 +69,13 @@ export default function ProductCard({ product }: { product: Product }) {
           {product.category}
         </p>
         <h3 className="font-display text-lg font-medium leading-snug text-foreground">
-          {product.name}
+          <Link
+            to="/products/$slug"
+            params={{ slug: product.slug }}
+            className="transition-colors hover:text-clay"
+          >
+            {product.name}
+          </Link>
         </h3>
         <p className="text-xs text-muted-foreground">{product.light}</p>
         <div className="mt-1 flex items-baseline gap-2">
