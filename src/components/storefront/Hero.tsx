@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 const heroImage = "/images/hero-plants.jpg";
 
@@ -5,13 +6,14 @@ export default function Hero() {
   return (
     <section className="relative">
       <div className="relative h-[78vh] min-h-[520px] w-full overflow-hidden sm:h-[82vh] lg:h-[88vh]">
-        <img
+        <Image
           src={heroImage}
           alt="A table full of lush house plants in terracotta and cream pots"
+          sizes="100vw"
           className="absolute inset-0 h-full w-full object-cover"
           width={1920}
           height={1080}
-          fetchPriority="high"
+          priority
         />
         {/* Soft scrim so text stays legible over the photo */}
         <div className="absolute inset-0 bg-gradient-to-b from-forest-deep/35 via-transparent to-forest-deep/20" />

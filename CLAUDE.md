@@ -38,7 +38,7 @@ Package manager: **npm** (`package-lock.json`). Do not add other lockfiles; `bun
 - **Phase 1 done**: the app is Next.js 16 (App Router) in `src/app` — routes `/`, `/collections/[slug]`, `/products/[slug]`, all statically prerendered. UI components in `src/components/storefront/*` are ported verbatim (only plumbing changed: `next/link`, `"use client"` boundaries). Filters/sort live in the client component `CollectionProducts`; the page is a server component.
 - Catalog is still static in `src/data/catalog.ts` (24 products, 4 collections, sync) with images in `public/images`. Becomes async/Shopify-backed in Phase 2.
 - Redux store (`src/store`, slice `ui`) and Lenis smooth scroll (`components/providers`) are wired. Cart, account, newsletter are still UI shells (no behavior); nothing from Shopify, Mongo or auth exists yet.
-- Fonts still load via the same Google Fonts stylesheet as the original (locked). `<img>` → `next/image` and `next/font` are a separate perf task (`feat/perf-images-fonts`) that must keep the baselines green.
+- Fonts are self-hosted via `next/font/local` from the exact Google woff2 files of the original request (`src/fonts`, see its README); never switch to `next/font/google` (different font build ⇒ visual drift, verified). Images use `next/image` with explicit `sizes`.
 - Scope: ONLY home, collection, product pages plus the behavior behind header cart/search/account. No extra pages without user approval.
 - Lovable is disconnected from the code (all `@lovable.dev/*`, TanStack, Vite-app tooling removed). `.lovable/` is kept until the user says to delete it.
 

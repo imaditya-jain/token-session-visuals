@@ -1,4 +1,5 @@
 import { ShoppingBag } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 
 import { formatPrice, type Product } from "@/data/catalog";
@@ -15,12 +16,12 @@ export default function ProductCard({ product }: { product: Product }) {
           aria-label={`View ${product.name}`}
           className="block"
         >
-          <img
+          <Image
             src={product.image}
             alt={product.name}
-            loading="lazy"
             width={800}
             height={1000}
+            sizes="(min-width: 1280px) 300px, (min-width: 1024px) 25vw, 50vw"
             className={`aspect-[4/5] w-full object-cover transition-transform duration-500 ease-out group-hover:scale-105 ${
               soldOut ? "opacity-55" : ""
             }`}
