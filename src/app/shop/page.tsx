@@ -5,11 +5,11 @@ import CollectionBanner from "@/components/storefront/CollectionBanner";
 import Header from "@/components/storefront/Header";
 import ProductCard from "@/components/storefront/ProductCard";
 import { Footer } from "@/components/storefront/sections";
-import ShopPagination from "@/components/storefront/ShopPagination";
-import ShopToolbar from "@/components/storefront/ShopToolbar";
+import ListingPagination from "@/components/storefront/ListingPagination";
+import ListingToolbar from "@/components/storefront/ListingToolbar";
 import { Button } from "@/components/ui/button";
 import { getProductTypes, getShopPage } from "@/data/catalog";
-import { parseShopQuery, SHOP_PATH } from "@/lib/shop";
+import { listingSummary, parseShopQuery, SHOP_PATH } from "@/lib/shop";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
@@ -47,13 +47,7 @@ export default async function ShopPage({ searchParams }: { searchParams: SearchP
     getProductTypes(),
   ]);
 
-  const firstItem = (query.page - 1) * 12 + 1;
-  const range =
-    products.length === 0
-      ? "0 products"
-      : products.length === 1
-        ? `Showing ${firstItem} product`
-        : `Showing ${firstItem}–${firstItem + products.length - 1} products`;
+  const paginated = pageInfo.hasNextPage || pageInfo.hasPreviousPage;
 
   return (
     <div className="min-h-screen bg-background">
@@ -66,14 +60,18 @@ export default async function ShopPage({ searchParams }: { searchParams: SearchP
       />
 
       <section className="mx-auto max-w-7xl px-4 pt-16 sm:px-6 sm:pt-20 lg:px-8">
-        <ShopToolbar query={query} types={types} />
+        <ListingToolbar query={query} types={types} basePath={SHOP_PATH} />
 
         <p className="py-5 text-sm font-medium text-foreground" aria-live="polite">
-          {range}
+          {listingSummary(query, pageInfo, products.length)}
         </p>
 
         {products.length > 0 ? (
-          <div className="grid grid-cols-2 gap-4 pb-12 sm:gap-6 lg:grid-cols-4 lg:pb-16">
+          <div
+            className={`grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4 ${
+              paginated ? "pb-12 lg:pb-16" : "pb-16 lg:pb-24"
+            }`}
+          >
             {products.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
@@ -90,7 +88,7 @@ export default async function ShopPage({ searchParams }: { searchParams: SearchP
           </div>
         )}
 
-        <ShopPagination query={query} pageInfo={pageInfo} />
+        <ListingPagination query={query} pageInfo={pageInfo} basePath={SHOP_PATH} />
       </section>
 
       <Footer />

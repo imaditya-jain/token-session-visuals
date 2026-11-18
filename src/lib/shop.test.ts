@@ -95,3 +95,34 @@ describe("URL serialization", () => {
     expect(activeFilterCount(parseShopQuery({ sort: "price-asc" }))).toBe(0);
   });
 });
+
+describe("listingSummary", () => {
+  const single = { hasNextPage: false, hasPreviousPage: false };
+  it("shows a plain count when everything fits on one page", async () => {
+    const { listingSummary } = await import("./shop");
+    expect(listingSummary(parseShopQuery({}), single, 8)).toBe("8 products");
+    expect(listingSummary(parseShopQuery({}), single, 1)).toBe("1 product");
+    expect(listingSummary(parseShopQuery({}), single, 0)).toBe("0 products");
+  });
+
+  it("shows the range on multi-page listings", async () => {
+    const { listingSummary } = await import("./shop");
+    expect(
+      listingSummary(parseShopQuery({}), { hasNextPage: true, hasPreviousPage: false }, 12),
+    ).toBe("Showing 1–12 products");
+    expect(
+      listingSummary(
+        parseShopQuery({ page: "2" }),
+        { hasNextPage: false, hasPreviousPage: true },
+        8,
+      ),
+    ).toBe("Showing 13–20 products");
+    expect(
+      listingSummary(
+        parseShopQuery({ page: "3" }),
+        { hasNextPage: false, hasPreviousPage: true },
+        1,
+      ),
+    ).toBe("Showing 25 product");
+  });
+});

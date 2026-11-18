@@ -40,3 +40,44 @@ export function sortArgs(sort: SortKey): SortArgs {
       return { sortKey: "ID", reverse: false };
   }
 }
+
+type CollectionSortArgs = {
+  sortKey: "COLLECTION_DEFAULT" | "BEST_SELLING" | "TITLE" | "PRICE";
+  reverse: boolean;
+};
+
+export function collectionSortArgs(sort: SortKey): CollectionSortArgs {
+  switch (sort) {
+    case "best-selling":
+      return { sortKey: "BEST_SELLING", reverse: false };
+    case "alpha-asc":
+      return { sortKey: "TITLE", reverse: false };
+    case "alpha-desc":
+      return { sortKey: "TITLE", reverse: true };
+    case "price-asc":
+      return { sortKey: "PRICE", reverse: false };
+    case "price-desc":
+      return { sortKey: "PRICE", reverse: true };
+    default:
+      return { sortKey: "COLLECTION_DEFAULT", reverse: false };
+  }
+}
+
+type ProductFilter =
+  { available: boolean } | { price: { min?: number; max?: number } } | { productType: string };
+
+/** Storefront `ProductFilter[]` for collection listings (typed input, so no query-string escaping needed). */
+export function buildCollectionFilters(query: ShopQuery): ProductFilter[] {
+  const filters: ProductFilter[] = [];
+  if (query.inStock !== query.outOfStock) filters.push({ available: query.inStock });
+  if (query.min !== undefined || query.max !== undefined) {
+    filters.push({
+      price: {
+        ...(query.min !== undefined ? { min: query.min } : {}),
+        ...(query.max !== undefined ? { max: query.max } : {}),
+      },
+    });
+  }
+  for (const productType of query.types) filters.push({ productType });
+  return filters;
+}

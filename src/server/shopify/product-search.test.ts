@@ -45,3 +45,37 @@ describe("sortArgs", () => {
     expect(sortArgs("price-desc")).toEqual({ sortKey: "PRICE", reverse: true });
   });
 });
+
+describe("collection listings", () => {
+  it("maps sorts to collection sort keys", async () => {
+    const { collectionSortArgs } = await import("./product-search");
+    expect(collectionSortArgs("featured")).toEqual({
+      sortKey: "COLLECTION_DEFAULT",
+      reverse: false,
+    });
+    expect(collectionSortArgs("price-desc")).toEqual({ sortKey: "PRICE", reverse: true });
+    expect(collectionSortArgs("alpha-asc")).toEqual({ sortKey: "TITLE", reverse: false });
+  });
+
+  it("builds typed filters (no string escaping involved)", async () => {
+    const { buildCollectionFilters } = await import("./product-search");
+    expect(buildCollectionFilters(parseShopQuery({}))).toEqual([]);
+    expect(
+      buildCollectionFilters(
+        parseShopQuery({
+          stock: "out",
+          min: "10",
+          max: "40",
+          type: ["House Plants", "Seeds & Tools"],
+        }),
+      ),
+    ).toEqual([
+      { available: false },
+      { price: { min: 10, max: 40 } },
+      { productType: "House Plants" },
+      { productType: "Seeds & Tools" },
+    ]);
+    expect(buildCollectionFilters(parseShopQuery({ stock: ["in", "out"] }))).toEqual([]);
+    expect(buildCollectionFilters(parseShopQuery({ max: "5" }))).toEqual([{ price: { max: 5 } }]);
+  });
+});

@@ -5,7 +5,12 @@ import type { z } from "zod";
 import { PAGE_SIZE, resetPaging, type ProductPage, type ShopQuery } from "@/lib/shop";
 import type { Collection, Product } from "@/lib/types";
 import { ShopifyError, storefrontQuery } from "@/server/shopify/client";
-import { buildProductSearchQuery, sortArgs } from "@/server/shopify/product-search";
+import {
+  buildCollectionFilters,
+  buildProductSearchQuery,
+  collectionSortArgs,
+  sortArgs,
+} from "@/server/shopify/product-search";
 import {
   collectionPosition,
   isStorefrontCollection,
@@ -13,6 +18,7 @@ import {
   mapProduct,
 } from "@/server/shopify/mappers";
 import {
+  COLLECTION_PAGE_QUERY,
   COLLECTION_PRODUCTS_QUERY,
   COLLECTION_QUERY,
   COLLECTIONS_QUERY,
@@ -22,6 +28,7 @@ import {
   PRODUCTS_QUERY,
 } from "@/server/shopify/queries";
 import {
+  collectionPageResponse,
   collectionProductsResponse,
   collectionResponse,
   collectionsResponse,
@@ -152,30 +159,78 @@ export async function getProductPage(query: ShopQuery): Promise<ProductPage> {
   }
 }
 
-async function fetchProductPage(query: ShopQuery): Promise<ProductPage> {
+type CursorPage = {
+  nodes: Parameters<typeof mapProduct>[0][];
+  pageInfo: {
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+    startCursor: string | null;
+    endCursor: string | null;
+  };
+};
+
+const toProductPage = ({ nodes, pageInfo }: CursorPage): ProductPage => ({
+  products: nodes.map(mapProduct),
+  pageInfo: {
+    hasNextPage: pageInfo.hasNextPage,
+    hasPreviousPage: pageInfo.hasPreviousPage,
+    ...(pageInfo.startCursor ? { startCursor: pageInfo.startCursor } : {}),
+    ...(pageInfo.endCursor ? { endCursor: pageInfo.endCursor } : {}),
+  },
+});
+
+/** Forward uses first/after; backward uses last/before (Shopify cursor pagination). */
+const cursorArgs = (query: ShopQuery) => {
   const backwards = query.before !== undefined && query.after === undefined;
+  return {
+    first: backwards ? null : PAGE_SIZE,
+    last: backwards ? PAGE_SIZE : null,
+    after: query.after ?? null,
+    before: backwards ? query.before : null,
+  };
+};
+
+async function fetchProductPage(query: ShopQuery): Promise<ProductPage> {
   const { products } = await run(
     productPageResponse,
     PRODUCT_PAGE_QUERY,
     {
-      first: backwards ? null : PAGE_SIZE,
-      last: backwards ? PAGE_SIZE : null,
-      after: query.after ?? null,
-      before: backwards ? query.before : null,
+      ...cursorArgs(query),
       query: buildProductSearchQuery(query) ?? null,
       ...sortArgs(query.sort),
     },
     [tags.catalog],
   );
-  return {
-    products: products.nodes.map(mapProduct),
-    pageInfo: {
-      hasNextPage: products.pageInfo.hasNextPage,
-      hasPreviousPage: products.pageInfo.hasPreviousPage,
-      ...(products.pageInfo.startCursor ? { startCursor: products.pageInfo.startCursor } : {}),
-      ...(products.pageInfo.endCursor ? { endCursor: products.pageInfo.endCursor } : {}),
-    },
+  return toProductPage(products);
+}
+
+/** One page of a collection's products. Returns an empty page when the collection does not exist. */
+export async function getCollectionPage(handle: string, query: ShopQuery): Promise<ProductPage> {
+  const fetchPage = async (q: ShopQuery): Promise<ProductPage> => {
+    const { collection } = await run(
+      collectionPageResponse,
+      COLLECTION_PAGE_QUERY,
+      {
+        handle,
+        ...cursorArgs(q),
+        filters: buildCollectionFilters(q),
+        ...collectionSortArgs(q.sort),
+      },
+      [tags.catalog, tags.collection(handle)],
+    );
+    return collection
+      ? toProductPage(collection.products)
+      : { products: [], pageInfo: { hasNextPage: false, hasPreviousPage: false } };
   };
+  try {
+    return await fetchPage(query);
+  } catch (error) {
+    const hasCursor = query.after !== undefined || query.before !== undefined;
+    if (hasCursor && error instanceof ShopifyError && /cursor/i.test(error.message)) {
+      return fetchPage(resetPaging(query));
+    }
+    throw error;
+  }
 }
 
 export async function getProductTypes(): Promise<string[]> {

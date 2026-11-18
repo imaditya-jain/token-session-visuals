@@ -8,7 +8,7 @@ import {
   fallbackProducts,
 } from "@/data/fallback-catalog";
 import { fallbackProductTypes, paginateFallback } from "@/data/fallback-shop";
-import type { ProductPage, ShopQuery } from "@/lib/shop";
+import { parseShopQuery, type ProductPage, type ShopQuery } from "@/lib/shop";
 import type { Collection, Product } from "@/lib/types";
 import { logger } from "@/server/logger";
 import * as shopify from "@/server/services/catalog";
@@ -46,10 +46,17 @@ export async function getCollection(handle: string): Promise<Collection | undefi
     : fallbackCollections.find((collection) => collection.slug === handle);
 }
 
-export async function getCollectionProducts(handle: string): Promise<Product[]> {
-  return (await isLive())
-    ? shopify.getCollectionProducts(handle)
-    : fallbackProducts.filter((product) => product.collectionSlugs.includes(handle));
+/** One page (12) of a collection with filters/sort and cursor pagination; `undefined` when the collection is unknown. */
+export async function getCollectionPage(
+  handle: string,
+  query: ShopQuery,
+): Promise<ProductPage | undefined> {
+  if (await isLive()) return shopify.getCollectionPage(handle, query);
+  if (!fallbackCollections.some((collection) => collection.slug === handle)) return undefined;
+  return paginateFallback(
+    fallbackProducts.filter((product) => product.collectionSlugs.includes(handle)),
+    query,
+  );
 }
 
 export async function getBestSellers(): Promise<Product[]> {
@@ -82,8 +89,10 @@ export async function getProductTypes(): Promise<string[]> {
 export async function getRelatedProducts(product: Product, limit = 4): Promise<Product[]> {
   const primary = product.collectionSlugs[0];
   if (!primary) return [];
-  const siblings = await getCollectionProducts(primary);
-  return siblings.filter((candidate) => candidate.slug !== product.slug).slice(0, limit);
+  const page = await getCollectionPage(primary, parseShopQuery({}));
+  return (page?.products ?? [])
+    .filter((candidate) => candidate.slug !== product.slug)
+    .slice(0, limit);
 }
 
 export { formatPrice } from "@/lib/format";
