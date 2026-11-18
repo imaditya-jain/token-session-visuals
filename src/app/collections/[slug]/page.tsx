@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -41,13 +42,14 @@ export default async function CollectionPage({ params }: { params: Promise<{ slu
       {/* Collection banner with the organic wave, like the reference theme */}
       <section className="relative">
         <div className="relative h-[360px] w-full overflow-hidden sm:h-[440px]">
-          <img
+          <Image
             src={collection.image}
             alt={collection.name}
+            sizes="100vw"
             className="absolute inset-0 h-full w-full object-cover"
             width={800}
             height={1000}
-            fetchPriority="high"
+            priority
           />
           <div className="absolute inset-0 bg-gradient-to-b from-forest-deep/25 via-transparent to-forest-deep/25" />
 

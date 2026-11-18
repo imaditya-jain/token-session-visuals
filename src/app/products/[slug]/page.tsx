@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -80,12 +81,13 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
         <section className="mx-auto grid max-w-7xl gap-8 px-4 py-8 sm:px-6 md:grid-cols-2 md:gap-12 lg:px-8 lg:py-14">
           <div className="overflow-hidden rounded-md bg-sand">
-            <img
+            <Image
               src={product.image}
               alt={product.name}
-              fetchPriority="high"
+              priority
               width={800}
               height={1000}
+              sizes="(min-width: 1280px) 600px, (min-width: 768px) 50vw, 100vw"
               className="aspect-[4/5] w-full object-cover"
             />
           </div>

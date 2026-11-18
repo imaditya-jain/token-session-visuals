@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
@@ -60,12 +61,12 @@ export function Collections() {
             href={`/collections/${collection.slug}`}
             className="group relative overflow-hidden rounded-2xl bg-sand shadow-sm ring-1 ring-border/60"
           >
-            <img
+            <Image
               src={collection.image}
               alt={collection.name}
-              loading="lazy"
               width={800}
               height={1000}
+              sizes="(min-width: 1280px) 300px, (min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
               className="aspect-[4/5] w-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-forest-deep/70 via-transparent to-transparent" />
@@ -117,12 +118,12 @@ export function PromoSplit() {
     <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
       <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
         <div className="relative order-2 lg:order-1">
-          <img
+          <Image
             src={promoImage}
             alt="Hands repotting a plant into a terracotta pot"
-            loading="lazy"
             width={1200}
             height={900}
+            sizes="(min-width: 1024px) 600px, 100vw"
             className="aspect-[5/4] w-full rounded-2xl object-cover shadow-md"
           />
           <div className="absolute -bottom-5 left-6 hidden rounded-xl bg-forest px-6 py-4 text-cream shadow-lg sm:block">
@@ -168,12 +169,12 @@ export function PromoSplit() {
 export function SeasonalBanner() {
   return (
     <section className="relative overflow-hidden">
-      <img
+      <Image
         src={seasonalImage}
         alt="Sunlit Victorian greenhouse filled with plants"
-        loading="lazy"
         width={1600}
         height={900}
+        sizes="100vw"
         className="h-[480px] w-full object-cover sm:h-[560px]"
       />
       <div className="absolute inset-0 bg-gradient-to-r from-forest-deep/70 via-forest-deep/30 to-transparent" />
@@ -278,12 +279,12 @@ export function StoryTestimonial() {
             Meet the growers <ArrowRight className="size-4" aria-hidden />
           </a>
         </div>
-        <img
+        <Image
           src={storyImage}
           alt="A Fernwood grower holding a tray of seedlings in the nursery"
-          loading="lazy"
           width={1200}
           height={900}
+          sizes="(min-width: 1024px) 600px, 100vw"
           className="aspect-[5/4] w-full rounded-2xl object-cover shadow-xl"
         />
       </div>

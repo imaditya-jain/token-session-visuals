@@ -1,9 +1,32 @@
 import type { Metadata, Viewport } from "next";
+import localFont from "next/font/local";
 import type { ReactNode } from "react";
 
 import Providers from "@/components/providers/Providers";
 
 import "../styles.css";
+
+// Same files and weight faces Google Fonts served for the original design (see src/fonts/README.md).
+const fraunces = localFont({
+  src: [
+    { path: "../fonts/fraunces-latin-v38.woff2", weight: "400", style: "normal" },
+    { path: "../fonts/fraunces-latin-v38.woff2", weight: "500", style: "normal" },
+    { path: "../fonts/fraunces-latin-v38.woff2", weight: "600", style: "normal" },
+  ],
+  display: "swap",
+  variable: "--font-fraunces",
+});
+
+const workSans = localFont({
+  src: [
+    { path: "../fonts/work-sans-latin-v24.woff2", weight: "300", style: "normal" },
+    { path: "../fonts/work-sans-latin-v24.woff2", weight: "400", style: "normal" },
+    { path: "../fonts/work-sans-latin-v24.woff2", weight: "500", style: "normal" },
+    { path: "../fonts/work-sans-latin-v24.woff2", weight: "600", style: "normal" },
+  ],
+  display: "swap",
+  variable: "--font-work-sans",
+});
 
 export const metadata: Metadata = {
   title: "Fernwood — Premium Plants & Garden Essentials",
@@ -26,16 +49,7 @@ export const viewport: Viewport = { width: "device-width", initialScale: 1 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        {/* eslint-disable-next-line @next/next/no-page-custom-font -- identical font request to the locked Lovable design; migrates to next/font in feat/perf-fonts with baseline verification */}
-        <link
-          rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Work+Sans:wght@300;400;500;600&display=swap"
-        />
-      </head>
+    <html lang="en" className={`${fraunces.variable} ${workSans.variable}`}>
       <body>
         <Providers>{children}</Providers>
       </body>

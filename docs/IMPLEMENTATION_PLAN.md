@@ -8,7 +8,7 @@ Rules: see `CLAUDE.md`. One task = one branch from `dev`. Every phase ends with 
 - [x] `dev` branch created
 - [x] **Phase 0** visual baselines (`chore/phase-0-visual-baselines`) — 14 golden screenshots, stable across 2 runs
 - [x] **Phase 1** Next.js port — 14/14 golden screenshots pass unchanged (threshold 0.1%), typecheck/lint/build/unit green
-- [ ] Phase 1b `feat/perf-images-fonts`: `next/image` + `next/font` under the same baselines
+- [x] Phase 1b next/image + self-hosted fonts (exact Google woff2 files) — 21/21 e2e, baselines unchanged
 - [ ] Phase 2 Shopify catalog (needs Shopify tokens)
 
 ## Blocking inputs from the user
