@@ -21,6 +21,8 @@ export async function startTestDatabase(): Promise<MongoMemoryServer> {
   vi.stubEnv("SMTP_EMAIL", "shop@example.com");
   vi.stubEnv("SMTP_PASS", "app-password-for-tests");
   vi.stubEnv("SITE_URL", "https://fernwood.test");
+  vi.stubEnv("SHOPIFY_STORE_URL", "example-store.myshopify.com");
+  vi.stubEnv("SHOPIFY_ADMIN_API_ACCESS_TOKEN", "shpat_admin_token_for_tests");
   vi.stubEnv("CRON_SECRET", "cron-secret-for-tests-0123456789");
   resetEnvCache();
   return server;
