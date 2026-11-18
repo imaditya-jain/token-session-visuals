@@ -1,11 +1,33 @@
 import { z } from "zod";
 
+import CampaignEmail from "./CampaignEmail";
 import NewsletterConfirm from "./NewsletterConfirm";
 import PasswordChanged from "./PasswordChanged";
 import ResetPassword from "./ResetPassword";
 import VerifyEmail from "./VerifyEmail";
 
-/** Every email Fernwood can send: subject, validated data shape and renderer. Add new emails here. */
+const https = z
+  .string()
+  .url()
+  .refine(
+    (value) => value.startsWith("https://") || value.startsWith("http://localhost"),
+    "Links must use https",
+  );
+
+const campaignSchema = z.object({
+  subject: z.string().min(1).max(150),
+  preheader: z.string().max(200).optional(),
+  heading: z.string().min(1).max(150),
+  paragraphs: z.array(z.string().min(1).max(2000)).min(1).max(20),
+  cta: z.object({ label: z.string().min(1).max(60), url: https }).optional(),
+  unsubscribeUrl: z.string().url(),
+  oneClickUrl: z.string().url(),
+});
+
+/**
+ * Every email Fernwood can send: subject, validated data shape and renderer. Add new emails here.
+ * `headers` adds message headers (e.g. List-Unsubscribe for marketing).
+ */
 export const templates = {
   "verify-email": {
     subject: "Confirm your Fernwood email",
@@ -26,6 +48,16 @@ export const templates = {
     subject: "Confirm your Fernwood subscription",
     schema: z.object({ url: z.string().url() }),
     element: (data: { url: string }) => <NewsletterConfirm {...data} />,
+  },
+  campaign: {
+    subject: (data: { subject: string }) => data.subject,
+    schema: campaignSchema,
+    element: (data: z.infer<typeof campaignSchema>) => <CampaignEmail {...data} />,
+    headers: (data: { oneClickUrl: string }) => ({
+      // RFC 8058 one-click unsubscribe: mailbox providers show their own "Unsubscribe" button.
+      "List-Unsubscribe": `<${data.oneClickUrl}>`,
+      "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+    }),
   },
 } as const;
 

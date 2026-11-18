@@ -1,6 +1,6 @@
 import "server-only";
 
-import { createHmac, randomBytes, randomUUID } from "node:crypto";
+import { createHmac, randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
 
 import { jwtVerify, SignJWT } from "jose";
 import { z } from "zod";
@@ -68,3 +68,27 @@ export const hashEmailToken = (token: string): string =>
   createHmac("sha256", authEnv().REFRESH_TOKEN_SECRET).update(`email-token:${token}`).digest("hex");
 
 export const generateEmailToken = (): string => randomBytes(32).toString("base64url");
+
+/**
+ * Stateless unsubscribe token: `base64url(email).hmac`. It never expires (people must always be able to opt
+ * out) and can't be forged or used to unsubscribe anyone else, because the HMAC binds it to one address.
+ */
+const unsubscribeMac = (email: string): string =>
+  createHmac("sha256", authEnv().REFRESH_TOKEN_SECRET)
+    .update(`unsubscribe:${email}`)
+    .digest("base64url");
+
+export const createUnsubscribeToken = (email: string): string => {
+  const normalized = email.toLowerCase();
+  return `${Buffer.from(normalized).toString("base64url")}.${unsubscribeMac(normalized)}`;
+};
+
+/** Returns the email when the token is authentic, otherwise null. */
+export function readUnsubscribeToken(token: string): string | null {
+  const [encoded, mac, ...rest] = token.split(".");
+  if (!encoded || !mac || rest.length > 0 || token.length > 400) return null;
+  const email = Buffer.from(encoded, "base64url").toString("utf8");
+  const expected = Buffer.from(unsubscribeMac(email));
+  const received = Buffer.from(mac);
+  return expected.length === received.length && timingSafeEqual(expected, received) ? email : null;
+}
