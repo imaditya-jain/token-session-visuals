@@ -7,6 +7,8 @@ import {
   fallbackCollections,
   fallbackProducts,
 } from "@/data/fallback-catalog";
+import { fallbackProductTypes, paginateFallback } from "@/data/fallback-shop";
+import type { ProductPage, ShopQuery } from "@/lib/shop";
 import type { Collection, Product } from "@/lib/types";
 import { logger } from "@/server/logger";
 import * as shopify from "@/server/services/catalog";
@@ -62,6 +64,18 @@ export async function getProduct(handle: string): Promise<Product | undefined> {
 
 export async function getProducts(): Promise<Product[]> {
   return (await isLive()) ? shopify.getProducts() : fallbackProducts;
+}
+
+/** One page (12) of all products with filters/sort and Shopify-style cursor pagination. */
+export async function getShopPage(query: ShopQuery): Promise<ProductPage> {
+  return (await isLive())
+    ? shopify.getProductPage(query)
+    : paginateFallback(fallbackProducts, query);
+}
+
+/** Product types available as shop filters. */
+export async function getProductTypes(): Promise<string[]> {
+  return (await isLive()) ? shopify.getProductTypes() : fallbackProductTypes(fallbackProducts);
 }
 
 /** Other products from the same primary collection, in collection order. */

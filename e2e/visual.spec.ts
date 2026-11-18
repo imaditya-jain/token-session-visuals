@@ -15,6 +15,7 @@ const pages = [
   { name: "home", path: "/" },
   { name: "collection", path: "/collections/house-plants" },
   { name: "product", path: "/products/monstera-deliciosa" },
+  { name: "shop", path: "/shop" },
 ];
 
 async function settle(page: Page) {

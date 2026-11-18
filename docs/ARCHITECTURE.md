@@ -145,3 +145,26 @@ Phase 4 uses Shopify Storefront `predictiveSearch`/`search` through a token-prot
 | Vercel can't run workers/sockets | separate worker service, polling fallback |
 | Lovable overwriting repo | disconnect Lovable before Phase 1 |
 | Data mismatch Shopify vs legacy catalog | import script + parity test against `catalog.ts` snapshot |
+
+## 17. Rendering strategy (SSG / ISR / SSR / CSR)
+
+Principle: render on the server as early and as cacheable as possible; ship JavaScript only for interaction.
+
+| Surface | Strategy | Why |
+|---|---|---|
+| Home `/`, static sections (hero, promo, story, footer) | **SSG + ISR** (`revalidate = 3600`) | Same HTML for everyone; CDN-served |
+| `/collections/[slug]`, `/products/[slug]` | **SSG + ISR** via `generateStaticParams`; `dynamicParams` on so new Shopify products render on first hit then cache | SEO-critical, identical for all users; invalidated by Shopify webhooks (`catalog`, `product:{h}`, `collection:{h}` tags) |
+| `/shop` (filters, sort, cursors) | **SSR** (`force-dynamic`) | Output depends on URL state; Shopify reads stay in the tagged data cache; non-base URLs are `noindex` |
+| Header menu/search, collection filters, newsletter form, smooth scroll | **CSR islands** (`"use client"`, smallest possible) | Pure interaction state |
+| Cart count, account menu, notifications (later) | **CSR**, fetched after hydration with the access token | Per-user data must never be baked into cached HTML |
+| Account, orders, checkout hand-off (later) | **SSR/dynamic, `no-store`**, auth-guarded, `noindex` | Personal data |
+| **Admin panel (future)** | **SSR/dynamic only** + CSR islands for tables/forms; never cached, never indexed | See below |
+
+Rules: (1) never read cookies/headers/searchParams in a page that should be static, since that silently makes it dynamic; (2) keep personalization out of cached HTML (CSR islands); (3) data fetched in RSC must carry cache tags and a fallback `revalidate`; (4) prefer Server Components, and add `"use client"` only at the leaf that needs state or effects; (5) a future optimization is Next `cacheComponents`/PPR (static shell + streamed dynamic holes), which would let `/shop` keep a static shell.
+
+### Admin panel (future scope, plan locked now)
+- Lives in an `(admin)` route group at `/admin/*`, separate layout, `robots: noindex`, `Cache-Control: no-store`.
+- Authentication and authorization **at every layer**: `proxy.ts` (formerly middleware) is only a first gate; every Server Action, Route Handler and RSC data call re-verifies the access token and the `admin` role server-side (defense in depth; never trust middleware alone).
+- Role model in Mongo (`role: admin | staff`), least-privilege permissions per resource, audit log for every mutation, short admin sessions, optional MFA, strict CSP, CSRF/Origin checks, rate limits, separate refresh-cookie path.
+- Data via Shopify Admin API (products, collections, inventory, orders) behind service functions; the admin never exposes Shopify tokens to the browser.
+- Details to be guided by the owner before implementation.

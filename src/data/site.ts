@@ -2,7 +2,7 @@
 // they come from Shopify via src/data/catalog.ts.
 
 export const navLinks = [
-  { label: "Shop Plants", href: "/collections/house-plants" },
+  { label: "Shop Plants", href: "/shop" },
   { label: "Collections", href: "#collections" },
   { label: "Our Story", href: "#our-story" },
   { label: "About us", href: "#footer" },
