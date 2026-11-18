@@ -6,10 +6,10 @@ import { notFound } from "next/navigation";
 import CollectionProducts from "@/components/storefront/CollectionProducts";
 import Header from "@/components/storefront/Header";
 import { Footer } from "@/components/storefront/sections";
-import { collections, getCollection, getCollectionProducts } from "@/data/catalog";
+import { getCollection, getCollectionProducts, getCollections } from "@/data/catalog";
 
-export function generateStaticParams() {
-  return collections.map((collection) => ({ slug: collection.slug }));
+export async function generateStaticParams() {
+  return (await getCollections()).map((collection) => ({ slug: collection.slug }));
 }
 
 export async function generateMetadata({
@@ -18,7 +18,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const collection = getCollection(slug);
+  const collection = await getCollection(slug);
   if (!collection) return { title: "Collection — Fernwood" };
   const title = `${collection.name} — Fernwood`;
   return {
@@ -31,9 +31,12 @@ export async function generateMetadata({
 
 export default async function CollectionPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const collection = getCollection(slug);
+  const [collection, products, collections] = await Promise.all([
+    getCollection(slug),
+    getCollectionProducts(slug),
+    getCollections(),
+  ]);
   if (!collection) notFound();
-  const products = getCollectionProducts(slug);
 
   return (
     <div className="min-h-screen bg-background">

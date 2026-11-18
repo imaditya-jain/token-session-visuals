@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { Product } from "@/data/catalog";
+import type { Product } from "@/lib/types";
 
 type SortKey =
   "featured" | "best-selling" | "alpha-asc" | "alpha-desc" | "price-asc" | "price-desc";

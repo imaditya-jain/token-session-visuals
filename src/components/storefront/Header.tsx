@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Menu, Search, ShoppingBag, User, X, ChevronDown } from "lucide-react";
 
-import { navLinks } from "@/data/catalog";
+import { navLinks } from "@/data/site";
 import { setSearchOpen } from "@/features/ui/uiSlice";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";

@@ -1,0 +1,292 @@
+{
+  "collections": [
+    {
+      "handle": "house-plants",
+      "title": "House Plants",
+      "tagline": "Lush classics for every room",
+      "description": "Nursery-grown indoor plants, from sculptural statement pieces to easy-going greenery for first-time plant parents.",
+      "imageFile": "public/images/collection-houseplants.jpg",
+      "productType": "House Plants"
+    },
+    {
+      "handle": "succulents-cacti",
+      "title": "Succulents & Cacti",
+      "tagline": "Small plants, big character",
+      "description": "Drought-loving, desk-sized greenery that thrives on sunshine and a little neglect.",
+      "imageFile": "public/images/collection-succulents.jpg",
+      "productType": "Succulents & Cacti"
+    },
+    {
+      "handle": "pots-planters",
+      "title": "Pots & Planters",
+      "tagline": "Handmade, natural, timeless",
+      "description": "Terracotta, ceramic and concrete vessels, thrown and fired to age beautifully alongside your plants.",
+      "imageFile": "public/images/collection-planters.jpg",
+      "productType": "Pots & Planters"
+    },
+    {
+      "handle": "seeds-tools",
+      "title": "Seeds & Tools",
+      "tagline": "Everything the gardener needs",
+      "description": "Heirloom seeds and heirloom-quality tools — the small kit that keeps every pot and patch thriving.",
+      "imageFile": "public/images/collection-tools.jpg",
+      "productType": "Seeds & Tools"
+    }
+  ],
+  "bestSellers": {
+    "handle": "home-best-sellers",
+    "title": "Home best sellers",
+    "products": [
+      "monstera-deliciosa",
+      "snake-plant-laurentii",
+      "fiddle-leaf-fig",
+      "peace-lily",
+      "calathea-orbifolia",
+      "zz-plant",
+      "bird-of-paradise",
+      "white-phalaenopsis-orchid"
+    ]
+  },
+  "products": [
+    {
+      "handle": "monstera-deliciosa",
+      "name": "Monstera Deliciosa",
+      "category": "House Plants",
+      "price": 49,
+      "compareAtPrice": null,
+      "badge": "Bestseller",
+      "light": "Bright, indirect light",
+      "size": "24\" — 34\" tall",
+      "inStock": true,
+      "collections": ["house-plants"]
+    },
+    {
+      "handle": "snake-plant-laurentii",
+      "name": "Snake Plant Laurentii",
+      "category": "House Plants",
+      "price": 39,
+      "compareAtPrice": 49,
+      "badge": "Sale",
+      "light": "Low to bright light",
+      "size": "22\" — 30\" tall",
+      "inStock": true,
+      "collections": ["house-plants"]
+    },
+    {
+      "handle": "fiddle-leaf-fig",
+      "name": "Fiddle Leaf Fig",
+      "category": "House Plants",
+      "price": 65,
+      "compareAtPrice": null,
+      "badge": null,
+      "light": "Bright, filtered light",
+      "size": "30\" — 40\" tall",
+      "inStock": true,
+      "collections": ["house-plants"]
+    },
+    {
+      "handle": "peace-lily",
+      "name": "Peace Lily",
+      "category": "House Plants",
+      "price": 34,
+      "compareAtPrice": null,
+      "badge": null,
+      "light": "Medium, indirect light",
+      "size": "18\" — 24\" tall",
+      "inStock": true,
+      "collections": ["house-plants"]
+    },
+    {
+      "handle": "calathea-orbifolia",
+      "name": "Calathea Orbifolia",
+      "category": "House Plants",
+      "price": 44,
+      "compareAtPrice": null,
+      "badge": "New",
+      "light": "Medium, indirect light",
+      "size": "16\" — 22\" tall",
+      "inStock": true,
+      "collections": ["house-plants"]
+    },
+    {
+      "handle": "zz-plant",
+      "name": "ZZ Plant",
+      "category": "House Plants",
+      "price": 29,
+      "compareAtPrice": 36,
+      "badge": "Sale",
+      "light": "Thrives in low light",
+      "size": "18\" — 26\" tall",
+      "inStock": true,
+      "collections": ["house-plants"]
+    },
+    {
+      "handle": "bird-of-paradise",
+      "name": "Bird of Paradise",
+      "category": "House Plants",
+      "price": 89,
+      "compareAtPrice": null,
+      "badge": null,
+      "light": "Bright, direct light",
+      "size": "36\" — 48\" tall",
+      "inStock": true,
+      "collections": ["house-plants"]
+    },
+    {
+      "handle": "white-phalaenopsis-orchid",
+      "name": "White Phalaenopsis Orchid",
+      "category": "House Plants",
+      "price": 52,
+      "compareAtPrice": null,
+      "badge": "Bestseller",
+      "light": "Soft, indirect light",
+      "size": "20\" — 26\" tall",
+      "inStock": true,
+      "collections": ["house-plants"]
+    },
+    {
+      "handle": "echeveria-perle",
+      "name": "Echeveria 'Perle'",
+      "category": "Succulents & Cacti",
+      "price": 18,
+      "compareAtPrice": null,
+      "badge": "New",
+      "light": "Bright, direct light",
+      "size": "4\" — 6\" across",
+      "inStock": true,
+      "collections": ["succulents-cacti"]
+    },
+    {
+      "handle": "golden-barrel-cactus",
+      "name": "Golden Barrel Cactus",
+      "category": "Succulents & Cacti",
+      "price": 24,
+      "compareAtPrice": null,
+      "badge": null,
+      "light": "Full sun",
+      "size": "6\" — 10\" across",
+      "inStock": false,
+      "collections": ["succulents-cacti"]
+    },
+    {
+      "handle": "jade-plant",
+      "name": "Jade Plant",
+      "category": "Succulents & Cacti",
+      "price": 32,
+      "compareAtPrice": null,
+      "badge": null,
+      "light": "Bright, direct light",
+      "size": "10\" — 14\" tall",
+      "inStock": true,
+      "collections": ["succulents-cacti"]
+    },
+    {
+      "handle": "string-of-pearls",
+      "name": "String of Pearls",
+      "category": "Succulents & Cacti",
+      "price": 26,
+      "compareAtPrice": 32,
+      "badge": "Sale",
+      "light": "Bright, indirect light",
+      "size": "6\" — 8\" across",
+      "inStock": true,
+      "collections": ["succulents-cacti"]
+    },
+    {
+      "handle": "terracotta-pot-trio",
+      "name": "Terracotta Pot Trio",
+      "category": "Pots & Planters",
+      "price": 28,
+      "compareAtPrice": null,
+      "badge": null,
+      "light": "Drainage holes included",
+      "size": "Set of 3: 4\", 6\" & 8\"",
+      "inStock": true,
+      "collections": ["pots-planters"]
+    },
+    {
+      "handle": "speckled-ceramic-planter",
+      "name": "Speckled Ceramic Planter",
+      "category": "Pots & Planters",
+      "price": 36,
+      "compareAtPrice": null,
+      "badge": "Bestseller",
+      "light": "Glazed inside and out",
+      "size": "7\" diameter",
+      "inStock": true,
+      "collections": ["pots-planters"]
+    },
+    {
+      "handle": "hanging-jute-planter",
+      "name": "Hanging Jute Planter",
+      "category": "Pots & Planters",
+      "price": 22,
+      "compareAtPrice": null,
+      "badge": "New",
+      "light": "Fits 6\" pots",
+      "size": "32\" drop length",
+      "inStock": true,
+      "collections": ["pots-planters"]
+    },
+    {
+      "handle": "concrete-pot-set",
+      "name": "Concrete Pot Set",
+      "category": "Pots & Planters",
+      "price": 42,
+      "compareAtPrice": null,
+      "badge": null,
+      "light": "Sealed, frost-proof",
+      "size": "Set of 2: 6\" & 8\"",
+      "inStock": true,
+      "collections": ["pots-planters"]
+    },
+    {
+      "handle": "heirloom-seed-collection",
+      "name": "Heirloom Seed Collection",
+      "category": "Seeds & Tools",
+      "price": 19,
+      "compareAtPrice": null,
+      "badge": null,
+      "light": "Flowers, herbs & veg",
+      "size": "5 packets",
+      "inStock": true,
+      "collections": ["seeds-tools"]
+    },
+    {
+      "handle": "brass-watering-can",
+      "name": "Brass Watering Can",
+      "category": "Seeds & Tools",
+      "price": 38,
+      "compareAtPrice": null,
+      "badge": "Bestseller",
+      "light": "1.2 L capacity",
+      "size": "9\" tall",
+      "inStock": true,
+      "collections": ["seeds-tools"]
+    },
+    {
+      "handle": "garden-tool-set",
+      "name": "Garden Tool Set",
+      "category": "Seeds & Tools",
+      "price": 46,
+      "compareAtPrice": 58,
+      "badge": "Sale",
+      "light": "Stainless steel & beech",
+      "size": "Trowel & pruners",
+      "inStock": true,
+      "collections": ["seeds-tools"]
+    },
+    {
+      "handle": "walnut-pruners-twine",
+      "name": "Walnut Pruners & Twine",
+      "category": "Seeds & Tools",
+      "price": 24,
+      "compareAtPrice": null,
+      "badge": null,
+      "light": "Bypass blade",
+      "size": "8\" handles",
+      "inStock": true,
+      "collections": ["seeds-tools"]
+    }
+  ]
+}
