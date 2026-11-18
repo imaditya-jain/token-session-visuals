@@ -34,7 +34,15 @@ const parsePrice = (value: string): number | undefined => {
  * Filter and sort bar for the shop. State lives in the URL (server-rendered results, shareable and
  * cursor-pagination friendly); any change returns to the first page.
  */
-export default function ShopToolbar({ query, types }: { query: ShopQuery; types: string[] }) {
+export default function ListingToolbar({
+  query,
+  types,
+  basePath,
+}: {
+  query: ShopQuery;
+  types: string[];
+  basePath: string;
+}) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   // Local drafts keep typing smooth; they are cleared once committed so the URL is the source of truth.
@@ -47,7 +55,7 @@ export default function ShopToolbar({ query, types }: { query: ShopQuery; types:
 
   const navigate = (patch: Partial<ShopQuery>) => {
     startTransition(() =>
-      router.push(shopHref(resetPaging({ ...query, ...patch })), { scroll: false }),
+      router.push(shopHref(resetPaging({ ...query, ...patch }), basePath), { scroll: false }),
     );
   };
 
@@ -175,7 +183,9 @@ export default function ShopToolbar({ query, types }: { query: ShopQuery; types:
             onClick={() => {
               clearTimeout(timer.current);
               setDraft({});
-              startTransition(() => router.push(shopHref({ sort: query.sort }), { scroll: false }));
+              startTransition(() =>
+                router.push(shopHref({ sort: query.sort }, basePath), { scroll: false }),
+              );
             }}
             className="flex items-center gap-1 text-sm font-medium text-clay transition-colors hover:text-clay/80"
           >

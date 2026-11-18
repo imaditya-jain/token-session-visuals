@@ -1,11 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { parseShopQuery } from "@/lib/shop";
 import type { Collection, Product } from "@/lib/types";
 
 const shopify = vi.hoisted(() => ({
   getCollections: vi.fn(),
   getCollection: vi.fn(),
   getCollectionProducts: vi.fn(),
+  getCollectionPage: vi.fn(),
   getBestSellers: vi.fn(),
   getProduct: vi.fn(),
   getProducts: vi.fn(),
@@ -50,10 +52,15 @@ describe("catalog facade source selection", () => {
     shopify.getCollections.mockResolvedValue([liveCollection]);
     shopify.hasProducts.mockResolvedValue(true);
     shopify.getProduct.mockResolvedValue(liveProduct);
-    shopify.getCollectionProducts.mockResolvedValue([liveProduct]);
+    shopify.getCollectionPage.mockResolvedValue({
+      products: [liveProduct],
+      pageInfo: { hasNextPage: false, hasPreviousPage: false },
+    });
 
     expect(await catalog.getCollections()).toEqual([liveCollection]);
     expect(await catalog.getProduct("live-product")).toEqual(liveProduct);
+    const page = await catalog.getCollectionPage("live", parseShopQuery({}));
+    expect(page?.products).toEqual([liveProduct]);
   });
 
   it("returns undefined (404) for unknown handles in live mode instead of falling back", async () => {
@@ -80,7 +87,9 @@ describe("catalog facade source selection", () => {
     shopify.getCollections.mockRejectedValue(new Error("Invalid Shopify environment"));
     shopify.hasProducts.mockResolvedValue(true);
     expect((await catalog.getBestSellers()).length).toBe(8);
-    expect((await catalog.getCollectionProducts("house-plants")).length).toBeGreaterThan(0);
+    const page = await catalog.getCollectionPage("house-plants", parseShopQuery({}));
+    expect(page?.products.length).toBe(8);
+    expect(await catalog.getCollectionPage("nope", parseShopQuery({}))).toBeUndefined();
   });
 
   it("derives related products from the primary collection", async () => {

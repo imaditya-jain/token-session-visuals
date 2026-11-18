@@ -9,12 +9,14 @@ const enabled = `${control} border-forest bg-transparent text-forest hover:bg-fo
 const disabled = `${control} cursor-not-allowed border-border text-muted-foreground/60`;
 
 /** Cursor-based Previous/Next pagination. Cursors are opaque; links carry the current filters. */
-export default function ShopPagination({
+export default function ListingPagination({
   query,
   pageInfo,
+  basePath,
 }: {
   query: ShopQuery;
   pageInfo: PageInfo;
+  basePath: string;
 }) {
   const { hasNextPage, hasPreviousPage, startCursor, endCursor } = pageInfo;
   if (!hasNextPage && !hasPreviousPage) return null;
@@ -22,11 +24,11 @@ export default function ShopPagination({
   const filters = resetPaging(query);
   const previous =
     hasPreviousPage && startCursor
-      ? shopHref({ ...filters, before: startCursor, page: Math.max(1, query.page - 1) })
+      ? shopHref({ ...filters, before: startCursor, page: Math.max(1, query.page - 1) }, basePath)
       : null;
   const next =
     hasNextPage && endCursor
-      ? shopHref({ ...filters, after: endCursor, page: query.page + 1 })
+      ? shopHref({ ...filters, after: endCursor, page: query.page + 1 }, basePath)
       : null;
 
   return (

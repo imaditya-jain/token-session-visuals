@@ -5,6 +5,7 @@ import { resetEnvCache } from "@/server/config/env";
 import {
   getBestSellers,
   getCollection,
+  getCollectionPage,
   getCollections,
   getProduct,
   getProductPage,
@@ -174,5 +175,81 @@ describe("getProductPage", () => {
     );
     const { parseShopQuery } = await import("@/lib/shop");
     await expect(getProductPage(parseShopQuery({ after: "x" }))).rejects.toThrow("Access denied");
+  });
+});
+
+describe("getCollectionPage", () => {
+  beforeEach(() => {
+    vi.stubEnv("SHOPIFY_STORE_URL", "example-store.myshopify.com");
+    vi.stubEnv("SHOPIFY_STOREFRONT_API_ACCESS_TOKEN", "shpat_test_token_value");
+    resetEnvCache();
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllEnvs();
+  });
+
+  const pageInfo = {
+    hasNextPage: false,
+    hasPreviousPage: false,
+    startCursor: null,
+    endCursor: null,
+  };
+  const variablesOf = (mock: { mock: { calls: unknown[][] } }, call: number) =>
+    JSON.parse(String((mock.mock.calls[call]![1] as RequestInit).body)).variables;
+
+  it("sends typed filters, collection sort keys and 12-item cursor pagination", async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockImplementation(async () =>
+        reply({ collection: { products: { nodes: [product("a")], pageInfo } } }),
+      );
+    const { parseShopQuery } = await import("@/lib/shop");
+
+    const page = await getCollectionPage(
+      "house-plants",
+      parseShopQuery({ stock: "in", sort: "price-asc", after: "c1" }),
+    );
+    expect(page.products.map((p) => p.slug)).toEqual(["a"]);
+    expect(variablesOf(fetchMock, 0)).toMatchObject({
+      handle: "house-plants",
+      first: 12,
+      last: null,
+      after: "c1",
+      filters: [{ available: true }],
+      sortKey: "PRICE",
+      reverse: false,
+    });
+  });
+
+  it("returns an empty page for an unknown collection", async () => {
+    vi.spyOn(globalThis, "fetch").mockImplementation(async () => reply({ collection: null }));
+    const { parseShopQuery } = await import("@/lib/shop");
+    expect(await getCollectionPage("nope", parseShopQuery({}))).toEqual({
+      products: [],
+      pageInfo: { hasNextPage: false, hasPreviousPage: false },
+    });
+  });
+
+  it("degrades a malformed cursor to the first page", async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockImplementationOnce(
+        async () =>
+          new Response(JSON.stringify({ errors: [{ message: "Malformed cursor" }] }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          }),
+      )
+      .mockImplementationOnce(async () =>
+        reply({ collection: { products: { nodes: [product("a")], pageInfo } } }),
+      );
+    const { parseShopQuery } = await import("@/lib/shop");
+    const page = await getCollectionPage(
+      "house-plants",
+      parseShopQuery({ after: "garbage", page: "3" }),
+    );
+    expect(page.products).toHaveLength(1);
+    expect(variablesOf(fetchMock, 1)).toMatchObject({ after: null, before: null });
   });
 });

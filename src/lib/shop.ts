@@ -117,7 +117,20 @@ export function resetPaging(query: ShopQuery): ShopQuery {
 
 export const SHOP_PATH = "/shop";
 
-export function shopHref(query: Partial<ShopQuery>): string {
+/** Link to a product listing (shop or a collection) carrying filters, sort and cursor. */
+export function shopHref(query: Partial<ShopQuery>, basePath: string = SHOP_PATH): string {
   const search = shopQueryToSearchParams(query).toString();
-  return search ? `${SHOP_PATH}?${search}` : SHOP_PATH;
+  return search ? `${basePath}?${search}` : basePath;
+}
+
+/** "8 products" when everything fits on one page, otherwise "Showing 13–20 products". */
+export function listingSummary(query: ShopQuery, pageInfo: PageInfo, shown: number): string {
+  if (shown === 0) return "0 products";
+  if (!pageInfo.hasNextPage && !pageInfo.hasPreviousPage && query.page === 1) {
+    return `${shown} ${shown === 1 ? "product" : "products"}`;
+  }
+  const first = (query.page - 1) * PAGE_SIZE + 1;
+  return shown === 1
+    ? `Showing ${first} product`
+    : `Showing ${first}–${first + shown - 1} products`;
 }

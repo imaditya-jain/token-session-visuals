@@ -160,3 +160,39 @@ export const PRODUCT_TYPES_QUERY = /* GraphQL */ `
     }
   }
 `;
+
+export const COLLECTION_PAGE_QUERY = /* GraphQL */ `
+  ${PRODUCT_FIELDS}
+  query CollectionPage(
+    $handle: String!
+    $first: Int
+    $last: Int
+    $after: String
+    $before: String
+    $filters: [ProductFilter!]
+    $sortKey: ProductCollectionSortKeys
+    $reverse: Boolean
+  ) {
+    collection(handle: $handle) {
+      products(
+        first: $first
+        last: $last
+        after: $after
+        before: $before
+        filters: $filters
+        sortKey: $sortKey
+        reverse: $reverse
+      ) {
+        nodes {
+          ...ProductFields
+        }
+        pageInfo {
+          hasNextPage
+          hasPreviousPage
+          startCursor
+          endCursor
+        }
+      }
+    }
+  }
+`;
