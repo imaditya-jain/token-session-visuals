@@ -1,5 +1,5 @@
 import { ShoppingBag } from "lucide-react";
-import { Link } from "@tanstack/react-router";
+import Link from "next/link";
 
 import { formatPrice, type Product } from "@/data/catalog";
 
@@ -11,8 +11,7 @@ export default function ProductCard({ product }: { product: Product }) {
     <article className="group relative flex flex-col overflow-hidden rounded-xl bg-card shadow-sm ring-1 ring-border/60 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
       <div className="relative overflow-hidden bg-sand">
         <Link
-          to="/products/$slug"
-          params={{ slug: product.slug }}
+          href={`/products/${product.slug}`}
           aria-label={`View ${product.name}`}
           className="block"
         >
@@ -69,19 +68,13 @@ export default function ProductCard({ product }: { product: Product }) {
           {product.category}
         </p>
         <h3 className="font-display text-lg font-medium leading-snug text-foreground">
-          <Link
-            to="/products/$slug"
-            params={{ slug: product.slug }}
-            className="transition-colors hover:text-clay"
-          >
+          <Link href={`/products/${product.slug}`} className="transition-colors hover:text-clay">
             {product.name}
           </Link>
         </h3>
         <p className="text-xs text-muted-foreground">{product.light}</p>
         <div className="mt-1 flex items-baseline gap-2">
-          <span className="text-base font-semibold text-forest">
-            {formatPrice(product.price)}
-          </span>
+          <span className="text-base font-semibold text-forest">{formatPrice(product.price)}</span>
           {onSale && (
             <span className="text-sm text-muted-foreground line-through">
               {formatPrice(product.compareAtPrice!)}

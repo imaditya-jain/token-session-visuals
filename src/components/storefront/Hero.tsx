@@ -1,5 +1,5 @@
-import { Link } from "@tanstack/react-router";
-import heroImage from "@/assets/hero-plants.jpg";
+import Link from "next/link";
+const heroImage = "/images/hero-plants.jpg";
 
 export default function Hero() {
   return (
@@ -24,20 +24,17 @@ export default function Hero() {
             Let&apos;s go green!
           </h1>
           <p className="mt-5 max-w-xl text-base text-cream/95 sm:text-lg">
-            Bring color and life to your home with plants straight from our
-            greenhouse.
+            Bring color and life to your home with plants straight from our greenhouse.
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Link
-              to="/collections/$slug"
-              params={{ slug: "house-plants" }}
+              href="/collections/house-plants"
               className="inline-flex items-center justify-center rounded-md bg-cream px-7 py-3 text-sm font-semibold text-forest-deep shadow-md transition-all hover:bg-cream/90 hover:shadow-lg"
             >
               Shop indoor plants
             </Link>
             <Link
-              to="/collections/$slug"
-              params={{ slug: "succulents-cacti" }}
+              href="/collections/succulents-cacti"
               className="inline-flex items-center justify-center rounded-md border border-cream/50 bg-cream/15 px-7 py-3 text-sm font-semibold text-cream backdrop-blur-sm transition-all hover:bg-cream/25"
             >
               Shop succulents

@@ -35,10 +35,12 @@ Act as principal engineer, QA, Shopify expert, system architect, ecommerce speci
 Package manager: **npm** (`package-lock.json`). Do not add other lockfiles; `bun.lock` is legacy and removed in Phase 1.
 
 ## 3. Current state (verify before relying on it)
-- Legacy app (TanStack Start/Vite) lives in `src/`. Routes: `/`, `/collections/$slug`, `/products/$slug`. Components in `src/components/storefront/*`. Data hardcoded in `src/data/catalog.ts` (24 products, 4 collections); images in `src/assets`.
-- Cart, search and account are UI shells only. Nothing from Shopify, Mongo, Redis or auth exists yet (verified by audit).
-- Scope for now: ONLY home, collection, product pages plus the behavior behind header cart/search/account. No extra pages (cart page, blog, …) without user approval. Login/register/account UI is added only when its phase is reached, built from existing tokens, and approved visually by the user.
-- Lovable is being disconnected: do not depend on `@lovable.dev/*` or its error-reporting libs; remove them during the port.
+- **Phase 1 done**: the app is Next.js 16 (App Router) in `src/app` — routes `/`, `/collections/[slug]`, `/products/[slug]`, all statically prerendered. UI components in `src/components/storefront/*` are ported verbatim (only plumbing changed: `next/link`, `"use client"` boundaries). Filters/sort live in the client component `CollectionProducts`; the page is a server component.
+- Catalog is still static in `src/data/catalog.ts` (24 products, 4 collections, sync) with images in `public/images`. Becomes async/Shopify-backed in Phase 2.
+- Redux store (`src/store`, slice `ui`) and Lenis smooth scroll (`components/providers`) are wired. Cart, account, newsletter are still UI shells (no behavior); nothing from Shopify, Mongo or auth exists yet.
+- Fonts still load via the same Google Fonts stylesheet as the original (locked). `<img>` → `next/image` and `next/font` are a separate perf task (`feat/perf-images-fonts`) that must keep the baselines green.
+- Scope: ONLY home, collection, product pages plus the behavior behind header cart/search/account. No extra pages without user approval.
+- Lovable is disconnected from the code (all `@lovable.dev/*`, TanStack, Vite-app tooling removed). `.lovable/` is kept until the user says to delete it.
 
 ## 4. Git workflow (mandatory)
 - Branches: `main` (production), `dev` (integration), short-lived `feat/*`, `fix/*`, `chore/*`, `test/*` cut from `dev`. **One task = one branch.**
@@ -123,9 +125,9 @@ Done = lint + typecheck + tests green, visual baselines unchanged, no new consol
 GitHub Actions: PR/`dev` → lint, typecheck, unit, integration, build, Playwright (incl. visual), audit. `main` → Vercel production deploy → post-deploy smoke against prod URL → on failure auto-rollback (`vercel rollback` to last good deployment) and open an issue. Preview deploys per PR.
 
 ## 13. Commands
-Legacy: `npm run dev` (Vite, 8080/8081), `npm test`, `BASE_URL=http://localhost:8081 npx playwright test`.
-Target (after Phase 1): `npm run dev|build|lint|typecheck|test|test:e2e`, `docker compose up -d mongo redis`, `docker compose up worker`.
-Caution: never `pkill -f` with a pattern that matches your own command line; kill by PID.
+`npm run dev|build|start|lint|typecheck|test|test:e2e`. Visual lock against a running server: `BASE_URL=http://localhost:3100 npx playwright test` (without BASE_URL Playwright builds and starts the app itself on :3100).
+Later: `docker compose up -d mongo` (Phase 3), `docker compose up worker` (Phase B).
+Cautions: never `pkill -f` with a pattern matching your own command line; `npx`/`npm` wrappers hide the real PID — start servers with `node node_modules/next/dist/bin/next start` and kill that PID.
 
 ## 14. Working agreement
 - Start each task from `docs/IMPLEMENTATION_PLAN.md` (current phase, acceptance criteria); tick the checklist when done.
