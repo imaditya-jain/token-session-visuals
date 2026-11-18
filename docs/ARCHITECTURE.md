@@ -127,7 +127,7 @@ Phase 4 uses Shopify Storefront `predictiveSearch`/`search` through a token-prot
 - **MongoDB Atlas**: M30+ replica set, PITR backups, IP/private-link allowlist, pooled connections (maxPoolSize tuned for serverless).
 - **Upstash Redis**: global/regional with TLS.
 - **Worker**: Docker image from `worker/Dockerfile`, host decided later (Fly/Railway/ECS). Local parity via `docker-compose.yml` (mongo, redis, worker).
-- **CI/CD**: GitHub Actions gates (lint, types, unit, integration, build, Playwright+visual, audit, gitleaks) → Vercel deploy → prod smoke → auto-rollback to last good deployment.
+- **CI/CD**: GitHub Actions gates (lint, types, unit, integration, build, Playwright+visual, audit, gitleaks) on every PR and push to `dev`/`main`. **Deploys are manual** (owner decision): deploy from Vercel after CI is green, then run the "Production smoke test" workflow with the production URL. Rollback = Vercel dashboard → Deployments → previous deployment → Promote to Production (instant).
 - **Environments**: local (compose), preview, production. Separate Shopify dev store for non-prod.
 
 ## 15. Design-lock architecture

@@ -131,7 +131,7 @@ worker/                 # standalone worker entry (Docker)
 Done = lint + typecheck + tests green, visual baselines unchanged, no new console errors, axe a11y pass.
 
 ## 13. CI/CD
-GitHub Actions: PR/`dev` → lint, typecheck, unit, integration, build, Playwright (incl. visual), audit. `main` → Vercel production deploy → post-deploy smoke against prod URL → on failure auto-rollback (`vercel rollback` to last good deployment) and open an issue. Preview deploys per PR.
+GitHub Actions on every PR and push to `dev`/`main`: lint, typecheck, unit, build, Playwright (smoke + visual), `npm audit`, gitleaks. **Deployment is manual** (owner deploys to Vercel); never add auto-deploy workflows. After a deploy, run the manual "Production smoke test" workflow with the prod URL. Rollback: Vercel dashboard → previous deployment → Promote to Production.
 
 ## 14. Commands
 `npm run dev|build|start|lint|typecheck|test|test:e2e`. Visual lock against a running server: `BASE_URL=http://localhost:3100 npx playwright test` (without BASE_URL Playwright builds and starts the app itself on :3100).
