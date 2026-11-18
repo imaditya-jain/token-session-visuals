@@ -9,7 +9,7 @@ Rules: see `CLAUDE.md`. One task = one branch from `dev`. Every phase ends with 
 - [x] **Phase 0** visual baselines (`chore/phase-0-visual-baselines`) — 14 golden screenshots, stable across 2 runs
 - [x] **Phase 1** Next.js port — 14/14 golden screenshots pass unchanged (threshold 0.1%), typecheck/lint/build/unit green
 - [x] Phase 1b next/image + self-hosted fonts (exact Google woff2 files) — 21/21 e2e, baselines unchanged
-- [ ] Phase 2 Shopify catalog (needs Shopify tokens)
+- [~] Phase 2 Shopify catalog: data layer, webhook, fallback, 31 unit tests done; BLOCKED on seeding the dev store (collections, metafields, inventory) before the live path can be verified end-to-end
 
 ## Blocking inputs from the user
 | Needed by | Input |
@@ -46,7 +46,7 @@ Branch `feat/shopify-catalog`
 2. `server/shopify/storefront.ts` client (pinned API version, timeout, retry/backoff, THROTTLED handling).
 3. GraphQL queries: collections, collection products (pagination, filters: availability/price, sort), product by handle, best sellers, search (later).
 4. Mappers → domain types in `lib/types`; contract tests with fixtures.
-5. Seed script `scripts/seed-shopify.ts`: import current catalog (24 products, 4 collections, images, tags like badge/light/size via metafields) into the dev store (Admin API; idempotent; runs only with user's approval).
+5. Seed script `scripts/seed-shopify.ts`: import current catalog (20 products, 4 collections, images, tags like badge/light/size via metafields) into the dev store (Admin API; idempotent; runs only with user's approval).
 6. Swap `data/catalog` implementation to Shopify; ISR + tags; webhook route `/api/webhooks/shopify` (HMAC, dedupe) → revalidate.
 7. Parity test: Shopify-rendered pages vs baselines (same content).
 **Accept**: visuals unchanged; stale-if-error verified by simulating Shopify failure; webhook negative tests pass.

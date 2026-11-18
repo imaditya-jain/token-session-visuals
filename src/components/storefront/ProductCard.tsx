@@ -2,7 +2,8 @@ import { ShoppingBag } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
-import { formatPrice, type Product } from "@/data/catalog";
+import { formatPrice } from "@/lib/format";
+import type { Product } from "@/lib/types";
 
 export default function ProductCard({ product }: { product: Product }) {
   const onSale = product.compareAtPrice !== undefined;

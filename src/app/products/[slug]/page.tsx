@@ -7,10 +7,16 @@ import Header from "@/components/storefront/Header";
 import ProductCard from "@/components/storefront/ProductCard";
 import { Footer } from "@/components/storefront/sections";
 import { Button } from "@/components/ui/button";
-import { formatPrice, getCollection, getProduct, products } from "@/data/catalog";
+import {
+  formatPrice,
+  getCollection,
+  getProduct,
+  getProducts,
+  getRelatedProducts,
+} from "@/data/catalog";
 
-export function generateStaticParams() {
-  return products.map((product) => ({ slug: product.slug }));
+export async function generateStaticParams() {
+  return (await getProducts()).map((product) => ({ slug: product.slug }));
 }
 
 export async function generateMetadata({
@@ -19,7 +25,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const product = getProduct(slug);
+  const product = await getProduct(slug);
   if (!product) return { title: "Product — Fernwood" };
   const title = `${product.name} — Fernwood`;
   const description = `${product.name} from Fernwood. Explore product details, availability, and care information.`;
@@ -33,19 +39,14 @@ export async function generateMetadata({
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const product = getProduct(slug);
+  const product = await getProduct(slug);
   if (!product) notFound();
 
   const collectionSlug = product.collectionSlugs[0];
-  const collection = collectionSlug ? getCollection(collectionSlug) : undefined;
-  const relatedProducts = collectionSlug
-    ? products
-        .filter(
-          (candidate) =>
-            candidate.slug !== product.slug && candidate.collectionSlugs.includes(collectionSlug),
-        )
-        .slice(0, 4)
-    : [];
+  const [collection, relatedProducts] = await Promise.all([
+    collectionSlug ? getCollection(collectionSlug) : undefined,
+    getRelatedProducts(product),
+  ]);
   const detailLabel =
     product.category === "House Plants" || product.category === "Succulents & Cacti"
       ? "Light"
