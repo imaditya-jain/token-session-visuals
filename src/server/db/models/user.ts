@@ -29,6 +29,8 @@ export type UserRecord = {
   phone?: string | undefined;
   role: Role;
   acceptsMarketing: boolean;
+  /** Set once the owner proves control of the mailbox (verification link or password-reset link). */
+  emailVerifiedAt?: Date | undefined;
   shopifyCustomerId?: string | undefined;
   failedLoginCount: number;
   lockedUntil?: Date | undefined;
@@ -72,6 +74,7 @@ const userSchema = new Schema<UserRecord>(
       required: true,
     },
     acceptsMarketing: { type: Boolean, default: false },
+    emailVerifiedAt: { type: Date },
     shopifyCustomerId: { type: String },
     failedLoginCount: { type: Number, default: 0 },
     lockedUntil: { type: Date },

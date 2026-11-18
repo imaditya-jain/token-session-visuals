@@ -14,7 +14,8 @@ Rules: see `CLAUDE.md`. One task = one branch from `dev`. Every phase ends with 
 - [x] Phase 3a auth backend (tokens, sessions, rotation, lockout, rate limit, `/api/me`): 41 integration tests
 - [x] Phase 3b auth UI: /login, /register, /account (12 e2e journeys + visual baselines); found+fixed missing unique index in production mode
 - [x] Collections: 12-per-page cursor pagination (shared listing toolbar/pagination)
-- [ ] Next: email verification + forgot/reset (SMTP, branded templates) → orders page (only for verified emails) → Shopify customer mirror (queue outbox) → cart + search → content pages; template fidelity pass for shop page once demo URL is reachable
+- [x] Phase 5a email system (outbox, branded templates) + email verification + forgot/reset + mobile account link; 69 e2e, 70 unit, 73 integration tests
+- [ ] Next: orders page (verified accounts only) → newsletter double opt-in/unsubscribe (campaign groundwork) → Shopify customer mirror → cart + search → content pages; template fidelity pass for shop page once demo URL is reachable
 
 ## Blocking inputs from the user
 | Needed by | Input |

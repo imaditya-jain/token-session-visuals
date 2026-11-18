@@ -93,6 +93,14 @@ export default function Header() {
                     </a>
                   ),
                 )}
+                <Link
+                  href={signedIn ? "/account" : "/login"}
+                  onClick={() => setMenuOpen(false)}
+                  className="flex items-center justify-between border-b border-cream/10 py-4 font-display text-xl text-cream transition-colors hover:text-sage"
+                >
+                  {signedIn ? "My account" : "Sign in"}
+                  <ChevronDown className="size-4 -rotate-90 text-sage" />
+                </Link>
               </nav>
               <div className="mt-auto px-6 pb-8 text-sm text-sage">
                 <p className="font-medium text-cream">Need help choosing?</p>

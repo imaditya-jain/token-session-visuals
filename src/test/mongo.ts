@@ -18,6 +18,10 @@ export async function startTestDatabase(): Promise<MongoMemoryServer> {
   vi.stubEnv("REFRESH_TOKEN_SECRET", "b".repeat(48));
   vi.stubEnv("ACCESS_TOKEN_EXPIRY", "15m");
   vi.stubEnv("REFRESH_TOKEN_EXPIRY", "7d");
+  vi.stubEnv("SMTP_EMAIL", "shop@example.com");
+  vi.stubEnv("SMTP_PASS", "app-password-for-tests");
+  vi.stubEnv("SITE_URL", "https://fernwood.test");
+  vi.stubEnv("CRON_SECRET", "cron-secret-for-tests-0123456789");
   resetEnvCache();
   return server;
 }

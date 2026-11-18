@@ -70,6 +70,14 @@ export default function LoginForm() {
         error={errors["password"]}
         onChange={(event) => setValues((v) => ({ ...v, password: event.target.value }))}
       />
+      <div className="-mt-2 text-right">
+        <Link
+          href="/forgot-password"
+          className="text-sm font-medium text-forest underline-offset-4 hover:text-clay hover:underline"
+        >
+          Forgot password?
+        </Link>
+      </div>
       <Button type="submit" disabled={pending} className="h-11 w-full text-sm font-semibold">
         {pending ? "Signing in…" : "Sign in"}
       </Button>

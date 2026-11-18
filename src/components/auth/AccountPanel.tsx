@@ -12,12 +12,56 @@ import {
 } from "@/components/auth/useFormErrors";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { logout, logoutAll, updateProfile } from "@/features/auth/authThunks";
+import { logout, logoutAll, resendVerification, updateProfile } from "@/features/auth/authThunks";
 import type { ApiFailure, AuthUser } from "@/features/auth/types";
 import { profileSchema } from "@/lib/auth-schemas";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 
 const card = "rounded-2xl bg-card p-6 shadow-sm ring-1 ring-border/60 sm:p-8";
+
+function VerifyEmailNotice() {
+  const dispatch = useAppDispatch();
+  const [state, setState] = useState<"idle" | "sending" | "sent" | "error">("idle");
+
+  const resend = async () => {
+    setState("sending");
+    const result = await dispatch(resendVerification());
+    setState(resendVerification.rejected.match(result) ? "error" : "sent");
+  };
+
+  return (
+    <section
+      aria-labelledby="verify-heading"
+      className="rounded-2xl border border-clay/30 bg-clay/10 p-6 sm:p-8"
+    >
+      <h2 id="verify-heading" className="font-display text-xl font-medium text-forest">
+        Please confirm your email
+      </h2>
+      <p className="mt-2 text-sm text-muted-foreground">
+        We sent you a confirmation link. Confirming lets you see your order history.
+      </p>
+      <div className="mt-4 flex flex-wrap items-center gap-4">
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={state === "sending" || state === "sent"}
+          onClick={resend}
+          className="h-10 px-5"
+        >
+          {state === "sending" ? "Sending…" : "Resend email"}
+        </Button>
+        <p role="status" className="text-sm font-medium text-forest">
+          {state === "sent" ? "Sent. Check your inbox." : ""}
+        </p>
+        {state === "error" ? (
+          <p role="alert" className="text-sm text-destructive">
+            Couldn&apos;t send right now. Please try again later.
+          </p>
+        ) : null}
+      </div>
+    </section>
+  );
+}
 
 function ProfileForm({ user }: { user: AuthUser }) {
   const dispatch = useAppDispatch();
@@ -145,6 +189,7 @@ export default function AccountPanel() {
 
   return (
     <div className="space-y-6">
+      {user.emailVerified ? null : <VerifyEmailNotice />}
       <section className={card} aria-labelledby="details-heading">
         <h2 id="details-heading" className="font-display text-2xl font-medium text-forest">
           Your details

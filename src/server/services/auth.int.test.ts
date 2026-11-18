@@ -4,6 +4,8 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 
 import { startTestDatabase } from "@/test/mongo";
 import { disconnectDb } from "@/server/db/connection";
+import { AuthToken } from "@/server/db/models/auth-token";
+import { EmailJob } from "@/server/db/models/email-job";
 import { User } from "@/server/db/models/user";
 import { RateLimit } from "@/server/db/models/rate-limit";
 import { rateLimiter } from "@/server/ratelimit";
@@ -11,12 +13,16 @@ import { signAccessToken, verifyAccessToken } from "@/server/auth/tokens";
 
 import {
   authenticate,
+  confirmEmailVerification,
   getProfile,
   loginUser,
   logoutAllSessions,
   logoutSession,
   refreshSession,
   registerUser,
+  requestEmailVerification,
+  requestPasswordReset,
+  resetPassword,
   updateProfile,
 } from "./auth";
 
@@ -46,6 +52,8 @@ beforeEach(async () => {
   await connectDb();
   await User.deleteMany({});
   await RateLimit.deleteMany({});
+  await AuthToken.deleteMany({});
+  await EmailJob.deleteMany({});
 });
 
 afterEach(() => vi.useRealTimers());
@@ -353,5 +361,128 @@ describe("rate limiter", () => {
     );
     expect(results.filter((r) => r.allowed)).toHaveLength(4);
     expect((await rateLimiter.consume("other", 4, 60)).allowed).toBe(true);
+  });
+});
+
+const tokenFrom = async (template: string): Promise<string> => {
+  const job = await EmailJob.findOne({ template }).sort({ createdAt: -1 }).lean();
+  const url = new URL(String((job?.data as { url?: string } | undefined)?.url));
+  expect(url.origin).toBe("https://fernwood.test"); // links come from SITE_URL, never from request headers
+  return url.searchParams.get("token")!;
+};
+
+describe("email verification", () => {
+  it("registration queues a verification email and the account starts unverified", async () => {
+    const { user } = await registerUser(registration, meta);
+    expect(user.emailVerified).toBe(false);
+    const job = await EmailJob.findOne({ template: "verify-email" }).lean();
+    expect(job).toMatchObject({ to: "ada@example.com", status: "pending" });
+  });
+
+  it("confirms with the emailed token exactly once", async () => {
+    const { user, accessToken } = await registerUser(registration, meta);
+    const token = await tokenFrom("verify-email");
+
+    await confirmEmailVerification(token);
+    expect((await getProfile(user.id)).emailVerified).toBe(true);
+    await expectCode(confirmEmailVerification(token), "invalid_token"); // single use
+    void accessToken;
+  });
+
+  it("stores only a hash of the token and rejects wrong, expired and cross-purpose tokens", async () => {
+    await registerUser(registration, meta);
+    const token = await tokenFrom("verify-email");
+    expect(JSON.stringify(await AuthToken.find().lean())).not.toContain(token);
+
+    await expectCode(confirmEmailVerification("x".repeat(43)), "invalid_token");
+    await expectCode(resetPassword(token, "brand-new-password"), "invalid_token"); // wrong type
+
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(Date.now() + 25 * 3600 * 1000);
+    await expectCode(confirmEmailVerification(token), "invalid_token");
+  });
+
+  it("re-sending invalidates the previous link and is a no-op once verified", async () => {
+    const { user } = await registerUser(registration, meta);
+    const first = await tokenFrom("verify-email");
+    await requestEmailVerification(user.id);
+    const second = await tokenFrom("verify-email");
+    expect(second).not.toBe(first);
+    await expectCode(confirmEmailVerification(first), "invalid_token");
+
+    await confirmEmailVerification(second);
+    const before = await EmailJob.countDocuments({ template: "verify-email" });
+    await requestEmailVerification(user.id);
+    expect(await EmailJob.countDocuments({ template: "verify-email" })).toBe(before);
+  });
+});
+
+describe("password reset", () => {
+  beforeEach(async () => {
+    await registerUser(registration, meta);
+    await EmailJob.deleteMany({});
+  });
+
+  it("does nothing, visibly or otherwise, for an unknown email", async () => {
+    await expect(requestPasswordReset("ghost@example.com")).resolves.toBeUndefined();
+    expect(await EmailJob.countDocuments()).toBe(0);
+    expect(await AuthToken.countDocuments({ type: "reset_password" })).toBe(0);
+  });
+
+  it("changes the password, signs out every device, clears the lockout and notifies the owner", async () => {
+    const second = await loginUser(
+      { email: registration.email, password: registration.password },
+      meta,
+    );
+    for (let i = 0; i < 5; i++) {
+      await loginUser({ email: registration.email, password: "wrong-wrong-wrong" }, meta).catch(
+        () => undefined,
+      );
+    }
+    await expectCode(
+      loginUser({ email: registration.email, password: registration.password }, meta),
+      "account_locked",
+    );
+
+    await requestPasswordReset(registration.email);
+    const token = await tokenFrom("reset-password");
+    await resetPassword(token, "a-much-better-password");
+
+    await expectCode(authenticate(`Bearer ${second.accessToken}`), "session_revoked");
+    await expectCode(
+      loginUser({ email: registration.email, password: registration.password }, meta),
+      "invalid_credentials",
+    );
+    const fresh = await loginUser(
+      { email: registration.email, password: "a-much-better-password" },
+      meta,
+    );
+    expect(fresh.user.emailVerified).toBe(true); // reaching the mailbox proves ownership
+    expect(
+      await EmailJob.countDocuments({ template: "password-changed", to: registration.email }),
+    ).toBe(1);
+  });
+
+  it("tokens are single use, expire after 1 hour and a newer request invalidates older links", async () => {
+    await requestPasswordReset(registration.email);
+    const old = await tokenFrom("reset-password");
+    await requestPasswordReset(registration.email);
+    const current = await tokenFrom("reset-password");
+    await expectCode(resetPassword(old, "a-much-better-password"), "invalid_token");
+
+    await resetPassword(current, "a-much-better-password");
+    await expectCode(resetPassword(current, "another-password-1"), "invalid_token");
+
+    await requestPasswordReset(registration.email);
+    const expiring = await tokenFrom("reset-password");
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(Date.now() + 61 * 60 * 1000);
+    await expectCode(resetPassword(expiring, "yet-another-password"), "invalid_token");
+  });
+
+  it("a verification token cannot reset a password", async () => {
+    await registerUser({ ...registration, email: "other@example.com" }, meta);
+    const verify = await tokenFrom("verify-email");
+    await expectCode(resetPassword(verify, "a-much-better-password"), "invalid_token");
   });
 });

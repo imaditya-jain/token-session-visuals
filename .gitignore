@@ -44,3 +44,6 @@ tsbuildinfo
 .env
 .env.*
 !.env.example
+
+# E2E runtime handshake
+.e2e-runtime.json

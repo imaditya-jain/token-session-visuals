@@ -13,6 +13,7 @@ const user = {
   lastName: "B",
   role: "customer" as const,
   acceptsMarketing: false,
+  emailVerified: true,
 };
 const json = (body: unknown, status = 200, headers: Record<string, string> = {}) =>
   new Response(status === 204 ? null : JSON.stringify(body), {

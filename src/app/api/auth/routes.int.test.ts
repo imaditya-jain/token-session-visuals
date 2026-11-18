@@ -13,6 +13,13 @@ import { POST as logout } from "./logout/route";
 import { POST as logoutAll } from "./logout-all/route";
 import { POST as refresh } from "./refresh/route";
 import { POST as register } from "./register/route";
+import { POST as forgotPassword } from "./forgot-password/route";
+import { POST as resetPassword } from "./reset-password/route";
+import { POST as verifyConfirm } from "./verify-email/confirm/route";
+import { POST as verifyRequest } from "./verify-email/request/route";
+import { GET as cron } from "../cron/jobs/route";
+import { EmailJob } from "@/server/db/models/email-job";
+import { AuthToken } from "@/server/db/models/auth-token";
 import { GET as me, PATCH as patchMe } from "../me/route";
 
 const ORIGIN = "http://localhost:3100";
@@ -40,6 +47,8 @@ beforeEach(async () => {
   await connectDb();
   await User.deleteMany({});
   await RateLimit.deleteMany({});
+  await EmailJob.deleteMany({});
+  await AuthToken.deleteMany({});
 });
 
 type Init = {
@@ -337,5 +346,179 @@ describe("/api/me", () => {
     const user = await User.findOne({ email: credentials.email }).lean();
     expect(user?.role).toBe("customer");
     expect(user?.email).toBe(credentials.email);
+  });
+});
+
+const emailedToken = async (template: string) => {
+  const job = await EmailJob.findOne({ template }).sort({ createdAt: -1 }).lean();
+  return new URL(String((job?.data as { url: string }).url)).searchParams.get("token")!;
+};
+
+describe("password reset over HTTP", () => {
+  it("answers identically for known and unknown emails (no account enumeration) and only emails real accounts", async () => {
+    await signUp();
+    await EmailJob.deleteMany({});
+
+    const known = await forgotPassword(
+      request("/api/auth/forgot-password", "POST", { body: { email: credentials.email } }),
+    );
+    const unknown = await forgotPassword(
+      request("/api/auth/forgot-password", "POST", { body: { email: "ghost@example.com" } }),
+    );
+    expect(known.status).toBe(202);
+    expect(unknown.status).toBe(202);
+    expect(await known.json()).toEqual(await unknown.json());
+    expect(await EmailJob.countDocuments({ template: "reset-password" })).toBe(1);
+  });
+
+  it("limits reset emails per address and per IP, and rejects cross-origin calls", async () => {
+    await signUp();
+    const call = (ip: string, email = credentials.email, origin: string | null = ORIGIN) =>
+      forgotPassword(request("/api/auth/forgot-password", "POST", { body: { email }, ip, origin }));
+    expect((await call("198.51.100.20")).status).toBe(202);
+    expect((await call("198.51.100.21")).status).toBe(202);
+    expect((await call("198.51.100.22")).status).toBe(202);
+    const blocked = await call("198.51.100.23");
+    expect(blocked.status).toBe(429);
+    expect(blocked.headers.get("retry-after")).toBeTruthy();
+
+    expect((await call("198.51.100.30", "other@example.com", "https://evil.example")).status).toBe(
+      403,
+    );
+  });
+
+  it("resets with the emailed token, then the old password and the old sessions stop working", async () => {
+    const { cookie, body } = await signUp();
+    await forgotPassword(
+      request("/api/auth/forgot-password", "POST", { body: { email: credentials.email } }),
+    );
+    const token = await emailedToken("reset-password");
+
+    const weak = await resetPassword(
+      request("/api/auth/reset-password", "POST", { body: { token, password: "short" } }),
+    );
+    expect(weak.status).toBe(400);
+
+    const ok = await resetPassword(
+      request("/api/auth/reset-password", "POST", {
+        body: { token, password: "brand-new-password" },
+      }),
+    );
+    expect(ok.status).toBe(200);
+
+    const replay = await resetPassword(
+      request("/api/auth/reset-password", "POST", {
+        body: { token, password: "brand-new-password-2" },
+      }),
+    );
+    expect(replay.status).toBe(400);
+    expect((await replay.json()).error.code).toBe("invalid_token");
+
+    expect(
+      (await refresh(request("/api/auth/refresh", "POST", { headers: { cookie } }))).status,
+    ).toBe(401);
+    const profile = await me(
+      request("/api/me", "GET", {
+        headers: { authorization: `Bearer ${body.data.accessToken}` },
+        origin: null,
+      }),
+    );
+    expect(profile.status).toBe(401);
+    const old = await login(
+      request("/api/auth/login", "POST", {
+        body: { email: credentials.email, password: credentials.password },
+      }),
+    );
+    expect(old.status).toBe(401);
+    const fresh = await login(
+      request("/api/auth/login", "POST", {
+        body: { email: credentials.email, password: "brand-new-password" },
+      }),
+    );
+    expect(fresh.status).toBe(200);
+  });
+});
+
+describe("email verification over HTTP", () => {
+  it("confirms an account with the emailed token and exposes the flag on /api/me", async () => {
+    const { body } = await signUp();
+    const headers = { authorization: `Bearer ${body.data.accessToken}` };
+    expect(
+      (await (await me(request("/api/me", "GET", { headers, origin: null }))).json()).data.user
+        .emailVerified,
+    ).toBe(false);
+
+    const token = await emailedToken("verify-email");
+    const ok = await verifyConfirm(
+      request("/api/auth/verify-email/confirm", "POST", { body: { token } }),
+    );
+    expect(ok.status).toBe(200);
+    expect(
+      (await (await me(request("/api/me", "GET", { headers, origin: null }))).json()).data.user
+        .emailVerified,
+    ).toBe(true);
+
+    const again = await verifyConfirm(
+      request("/api/auth/verify-email/confirm", "POST", { body: { token } }),
+    );
+    expect(again.status).toBe(400);
+  });
+
+  it("re-sending requires sign-in and is rate limited to 3 per hour", async () => {
+    const { body } = await signUp();
+    expect(
+      (await verifyRequest(request("/api/auth/verify-email/request", "POST", { origin: null })))
+        .status,
+    ).toBe(401);
+    const headers = { authorization: `Bearer ${body.data.accessToken}` };
+    for (let i = 0; i < 3; i++) {
+      expect(
+        (
+          await verifyRequest(
+            request("/api/auth/verify-email/request", "POST", { headers, origin: null }),
+          )
+        ).status,
+      ).toBe(202);
+    }
+    expect(
+      (
+        await verifyRequest(
+          request("/api/auth/verify-email/request", "POST", { headers, origin: null }),
+        )
+      ).status,
+    ).toBe(429);
+  });
+});
+
+describe("GET /api/cron/jobs", () => {
+  const call = (authorization?: string) =>
+    cron(
+      request("/api/cron/jobs", "GET", {
+        origin: null,
+        ...(authorization ? { headers: { authorization } } : {}),
+      }),
+    );
+
+  it("is not public: it needs the cron secret", async () => {
+    expect((await call()).status).toBe(403);
+    expect((await call("Bearer wrong-secret")).status).toBe(403);
+  });
+
+  it("with the secret it sweeps due jobs", async () => {
+    const { setTransportForTests } = await import("@/server/email/mailer");
+    const sendMail = vi.fn().mockResolvedValue({});
+    setTransportForTests({ sendMail });
+    await signUp();
+    const response = await call("Bearer cron-secret-for-tests-0123456789");
+    expect(response.status).toBe(200);
+    expect((await response.json()).data).toEqual({ attempted: 1, sent: 1 });
+    expect(sendMail).toHaveBeenCalledTimes(1);
+    setTransportForTests(undefined);
+  });
+
+  it("fails closed when no secret is configured", async () => {
+    vi.stubEnv("CRON_SECRET", "");
+    expect((await call("Bearer ")).status).toBe(503);
+    vi.stubEnv("CRON_SECRET", "cron-secret-for-tests-0123456789");
   });
 });
