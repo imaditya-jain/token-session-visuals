@@ -18,10 +18,11 @@ export default defineConfig({
     ? {}
     : {
         webServer: {
-          command: `npm run build && npm run start -- -p ${port}`,
+          command: "node scripts/e2e-server.mjs",
+          env: { PORT: String(port) },
           url: `http://localhost:${port}`,
           reuseExistingServer: !isCI,
-          timeout: 240_000,
+          timeout: 300_000,
         },
       }),
 });

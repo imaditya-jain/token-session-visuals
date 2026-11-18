@@ -12,7 +12,9 @@ Rules: see `CLAUDE.md`. One task = one branch from `dev`. Every phase ends with 
 - [x] **Phase 2** Shopify catalog: data layer, webhook, live/fallback facade, seed applied to dev store, 52 unit tests; 33/33 e2e green in BOTH live and fallback mode
 - [x] Shop page `/shop`: all products, 12/page cursor pagination, availability/price/type filters + sort, URL-driven SSR, noindex variants
 - [x] Phase 3a auth backend (tokens, sessions, rotation, lockout, rate limit, `/api/me`): 41 integration tests
-- [ ] Next: 3b auth UI (login/register/account pages) + forgot/reset password (SMTP) + Shopify customer mirror (queue outbox); template fidelity pass for shop page once demo URL is reachable
+- [x] Phase 3b auth UI: /login, /register, /account (12 e2e journeys + visual baselines); found+fixed missing unique index in production mode
+- [x] Collections: 12-per-page cursor pagination (shared listing toolbar/pagination)
+- [ ] Next: email verification + forgot/reset (SMTP, branded templates) → orders page (only for verified emails) → Shopify customer mirror (queue outbox) → cart + search → content pages; template fidelity pass for shop page once demo URL is reachable
 
 ## Blocking inputs from the user
 | Needed by | Input |
