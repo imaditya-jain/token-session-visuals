@@ -13,6 +13,15 @@ import { AppError, badRequest, forbidden } from "./errors";
 
 const MAX_BODY_BYTES = 10_000;
 
+/** Driver errors that mean "the database can't be reached right now" (outage, network, IP allow-list). */
+const DATABASE_UNAVAILABLE = new Set([
+  "MongooseServerSelectionError",
+  "MongoServerSelectionError",
+  "MongoNetworkError",
+  "MongoNetworkTimeoutError",
+  "MongoNotConnectedError",
+]);
+
 type Context = { request: NextRequest; requestId: string };
 type RouteFn = (context: Context) => Promise<NextResponse>;
 
@@ -50,6 +59,22 @@ export function route(fn: RouteFn): (request: NextRequest) => Promise<NextRespon
             },
           },
           { status: 400, headers: baseHeaders(requestId) },
+        );
+      }
+      if (error instanceof Error && DATABASE_UNAVAILABLE.has(error.name)) {
+        // A dependency outage is not a bug in the request: tell clients to retry, and alert via the log.
+        logger.error(
+          { err: error, requestId, path: request.nextUrl.pathname },
+          "Database unavailable",
+        );
+        return NextResponse.json(
+          {
+            error: {
+              code: "service_unavailable",
+              message: "Service temporarily unavailable. Please try again shortly.",
+            },
+          },
+          { status: 503, headers: { ...baseHeaders(requestId), "Retry-After": "5" } },
         );
       }
       logger.error(

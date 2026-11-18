@@ -31,7 +31,12 @@ export function setTransportForTests(next: Transport | undefined): void {
   transport = next;
 }
 
-export type RenderedEmail = { subject: string; html: string; text: string };
+export type RenderedEmail = {
+  subject: string;
+  html: string;
+  text: string;
+  headers: Record<string, string>;
+};
 
 /** Validates the data against the template's schema and renders HTML + plain text. */
 export async function renderEmail<T extends TemplateName>(
@@ -42,17 +47,26 @@ export async function renderEmail<T extends TemplateName>(
   const parsed = entry.schema.parse(data) as TemplateData<T>;
   const element = (entry.element as (value: TemplateData<T>) => ReactElement)(parsed);
   const [html, text] = await Promise.all([render(element), render(element, { plainText: true })]);
-  return { subject: entry.subject, html, text };
+  const subject =
+    typeof entry.subject === "function"
+      ? (entry.subject as (value: TemplateData<T>) => string)(parsed)
+      : entry.subject;
+  const headers =
+    "headers" in entry
+      ? (entry.headers as (value: TemplateData<T>) => Record<string, string>)(parsed)
+      : {};
+  return { subject, html, text, headers };
 }
 
 export async function sendEmail(to: string, template: TemplateName, data: unknown): Promise<void> {
   const { SMTP_EMAIL, SMTP_FROM_NAME } = emailEnv();
-  const { subject, html, text } = await renderEmail(template, data);
+  const { subject, html, text, headers } = await renderEmail(template, data);
   await getTransport().sendMail({
     from: { name: SMTP_FROM_NAME, address: SMTP_EMAIL },
     to,
     subject,
     html,
     text,
+    headers,
   });
 }

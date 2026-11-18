@@ -9,6 +9,7 @@ import { AuthToken, type AuthTokenType } from "@/server/db/models/auth-token";
 const TTL_SECONDS: Record<AuthTokenType, number> = {
   verify_email: 24 * 3600,
   reset_password: 3600,
+  newsletter_confirm: 7 * 24 * 3600,
 };
 
 /** Creates a single-use token and invalidates any earlier unused token of the same kind for this user. */

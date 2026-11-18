@@ -2,9 +2,15 @@ import { readFileSync } from "node:fs";
 
 import { MongoClient } from "mongodb";
 
-type Runtime = { mongoUri: string; dbName: string };
+export type Runtime = {
+  mongoUri: string;
+  dbName: string;
+  webhookSecret: string;
+  cronSecret: string;
+};
 
-const runtime = (): Runtime => JSON.parse(readFileSync(".e2e-runtime.json", "utf8")) as Runtime;
+export const runtime = (): Runtime =>
+  JSON.parse(readFileSync(".e2e-runtime.json", "utf8")) as Runtime;
 
 /**
  * The e2e server cannot deliver email (SMTP is a closed port), so queued jobs keep their payload. This reads

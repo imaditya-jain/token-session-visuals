@@ -17,6 +17,8 @@ if (!process.env.MONGOMS_SYSTEM_BINARY && existsSync("/usr/bin/mongod")) {
 }
 
 const mongo = await MongoMemoryServer.create();
+const webhookSecret = randomBytes(24).toString("base64url");
+const cronSecret = randomBytes(24).toString("base64url");
 const env = {
   ...process.env,
   MONGODB_URI: mongo.getUri(),
@@ -30,19 +32,22 @@ const env = {
   SHOPIFY_STORE_URL: "",
   SHOPIFY_STOREFRONT_API_ACCESS_TOKEN: "",
   SHOPIFY_ADMIN_API_ACCESS_TOKEN: "",
-  SHOPIFY_WEBHOOK_SECRET: "",
+  SHOPIFY_WEBHOOK_SECRET: webhookSecret,
   // Email goes nowhere: SMTP points at a closed local port so delivery fails instantly and the queued job
   // (with its one-time link) stays in the database, where the tests read it.
   SMTP_EMAIL: "shop@fernwood.test",
   SMTP_PASS: "e2e-not-a-real-password",
   SMTP_HOST: "127.0.0.1",
   SMTP_PORT: "1",
-  CRON_SECRET: randomBytes(24).toString("base64url"),
+  CRON_SECRET: cronSecret,
 };
 
 // Tell the test process where the database is (never a real cluster).
 const runtimeFile = ".e2e-runtime.json";
-writeFileSync(runtimeFile, JSON.stringify({ mongoUri: mongo.getUri(), dbName: "fernwood_e2e" }));
+writeFileSync(
+  runtimeFile,
+  JSON.stringify({ mongoUri: mongo.getUri(), dbName: "fernwood_e2e", webhookSecret, cronSecret }),
+);
 const next = ["node_modules/next/dist/bin/next"];
 
 if (!process.env.SKIP_BUILD) {

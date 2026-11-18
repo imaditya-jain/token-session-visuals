@@ -19,6 +19,7 @@ import { enqueueEmail } from "@/server/email/outbox";
 import { AppError, badRequest, conflict, unauthorized } from "@/server/http/errors";
 import { logger } from "@/server/logger";
 import { consumeAuthToken, issueAuthToken } from "@/server/services/auth-tokens";
+import { syncMarketingConsent } from "@/server/services/newsletter";
 
 const MAX_SESSIONS_PER_USER = 10;
 /** A refresh chain can't be extended past this lifetime, however active the device is. */
@@ -343,6 +344,10 @@ export async function updateProfile(userId: string, patch: ProfileInput): Promis
     runValidators: true,
   }).lean();
   if (!user) throw unauthorized("Account not found", "session_revoked");
+  // Keep the mailing list in step with the preference (only verified accounts can opt in from settings).
+  if (rest.acceptsMarketing !== undefined && (user.emailVerifiedAt || !rest.acceptsMarketing)) {
+    await syncMarketingConsent(user.email, rest.acceptsMarketing);
+  }
   return toPublicUser(user);
 }
 
@@ -367,10 +372,12 @@ export async function confirmEmailVerification(rawToken: string): Promise<void> 
   const userId = await consumeAuthToken(rawToken, "verify_email");
   if (!userId)
     throw badRequest("This confirmation link is invalid or has expired.", "invalid_token");
-  await User.updateOne(
+  const verified = await User.findOneAndUpdate(
     { _id: userId, emailVerifiedAt: { $exists: false } },
     { $set: { emailVerifiedAt: new Date() } },
-  );
+  ).lean();
+  // The marketing box ticked at sign-up counts as consent once the mailbox is proven.
+  if (verified?.acceptsMarketing) await syncMarketingConsent(verified.email, true);
 }
 
 /** Always resolves, whether or not the email has an account, so the endpoint can't be used to enumerate users. */
