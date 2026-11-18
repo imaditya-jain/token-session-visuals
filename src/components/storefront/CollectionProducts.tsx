@@ -1,10 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ChevronDown, X } from "lucide-react";
+import { X } from "lucide-react";
 
 import ProductCard from "@/components/storefront/ProductCard";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import FilterPopover from "@/components/storefront/FilterPopover";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -15,19 +15,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { SORT_KEYS, SORT_LABELS, type SortKey } from "@/lib/shop";
 import type { Product } from "@/lib/types";
-
-type SortKey =
-  "featured" | "best-selling" | "alpha-asc" | "alpha-desc" | "price-asc" | "price-desc";
-
-const SORT_LABELS: Record<SortKey, string> = {
-  featured: "Featured",
-  "best-selling": "Best selling",
-  "alpha-asc": "Alphabetically, A-Z",
-  "alpha-desc": "Alphabetically, Z-A",
-  "price-asc": "Price, low to high",
-  "price-desc": "Price, high to low",
-};
 
 function sortProducts(list: Product[], sort: SortKey): Product[] {
   const copy = [...list];
@@ -47,35 +36,6 @@ function sortProducts(list: Product[], sort: SortKey): Product[] {
     default:
       return copy;
   }
-}
-
-function FilterPopover({
-  label,
-  activeCount,
-  children,
-}: {
-  label: string;
-  activeCount: number;
-  children: React.ReactNode;
-}) {
-  return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <button className="flex items-center gap-2 rounded-md border border-border bg-card px-4 py-2 text-sm font-medium text-foreground transition-colors hover:border-forest hover:text-forest data-[state=open]:border-forest data-[state=open]:text-forest">
-          {label}
-          {activeCount > 0 && (
-            <span className="rounded-full bg-clay px-1.5 text-[11px] font-bold text-cream">
-              {activeCount}
-            </span>
-          )}
-          <ChevronDown className="size-4 text-muted-foreground" aria-hidden />
-        </button>
-      </PopoverTrigger>
-      <PopoverContent align="start" className="w-64 rounded-xl border-border bg-card p-5">
-        {children}
-      </PopoverContent>
-    </Popover>
-  );
 }
 
 export default function CollectionProducts({ products: allProducts }: { products: Product[] }) {
@@ -183,7 +143,7 @@ export default function CollectionProducts({ products: allProducts }: { products
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="rounded-xl border-border">
-              {(Object.keys(SORT_LABELS) as SortKey[]).map((key) => (
+              {SORT_KEYS.map((key) => (
                 <SelectItem key={key} value={key}>
                   {SORT_LABELS[key]}
                 </SelectItem>

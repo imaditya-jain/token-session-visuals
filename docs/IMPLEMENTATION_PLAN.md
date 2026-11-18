@@ -9,7 +9,9 @@ Rules: see `CLAUDE.md`. One task = one branch from `dev`. Every phase ends with 
 - [x] **Phase 0** visual baselines (`chore/phase-0-visual-baselines`) — 14 golden screenshots, stable across 2 runs
 - [x] **Phase 1** Next.js port — 14/14 golden screenshots pass unchanged (threshold 0.1%), typecheck/lint/build/unit green
 - [x] Phase 1b next/image + self-hosted fonts (exact Google woff2 files) — 21/21 e2e, baselines unchanged
-- [~] Phase 2 Shopify catalog: data layer, webhook, fallback, 31 unit tests done; BLOCKED on seeding the dev store (collections, metafields, inventory) before the live path can be verified end-to-end
+- [x] **Phase 2** Shopify catalog: data layer, webhook, live/fallback facade, seed applied to dev store, 52 unit tests; 33/33 e2e green in BOTH live and fallback mode
+- [x] Shop page `/shop`: all products, 12/page cursor pagination, availability/price/type filters + sort, URL-driven SSR, noindex variants
+- [ ] Next: Phase 3 auth + MongoDB; template fidelity pass for shop page once demo URL is reachable
 
 ## Blocking inputs from the user
 | Needed by | Input |

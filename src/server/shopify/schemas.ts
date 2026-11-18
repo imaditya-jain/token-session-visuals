@@ -46,3 +46,18 @@ export const productsResponse = z.object({ products: page(productNodeSchema) });
 export type ProductNode = z.infer<typeof productNodeSchema>;
 export type CollectionNode = z.infer<typeof collectionNodeSchema>;
 export { page };
+
+export const productPageResponse = z.object({
+  products: z.object({
+    nodes: z.array(productNodeSchema),
+    pageInfo: z.object({
+      hasNextPage: z.boolean(),
+      hasPreviousPage: z.boolean(),
+      startCursor: z.string().nullable(),
+      endCursor: z.string().nullable(),
+    }),
+  }),
+});
+export const productTypesResponse = z.object({
+  productTypes: z.object({ nodes: z.array(z.string()) }),
+});

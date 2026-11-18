@@ -15,6 +15,9 @@ import {
   getRelatedProducts,
 } from "@/data/catalog";
 
+/** ISR: prerendered at build, refreshed hourly and on demand via Shopify webhooks (cache tags). */
+export const revalidate = 3600;
+
 export async function generateStaticParams() {
   return (await getProducts()).map((product) => ({ slug: product.slug }));
 }

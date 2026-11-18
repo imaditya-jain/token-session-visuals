@@ -111,28 +111,34 @@ worker/                 # standalone worker entry (Docker)
 - No long-running work or persistent connections in Vercel functions. Notifications are persisted in Mongo, fanned out via Redis pub/sub → SSE/Socket gateway in the worker service (authenticated with the access token); client falls back to polling.
 - Emails: React Email, brand tokens (cream/forest/clay; Fraunces/Work Sans with safe fallbacks), plain-text alternative.
 
-## 10. Performance (1M-user target)
+## 10. Rendering strategy (follow strictly; details in `docs/ARCHITECTURE.md` §17)
+- Static/identical-for-everyone content ⇒ SSG + ISR (`export const revalidate = 3600` + tagged Shopify fetches + webhook revalidation). Home, collection, product pages.
+- URL-state or per-request content ⇒ SSR (`/shop`). Per-user data (cart, account, notifications) ⇒ CSR islands after hydration, never in cached HTML.
+- Server Components by default; `"use client"` only on the smallest leaf needing state/effects. Never touch `cookies()`, `headers()` or `searchParams` in a page meant to stay static.
+- Admin (future) is dynamic-only, `no-store`, `noindex`, auth + role verified at every layer (not just `proxy.ts`). Owner will guide its design before any implementation.
+
+## 11. Performance (1M-user target)
 - Static/ISR for home, collections, products; dynamic bits (cart count, user) load client-side. Public pages never hit Mongo.
 - `next/image` with explicit sizes (no layout shift). Fonts via `next/font` with the same families/weights.
 - Mongo: indexes in models (`users.email` unique, `sessions.hash`, `notifications {userId, createdAt}`), `lean()` reads, connection cached across invocations.
 - Budgets: LCP < 2.5s, CLS < 0.05, TBT < 200ms (Lighthouse CI), API p95 < 300ms. k6 load test before each major release.
 
-## 11. Testing policy
+## 12. Testing policy
 1. Unit (Vitest): services, mappers, token logic.
 2. Integration: route handlers against real Mongo/Redis (Docker); Shopify mocked at the HTTP boundary (MSW) in tests only.
 3. Playwright (real browser): smoke (home → collection → product → add to cart → checkout redirect), auth flows, regression, mobile/tablet/desktop, visual locks.
 4. Negative/behavioral: expired token, reused refresh token, rate limit, bad HMAC, Shopify down.
 Done = lint + typecheck + tests green, visual baselines unchanged, no new console errors, axe a11y pass.
 
-## 12. CI/CD
+## 13. CI/CD
 GitHub Actions: PR/`dev` → lint, typecheck, unit, integration, build, Playwright (incl. visual), audit. `main` → Vercel production deploy → post-deploy smoke against prod URL → on failure auto-rollback (`vercel rollback` to last good deployment) and open an issue. Preview deploys per PR.
 
-## 13. Commands
+## 14. Commands
 `npm run dev|build|start|lint|typecheck|test|test:e2e`. Visual lock against a running server: `BASE_URL=http://localhost:3100 npx playwright test` (without BASE_URL Playwright builds and starts the app itself on :3100).
 Later: `docker compose up -d mongo` (Phase 3), `docker compose up worker` (Phase B).
 Cautions: never `pkill -f` with a pattern matching your own command line; `npx`/`npm` wrappers hide the real PID — start servers with `node node_modules/next/dist/bin/next start` and kill that PID.
 
-## 14. Working agreement
+## 15. Working agreement
 - Start each task from `docs/IMPLEMENTATION_PLAN.md` (current phase, acceptance criteria); tick the checklist when done.
 - Prefer editing existing files; reuse before creating; small reviewable commits.
 - Report honestly: failing tests, skipped steps and unknowns are stated plainly.
