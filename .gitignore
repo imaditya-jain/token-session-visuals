@@ -39,3 +39,8 @@ playwright-report/
 .next/
 next-env.d.ts
 tsbuildinfo
+
+# Secrets (commit only .env.example)
+.env
+.env.*
+!.env.example
