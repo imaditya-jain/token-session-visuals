@@ -61,6 +61,9 @@ test("search overlay open", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/");
   await settle(page);
-  await page.getByRole("button", { name: /search/i }).first().click();
+  await page
+    .getByRole("button", { name: /search/i })
+    .first()
+    .click();
   await expect(page).toHaveScreenshot("search-overlay.png");
 });

@@ -1,15 +1,13 @@
+"use client";
+
 import { useState } from "react";
-import { Link } from "@tanstack/react-router";
+import Link from "next/link";
 import { Menu, Search, ShoppingBag, User, X, ChevronDown } from "lucide-react";
 
 import { navLinks } from "@/data/catalog";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+import { setSearchOpen } from "@/features/ui/uiSlice";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
 const isRouteLink = (href: string) => href.startsWith("/");
 
@@ -39,7 +37,8 @@ function SearchOverlay({ open, onClose }: { open: boolean; onClose: () => void }
 }
 
 export default function Header() {
-  const [searchOpen, setSearchOpen] = useState(false);
+  const dispatch = useAppDispatch();
+  const searchOpen = useAppSelector((state) => state.ui.searchOpen);
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
@@ -74,7 +73,7 @@ export default function Header() {
                   isRouteLink(link.href) ? (
                     <Link
                       key={link.label}
-                      to={link.href}
+                      href={link.href}
                       onClick={() => setMenuOpen(false)}
                       className="flex items-center justify-between border-b border-cream/10 py-4 font-display text-xl text-cream transition-colors hover:text-sage"
                     >
@@ -102,12 +101,12 @@ export default function Header() {
           </Sheet>
 
           {/* Logo */}
-          <a
+          <Link
             href="/"
             className="font-display text-3xl font-medium tracking-tight text-forest lg:text-4xl"
           >
             Fernwood
-          </a>
+          </Link>
 
           {/* Desktop nav */}
           <nav className="hidden items-center gap-8 text-sm font-medium lg:flex">
@@ -115,7 +114,7 @@ export default function Header() {
               isRouteLink(link.href) ? (
                 <Link
                   key={link.label}
-                  to={link.href}
+                  href={link.href}
                   className="group relative text-foreground/90 transition-colors hover:text-forest"
                 >
                   {link.label}
@@ -137,7 +136,7 @@ export default function Header() {
           {/* Actions */}
           <div className="flex items-center gap-1 sm:gap-2">
             <button
-              onClick={() => setSearchOpen(true)}
+              onClick={() => dispatch(setSearchOpen(true))}
               aria-label="Search"
               className="rounded-full p-2 text-foreground transition-colors hover:bg-sand"
             >
@@ -162,7 +161,7 @@ export default function Header() {
         </div>
       </header>
 
-      <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
+      <SearchOverlay open={searchOpen} onClose={() => dispatch(setSearchOpen(false))} />
     </>
   );
 }

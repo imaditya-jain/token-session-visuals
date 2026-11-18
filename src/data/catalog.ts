@@ -1,31 +1,31 @@
-import houseplants from "@/assets/collection-houseplants.jpg";
-import succulents from "@/assets/collection-succulents.jpg";
-import planters from "@/assets/collection-planters.jpg";
-import tools from "@/assets/collection-tools.jpg";
+const houseplants = "/images/collection-houseplants.jpg";
+const succulents = "/images/collection-succulents.jpg";
+const planters = "/images/collection-planters.jpg";
+const tools = "/images/collection-tools.jpg";
 
-import monstera from "@/assets/product-monstera.jpg";
-import snakePlant from "@/assets/product-snake-plant.jpg";
-import fiddleFig from "@/assets/product-fiddle-fig.jpg";
-import peaceLily from "@/assets/product-peace-lily.jpg";
-import calathea from "@/assets/product-calathea.jpg";
-import zzPlant from "@/assets/product-zz-plant.jpg";
-import birdOfParadise from "@/assets/product-bird-of-paradise.jpg";
-import orchid from "@/assets/product-orchid.jpg";
+const monstera = "/images/product-monstera.jpg";
+const snakePlant = "/images/product-snake-plant.jpg";
+const fiddleFig = "/images/product-fiddle-fig.jpg";
+const peaceLily = "/images/product-peace-lily.jpg";
+const calathea = "/images/product-calathea.jpg";
+const zzPlant = "/images/product-zz-plant.jpg";
+const birdOfParadise = "/images/product-bird-of-paradise.jpg";
+const orchid = "/images/product-orchid.jpg";
 
-import echeveria from "@/assets/product-echeveria.jpg";
-import barrelCactus from "@/assets/product-barrel-cactus.jpg";
-import jadePlant from "@/assets/product-jade-plant.jpg";
-import stringOfPearls from "@/assets/product-string-of-pearls.jpg";
+const echeveria = "/images/product-echeveria.jpg";
+const barrelCactus = "/images/product-barrel-cactus.jpg";
+const jadePlant = "/images/product-jade-plant.jpg";
+const stringOfPearls = "/images/product-string-of-pearls.jpg";
 
-import terracottaTrio from "@/assets/product-terracotta-trio.jpg";
-import ceramicPlanter from "@/assets/product-ceramic-planter.jpg";
-import hangingPlanter from "@/assets/product-hanging-planter.jpg";
-import concretePots from "@/assets/product-concrete-pots.jpg";
+const terracottaTrio = "/images/product-terracotta-trio.jpg";
+const ceramicPlanter = "/images/product-ceramic-planter.jpg";
+const hangingPlanter = "/images/product-hanging-planter.jpg";
+const concretePots = "/images/product-concrete-pots.jpg";
 
-import seedPackets from "@/assets/product-seed-packets.jpg";
-import wateringCan from "@/assets/product-watering-can.jpg";
-import toolSet from "@/assets/product-tool-set.jpg";
-import pruners from "@/assets/product-pruners.jpg";
+const seedPackets = "/images/product-seed-packets.jpg";
+const wateringCan = "/images/product-watering-can.jpg";
+const toolSet = "/images/product-tool-set.jpg";
+const pruners = "/images/product-pruners.jpg";
 
 export type Collection = {
   slug: string;
@@ -273,7 +273,7 @@ export const products: Product[] = [
     price: 22,
     image: hangingPlanter,
     badge: "New",
-    light: "Fits 6\" pots",
+    light: 'Fits 6" pots',
     size: '32" drop length',
     inStock: true,
     collectionSlugs: ["pots-planters"],
@@ -343,19 +343,11 @@ export const products: Product[] = [
   },
 ];
 
-export const bestSellers: Product[] = [
-  "p1",
-  "p2",
-  "p3",
-  "p4",
-  "p5",
-  "p6",
-  "p7",
-  "p8",
-].map((id) => products.find((p) => p.id === id)!);
+export const bestSellers: Product[] = ["p1", "p2", "p3", "p4", "p5", "p6", "p7", "p8"].map((id) =>
+  products.find((p) => p.id === id)!,
+);
 
-export const getCollection = (slug: string) =>
-  collections.find((c) => c.slug === slug);
+export const getCollection = (slug: string) => collections.find((c) => c.slug === slug);
 
 export const getProduct = (slug: string) => products.find((product) => product.slug === slug);
 

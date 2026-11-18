@@ -1,0 +1,17 @@
+"use client";
+
+import { useState, type ReactNode } from "react";
+import { Provider } from "react-redux";
+
+import SmoothScroll from "@/components/providers/SmoothScroll";
+import { makeStore, type AppStore } from "@/store";
+
+export default function Providers({ children }: { children: ReactNode }) {
+  const [store] = useState<AppStore>(makeStore);
+  return (
+    <Provider store={store}>
+      <SmoothScroll />
+      {children}
+    </Provider>
+  );
+}

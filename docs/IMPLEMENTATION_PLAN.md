@@ -7,7 +7,9 @@ Rules: see `CLAUDE.md`. One task = one branch from `dev`. Every phase ends with 
 - [x] Decisions: Shopify hosted checkout · own JWT auth mirrored to Shopify · scope home/collection/product · worker host deferred
 - [x] `dev` branch created
 - [x] **Phase 0** visual baselines (`chore/phase-0-visual-baselines`) — 14 golden screenshots, stable across 2 runs
-- [ ] Phase 1 …
+- [x] **Phase 1** Next.js port — 14/14 golden screenshots pass unchanged (threshold 0.1%), typecheck/lint/build/unit green
+- [ ] Phase 1b `feat/perf-images-fonts`: `next/image` + `next/font` under the same baselines
+- [ ] Phase 2 Shopify catalog (needs Shopify tokens)
 
 ## Blocking inputs from the user
 | Needed by | Input |
