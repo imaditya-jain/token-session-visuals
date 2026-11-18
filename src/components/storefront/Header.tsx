@@ -39,6 +39,7 @@ function SearchOverlay({ open, onClose }: { open: boolean; onClose: () => void }
 export default function Header() {
   const dispatch = useAppDispatch();
   const searchOpen = useAppSelector((state) => state.ui.searchOpen);
+  const signedIn = useAppSelector((state) => state.auth.status === "authenticated");
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
@@ -142,12 +143,13 @@ export default function Header() {
             >
               <Search className="size-5" />
             </button>
-            <button
+            <Link
+              href={signedIn ? "/account" : "/login"}
               aria-label="Account"
               className="hidden rounded-full p-2 text-foreground transition-colors hover:bg-sand sm:block"
             >
               <User className="size-5" />
-            </button>
+            </Link>
             <button
               aria-label="Cart, 2 items"
               className="relative rounded-full p-2 text-foreground transition-colors hover:bg-sand"

@@ -3,6 +3,7 @@ import "server-only";
 import mongoose from "mongoose";
 
 import { authEnv } from "@/server/config/env";
+import { ensureIndexes } from "@/server/db/indexes";
 
 type Cache = { promise?: Promise<typeof mongoose> | undefined };
 const globalCache = globalThis as typeof globalThis & { __fernwoodMongo?: Cache };
@@ -22,7 +23,12 @@ export async function connectDb(): Promise<typeof mongoose> {
         bufferCommands: false,
         maxPoolSize: 10,
         serverSelectionTimeoutMS: 5_000,
-        autoIndex: process.env["NODE_ENV"] !== "production",
+        // Indexes are created explicitly below, once per process, in every environment.
+        autoIndex: false,
+      })
+      .then(async (connection) => {
+        await ensureIndexes();
+        return connection;
       })
       .catch((error: unknown) => {
         cache.promise = undefined;

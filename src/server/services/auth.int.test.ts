@@ -54,6 +54,18 @@ const expectCode = async (promise: Promise<unknown>, code: string) => {
   await expect(promise).rejects.toMatchObject({ code });
 };
 
+describe("database indexes", () => {
+  it("guarantees unique emails and TTL cleanup regardless of environment", async () => {
+    const userIndexes = await User.collection.indexes();
+    expect(userIndexes.find((index) => index.key["email"] === 1)).toMatchObject({ unique: true });
+    const limitIndexes = await RateLimit.collection.indexes();
+    expect(limitIndexes.find((index) => index.key["expireAt"] === 1)).toMatchObject({
+      expireAfterSeconds: 0,
+    });
+    expect(limitIndexes.find((index) => index.key["key"] === 1)).toMatchObject({ unique: true });
+  });
+});
+
 describe("registration", () => {
   it("creates a customer, hashes the password and starts a session", async () => {
     const result = await registerUser(registration, meta);

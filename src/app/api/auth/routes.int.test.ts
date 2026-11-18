@@ -93,6 +93,11 @@ describe("POST /api/auth/register", () => {
     expect(cookie).toMatch(/SameSite=strict/i);
     expect(cookie).toMatch(/Path=\/api\/auth/);
     expect(cookie).toMatch(/Max-Age=604800/);
+    const hint = response.headers.getSetCookie().find((c) => c.startsWith("fw_auth="));
+    expect(hint).toMatch(/^fw_auth=1/);
+    expect(hint).not.toMatch(/HttpOnly/i);
+    expect(hint).toMatch(/Path=\//);
+    expect(hint).not.toContain(cookieValue(cookie).split("=")[1]!);
     expect(response.headers.get("cache-control")).toBe("no-store");
     expect(response.headers.get("x-request-id")).toBeTruthy();
   });
