@@ -14,7 +14,11 @@ import { hashPassword, verifyAgainstDummy, verifyPassword } from "@/server/auth/
 import { authEnv } from "@/server/config/env";
 import { connectDb } from "@/server/db/connection";
 import { type Role, User, type UserRecord } from "@/server/db/models/user";
-import { AppError, conflict, unauthorized } from "@/server/http/errors";
+import { siteUrl } from "@/server/config/env";
+import { enqueueEmail } from "@/server/email/outbox";
+import { AppError, badRequest, conflict, unauthorized } from "@/server/http/errors";
+import { logger } from "@/server/logger";
+import { consumeAuthToken, issueAuthToken } from "@/server/services/auth-tokens";
 
 const MAX_SESSIONS_PER_USER = 10;
 /** A refresh chain can't be extended past this lifetime, however active the device is. */
@@ -34,6 +38,7 @@ export type PublicUser = {
   phone?: string;
   role: Role;
   acceptsMarketing: boolean;
+  emailVerified: boolean;
 };
 
 export type AuthResult = {
@@ -55,7 +60,14 @@ export type RefreshResult = {
 const toPublicUser = (
   user: Pick<
     UserRecord,
-    "_id" | "email" | "firstName" | "lastName" | "phone" | "role" | "acceptsMarketing"
+    | "_id"
+    | "email"
+    | "firstName"
+    | "lastName"
+    | "phone"
+    | "role"
+    | "acceptsMarketing"
+    | "emailVerifiedAt"
   >,
 ): PublicUser => ({
   id: String(user._id),
@@ -65,6 +77,7 @@ const toPublicUser = (
   ...(user.phone ? { phone: user.phone } : {}),
   role: user.role,
   acceptsMarketing: user.acceptsMarketing,
+  emailVerified: Boolean(user.emailVerifiedAt),
 });
 
 async function startSession(user: UserRecord, meta: SessionMeta): Promise<AuthResult> {
@@ -116,7 +129,15 @@ export async function registerUser(input: RegisterInput, meta: SessionMeta): Pro
       lastName: input.lastName,
       acceptsMarketing: input.acceptsMarketing,
     });
-    return await startSession(user.toObject(), meta);
+    const record = user.toObject();
+    await sendVerificationEmail(record).catch((error: unknown) =>
+      // Registration must not fail because email is down; the user can request a new link.
+      logger.error(
+        { err: error, userId: String(record._id) },
+        "Could not enqueue verification email",
+      ),
+    );
+    return await startSession(record, meta);
   } catch (error) {
     if ((error as { code?: number }).code === 11000) {
       throw conflict("An account with this email already exists.", "email_taken");
@@ -323,4 +344,70 @@ export async function updateProfile(userId: string, patch: ProfileInput): Promis
   }).lean();
   if (!user) throw unauthorized("Account not found", "session_revoked");
   return toPublicUser(user);
+}
+
+type MailTarget = Pick<UserRecord, "_id" | "email" | "firstName">;
+
+async function sendVerificationEmail(user: MailTarget): Promise<void> {
+  const token = await issueAuthToken(user._id, "verify_email");
+  const url = `${siteUrl()}/verify-email?token=${encodeURIComponent(token)}`;
+  await enqueueEmail("verify-email", user.email, { firstName: user.firstName, url });
+}
+
+/** Re-sends the verification link to a signed-in, unverified user. */
+export async function requestEmailVerification(userId: string): Promise<void> {
+  await connectDb();
+  const user = await User.findById(userId).lean();
+  if (!user) throw unauthorized("Account not found", "session_revoked");
+  if (user.emailVerifiedAt) return;
+  await sendVerificationEmail(user);
+}
+
+export async function confirmEmailVerification(rawToken: string): Promise<void> {
+  const userId = await consumeAuthToken(rawToken, "verify_email");
+  if (!userId)
+    throw badRequest("This confirmation link is invalid or has expired.", "invalid_token");
+  await User.updateOne(
+    { _id: userId, emailVerifiedAt: { $exists: false } },
+    { $set: { emailVerifiedAt: new Date() } },
+  );
+}
+
+/** Always resolves, whether or not the email has an account, so the endpoint can't be used to enumerate users. */
+export async function requestPasswordReset(email: string): Promise<void> {
+  await connectDb();
+  const user = await User.findOne({ email }).lean();
+  if (!user) return;
+  const token = await issueAuthToken(user._id, "reset_password");
+  const url = `${siteUrl()}/reset-password?token=${encodeURIComponent(token)}`;
+  await enqueueEmail("reset-password", user.email, { firstName: user.firstName, url });
+}
+
+/**
+ * Sets a new password from an emailed token. Signs the account out everywhere (a stolen session must not
+ * survive a reset), clears any lockout, and treats the click as proof of mailbox ownership.
+ */
+export async function resetPassword(rawToken: string, newPassword: string): Promise<void> {
+  const userId = await consumeAuthToken(rawToken, "reset_password");
+  if (!userId) throw badRequest("This reset link is invalid or has expired.", "invalid_token");
+
+  const passwordHash = await hashPassword(newPassword);
+  const user = await User.findByIdAndUpdate(
+    userId,
+    { $set: { passwordHash, sessions: [], failedLoginCount: 0 }, $unset: { lockedUntil: 1 } },
+    { new: true },
+  ).lean();
+  if (!user) throw badRequest("This reset link is invalid or has expired.", "invalid_token");
+
+  await User.updateOne(
+    { _id: userId, emailVerifiedAt: { $exists: false } },
+    { $set: { emailVerifiedAt: new Date() } },
+  );
+  await enqueueEmail("password-changed", user.email, { firstName: user.firstName }).catch(
+    (error: unknown) =>
+      logger.error(
+        { err: error, userId: String(userId) },
+        "Could not enqueue password-changed email",
+      ),
+  );
 }

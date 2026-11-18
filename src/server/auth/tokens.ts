@@ -59,3 +59,12 @@ export const hashRefreshToken = (token: string): string =>
   createHmac("sha256", authEnv().REFRESH_TOKEN_SECRET).update(token).digest("hex");
 
 export const newSessionId = (): string => randomUUID();
+
+/**
+ * Keyed hash for emailed one-time tokens (verification, password reset). Domain-separated from refresh
+ * tokens so one kind of token can never be presented as the other.
+ */
+export const hashEmailToken = (token: string): string =>
+  createHmac("sha256", authEnv().REFRESH_TOKEN_SECRET).update(`email-token:${token}`).digest("hex");
+
+export const generateEmailToken = (): string => randomBytes(32).toString("base64url");

@@ -40,3 +40,12 @@ export const profileSchema = z
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type ProfileInput = z.infer<typeof profileSchema>;
+
+const oneTimeToken = z.string().trim().min(20, "Invalid link").max(200, "Invalid link");
+
+export const forgotPasswordSchema = z.object({ email });
+export const resetPasswordSchema = z.object({ token: oneTimeToken, password: passwordSchema });
+export const confirmTokenSchema = z.object({ token: oneTimeToken });
+
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;

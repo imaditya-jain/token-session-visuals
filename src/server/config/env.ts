@@ -44,6 +44,7 @@ export function shopifyEnv(): ShopifyEnv {
 export function resetEnvCache() {
   cached = undefined;
   cachedAuth = undefined;
+  cachedEmail = undefined;
 }
 
 const UNIT_SECONDS = { s: 1, m: 60, h: 3600, d: 86_400 } as const;
@@ -88,4 +89,39 @@ export function authEnv(): AuthEnv {
   }
   cachedAuth = parsed.data;
   return cachedAuth;
+}
+
+const emailSchema = z.object({
+  SMTP_EMAIL: z.string().email("SMTP_EMAIL must be an email address"),
+  SMTP_PASS: z.string().min(8, "SMTP_PASS is required"),
+  SMTP_HOST: z.string().min(1).default("smtp.gmail.com"),
+  SMTP_PORT: z.coerce.number().int().min(1).max(65535).default(465),
+  SMTP_FROM_NAME: z.string().min(1).default("Fernwood"),
+});
+
+export type EmailEnv = z.infer<typeof emailSchema>;
+
+let cachedEmail: EmailEnv | undefined;
+
+export function emailEnv(): EmailEnv {
+  if (cachedEmail) return cachedEmail;
+  const parsed = emailSchema.safeParse(process.env);
+  if (!parsed.success) {
+    const problems = parsed.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ");
+    throw new Error(`Invalid email environment: ${problems}`);
+  }
+  cachedEmail = parsed.data;
+  return cachedEmail;
+}
+
+/**
+ * Public origin used in links inside emails. It comes from configuration, never from the request's
+ * Host header (which an attacker controls and could use to poison password-reset links).
+ */
+export function siteUrl(): string {
+  const configured = process.env["SITE_URL"];
+  if (configured) return new URL(configured).origin;
+  if (process.env["NODE_ENV"] === "production")
+    throw new Error("SITE_URL must be set in production");
+  return "http://localhost:3000";
 }

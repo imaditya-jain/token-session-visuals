@@ -2,6 +2,7 @@ import { createAsyncThunk } from "@reduxjs/toolkit";
 
 import type { LoginInput, ProfileInput, RegisterInput } from "@/lib/auth-schemas";
 import { ApiError, apiFetch, postJson, refreshAccessToken } from "@/lib/api-client";
+import type { ForgotPasswordInput, ResetPasswordInput } from "@/lib/auth-schemas";
 
 import { sessionStarted, signedOut, userLoaded } from "./authSlice";
 import type { ApiFailure, AuthUser } from "./types";
@@ -91,3 +92,36 @@ export const restoreSession = createAsyncThunk<void, void>(
     }
   },
 );
+
+export const forgotPassword = thunk<ForgotPasswordInput, void>(
+  "auth/forgotPassword",
+  async (input) => {
+    await postJson("/api/auth/forgot-password", input);
+  },
+);
+
+export const resetPassword = thunk<ResetPasswordInput, void>(
+  "auth/resetPassword",
+  async (input, dispatch) => {
+    await postJson("/api/auth/reset-password", input);
+    // The server revoked every session; make the UI agree.
+    dispatch(signedOut());
+  },
+);
+
+export const confirmEmail = thunk<string, void>("auth/confirmEmail", async (token, dispatch) => {
+  await postJson("/api/auth/verify-email/confirm", { token });
+  if (document.cookie.split("; ").includes("fw_auth=1")) {
+    // A signed-in customer just verified: refresh the flag shown in the account page.
+    try {
+      const { user } = await apiFetch<{ user: AuthUser }>("/api/me");
+      dispatch(userLoaded(user));
+    } catch {
+      /* the next page load restores it */
+    }
+  }
+});
+
+export const resendVerification = thunk<void, void>("auth/resendVerification", async () => {
+  await apiFetch<void>("/api/auth/verify-email/request", { method: "POST" });
+});

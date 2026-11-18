@@ -18,6 +18,8 @@ const pages = [
   { name: "shop", path: "/shop" },
   { name: "login", path: "/login" },
   { name: "register", path: "/register" },
+  { name: "forgot-password", path: "/forgot-password" },
+  { name: "reset-password", path: "/reset-password?token=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" },
 ];
 
 async function settle(page: Page) {

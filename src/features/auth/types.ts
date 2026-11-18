@@ -6,6 +6,7 @@ export type AuthUser = {
   phone?: string;
   role: "customer" | "staff" | "admin";
   acceptsMarketing: boolean;
+  emailVerified: boolean;
 };
 
 /** Serializable error shape stored in Redux and shown by forms. */

@@ -1,5 +1,7 @@
 import "server-only";
 
+import { AuthToken } from "@/server/db/models/auth-token";
+import { EmailJob } from "@/server/db/models/email-job";
 import { RateLimit } from "@/server/db/models/rate-limit";
 import { User } from "@/server/db/models/user";
 
@@ -9,5 +11,10 @@ import { User } from "@/server/db/models/user";
  * Add every new model here.
  */
 export async function ensureIndexes(): Promise<void> {
-  await Promise.all([User.createIndexes(), RateLimit.createIndexes()]);
+  await Promise.all([
+    User.createIndexes(),
+    RateLimit.createIndexes(),
+    AuthToken.createIndexes(),
+    EmailJob.createIndexes(),
+  ]);
 }

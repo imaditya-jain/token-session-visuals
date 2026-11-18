@@ -47,12 +47,12 @@ function requireStore(): AppStore {
 }
 
 async function parse<T>(response: Response): Promise<T> {
-  if (response.status === 204) return undefined as T;
-  const body = (await response.json().catch(() => null)) as {
+  const text = await response.text();
+  const body = (text ? safeJson(text) : null) as {
     data?: T;
     error?: { code: string; message: string; fields?: { path: string; message: string }[] };
   } | null;
-  if (response.ok && body && "data" in body) return body.data as T;
+  if (response.ok) return (body && "data" in body ? body.data : undefined) as T;
   const retryAfter = Number(response.headers.get("retry-after")) || undefined;
   throw new ApiError(
     response.status,
@@ -61,6 +61,14 @@ async function parse<T>(response: Response): Promise<T> {
     body?.error?.fields,
     retryAfter,
   );
+}
+
+function safeJson(text: string): unknown {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
 }
 
 /** Exchanges the refresh cookie for a new access token. Resolves false (and signs out) if there is no valid session. */
