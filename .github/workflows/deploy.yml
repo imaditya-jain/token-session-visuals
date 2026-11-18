@@ -1,0 +1,66 @@
+name: Deploy production
+
+# Runs only after CI succeeded on main. Vercel's own Git auto-deploy is disabled in vercel.json
+# so that nothing reaches production without passing these gates.
+on:
+  workflow_run:
+    workflows: [CI]
+    branches: [main]
+    types: [completed]
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  issues: write
+
+env:
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+jobs:
+  deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm i -g vercel@latest
+      - run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+      - run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+      - name: Deploy
+        id: deploy
+        run: |
+          url=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }})
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+      - run: npx playwright install --with-deps chromium
+      - name: Production smoke test
+        id: smoke
+        run: npx playwright test e2e/smoke.spec.ts
+        env:
+          BASE_URL: ${{ steps.deploy.outputs.url }}
+          CI: "true"
+      - name: Roll back to last stable deployment
+        if: ${{ failure() && steps.deploy.outcome == 'success' }}
+        run: vercel rollback --yes --token=${{ secrets.VERCEL_TOKEN }}
+      - name: Open incident issue
+        if: ${{ failure() }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Production deploy failed for ${context.payload.workflow_run.head_sha.slice(0, 7)}`,
+              body: `Deploy or post-deploy smoke test failed; production was rolled back to the previous deployment where a deploy had occurred.\n\nRun: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+              labels: ['incident'],
+            });
