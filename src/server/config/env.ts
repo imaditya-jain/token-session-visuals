@@ -45,6 +45,7 @@ export function resetEnvCache() {
   cached = undefined;
   cachedAuth = undefined;
   cachedEmail = undefined;
+  cachedAdmin = undefined;
 }
 
 const UNIT_SECONDS = { s: 1, m: 60, h: 3600, d: 86_400 } as const;
@@ -124,4 +125,25 @@ export function siteUrl(): string {
   if (process.env["NODE_ENV"] === "production")
     throw new Error("SITE_URL must be set in production");
   return "http://localhost:3000";
+}
+
+const adminSchema = z.object({
+  SHOPIFY_STORE_URL: shopifySchema.shape.SHOPIFY_STORE_URL,
+  SHOPIFY_ADMIN_API_ACCESS_TOKEN: z.string().min(10, "SHOPIFY_ADMIN_API_ACCESS_TOKEN is required"),
+});
+
+export type AdminEnv = z.infer<typeof adminSchema>;
+
+let cachedAdmin: AdminEnv | undefined;
+
+/** Server-only Admin credentials (orders, customers). Never imported by client code. */
+export function adminEnv(): AdminEnv {
+  if (cachedAdmin) return cachedAdmin;
+  const parsed = adminSchema.safeParse(process.env);
+  if (!parsed.success) {
+    const problems = parsed.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ");
+    throw new Error(`Invalid Shopify Admin environment: ${problems}`);
+  }
+  cachedAdmin = parsed.data;
+  return cachedAdmin;
 }
