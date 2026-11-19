@@ -9,7 +9,7 @@ test.describe("content pages", () => {
   });
 
   for (const [path, heading] of [
-    ["/about", "Three generations of growers, one shared obsession"],
+    ["/about", "Our story"],
     ["/care-guide", "Plant care guide"],
     ["/contact", "Contact us"],
   ] as const) {
@@ -45,7 +45,7 @@ test.describe("content pages", () => {
       ["Care Library", /\/care-guide$/],
       ["Contact Us", /\/contact$/],
       ["Privacy Policy", /\/policies\/privacy-policy$/],
-      ["Plant Guarantee", /\/policies\/refund-policy$/],
+      ["Plant Guarantee", /\/plant-guarantee$/],
       ["House Plants", /\/collections\/house-plants$/],
     ] as const) {
       await page.goto("/");
@@ -60,7 +60,8 @@ test.describe("content pages", () => {
     await expect(page.getByText("This field is required").first()).toBeVisible();
 
     await page.getByLabel("Your name").fill("Ada Lovelace");
-    await page.getByLabel("Email", { exact: true }).fill("ada@example.com");
+    // Unique per run: the form allows 3 messages per address per hour.
+    await page.getByLabel("Email", { exact: true }).fill(`ada+${Date.now()}@example.com`);
     await page.getByLabel("Topic").selectOption("Plant care advice");
     await page.getByLabel("Message").fill("hi");
     await page.getByRole("button", { name: "Send message" }).click();

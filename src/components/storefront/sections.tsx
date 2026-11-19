@@ -4,6 +4,8 @@ import { ArrowRight } from "lucide-react";
 
 import { getBestSellers, getCollections } from "@/data/catalog";
 import { testimonials } from "@/data/site";
+import { store } from "@/data/store-info";
+import CollectionCard from "@/components/storefront/CollectionCard";
 import ProductCard from "@/components/storefront/ProductCard";
 const promoImage = "/images/promo-repotting.jpg";
 const seasonalImage = "/images/seasonal-greenhouse.jpg";
@@ -59,30 +61,7 @@ export async function Collections() {
       />
       <div className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
         {collections.map((collection) => (
-          <Link
-            key={collection.slug}
-            href={`/collections/${collection.slug}`}
-            className="group relative overflow-hidden rounded-2xl bg-sand shadow-sm ring-1 ring-border/60"
-          >
-            <Image
-              src={collection.image}
-              alt={collection.name}
-              width={800}
-              height={1000}
-              sizes="(min-width: 1280px) 300px, (min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
-              className="aspect-[4/5] w-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-forest-deep/70 via-transparent to-transparent" />
-            <div className="absolute inset-x-0 bottom-0 p-4 sm:p-5">
-              <h3 className="font-display text-lg font-medium text-cream sm:text-xl">
-                {collection.name}
-              </h3>
-              <p className="mt-0.5 text-xs text-cream/85 sm:text-sm">{collection.tagline}</p>
-              <span className="mt-2 inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-cream opacity-90 transition-all group-hover:gap-2">
-                Explore <ArrowRight className="size-3.5" aria-hidden />
-              </span>
-            </div>
-          </Link>
+          <CollectionCard key={collection.slug} collection={collection} />
         ))}
       </div>
     </section>
@@ -333,9 +312,6 @@ export function Testimonials() {
 
 type FooterLink = { label: string; href: string };
 
-/** Links without a destination page yet keep pointing at the footer anchor. */
-const PENDING = "#footer";
-
 const footerColumns: { heading: string; links: FooterLink[] }[] = [
   {
     heading: "Shop",
@@ -344,26 +320,26 @@ const footerColumns: { heading: string; links: FooterLink[] }[] = [
       { label: "Succulents & Cacti", href: "/collections/succulents-cacti" },
       { label: "Pots & Planters", href: "/collections/pots-planters" },
       { label: "Seeds & Tools", href: "/collections/seeds-tools" },
-      { label: "Gift Cards", href: PENDING },
+      { label: "Gift Cards", href: "/gift-cards" },
     ],
   },
   {
     heading: "Company",
     links: [
       { label: "Our Story", href: "/about" },
-      { label: "Careers", href: PENDING },
-      { label: "Wholesale", href: PENDING },
-      { label: "Sustainability", href: PENDING },
-      { label: "Press", href: PENDING },
+      { label: "Careers", href: "/careers" },
+      { label: "Wholesale", href: "/wholesale" },
+      { label: "Sustainability", href: "/sustainability" },
+      { label: "Press", href: "/press" },
     ],
   },
   {
     heading: "Help",
     links: [
-      { label: "Shipping & Delivery", href: "/policies/shipping-policy" },
-      { label: "Plant Guarantee", href: "/policies/refund-policy" },
+      { label: "Shipping & Delivery", href: "/shipping-delivery" },
+      { label: "Plant Guarantee", href: "/plant-guarantee" },
       { label: "Care Library", href: "/care-guide" },
-      { label: "FAQs", href: PENDING },
+      { label: "FAQs", href: "/faq" },
       { label: "Contact Us", href: "/contact" },
     ],
   },
@@ -372,7 +348,7 @@ const footerColumns: { heading: string; links: FooterLink[] }[] = [
 const legalLinks: FooterLink[] = [
   { label: "Privacy Policy", href: "/policies/privacy-policy" },
   { label: "Terms of Service", href: "/policies/terms-of-service" },
-  { label: "Accessibility", href: PENDING },
+  { label: "Accessibility", href: "/accessibility" },
 ];
 
 export function Footer() {
@@ -405,7 +381,15 @@ export function Footer() {
             </div>
             <div className="mt-6 space-y-1 text-sm text-cream/75">
               <p>1234 Greenhouse Lane, Portland, OR 97210</p>
-              <p>hello@fernwood.shop · (503) 555-0142</p>
+              <p>
+                <a href={`mailto:${store.email}`} className="transition-colors hover:text-cream">
+                  {store.email}
+                </a>{" "}
+                ·{" "}
+                <a href={store.phoneHref} className="transition-colors hover:text-cream">
+                  {store.phone}
+                </a>
+              </p>
               <p>Mon–Sat, 9am–6pm PST</p>
             </div>
           </div>

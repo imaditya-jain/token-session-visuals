@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+import CollectionBanner from "@/components/storefront/CollectionBanner";
 import Header from "@/components/storefront/Header";
 import { Footer } from "@/components/storefront/sections";
 
@@ -23,17 +24,17 @@ export default function AuthShell({
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Header />
-      <main className="mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-20 lg:px-8">
+      {/* Same banner as the shop and collection pages, so every page opens the same way. */}
+      <CollectionBanner image="/images/seasonal-greenhouse.jpg" title={title} tagline={eyebrow} />
+      <main className="mx-auto max-w-7xl px-4 pb-14 pt-16 sm:px-6 sm:pb-20 sm:pt-20 lg:px-8">
         <div className={`mx-auto w-full ${wide ? "max-w-2xl" : "max-w-md"}`}>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-clay">{eyebrow}</p>
-          <h1 className="mt-3 font-display text-4xl font-medium leading-tight text-forest sm:text-5xl">
-            {title}
-          </h1>
-          {description ? <p className="mt-3 text-muted-foreground">{description}</p> : null}
+          {description ? (
+            <p className="mb-8 text-center text-muted-foreground">{description}</p>
+          ) : null}
           {wide ? (
-            <div className="mt-8">{children}</div>
+            <div>{children}</div>
           ) : (
-            <div className="mt-8 rounded-2xl bg-card p-6 shadow-sm ring-1 ring-border/60 sm:p-8">
+            <div className="rounded-2xl bg-card p-6 shadow-sm ring-1 ring-border/60 sm:p-8">
               {children}
             </div>
           )}

@@ -5,6 +5,8 @@ export const CONTACT_TOPICS = [
   "Plant care advice",
   "Returns or guarantee",
   "Wholesale",
+  "Careers",
+  "Press and partnerships",
   "Something else",
 ] as const;
 

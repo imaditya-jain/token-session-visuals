@@ -3,9 +3,9 @@
 
 export const navLinks = [
   { label: "Shop Plants", href: "/shop" },
-  { label: "Collections", href: "#collections" },
-  { label: "Our Story", href: "#our-story" },
-  { label: "About us", href: "#footer" },
+  { label: "Collections", href: "/collections" },
+  { label: "Our Story", href: "/about#our-story" },
+  { label: "About us", href: "/about" },
 ];
 
 export const testimonials = [
