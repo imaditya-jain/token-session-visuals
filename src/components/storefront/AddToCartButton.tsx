@@ -27,11 +27,19 @@ export default function AddToCartButton({ name, variantId }: Props) {
     if (added) dispatch(setCartOpen(true));
   };
 
+  // The accessible name must contain the visible words (WCAG 2.5.3), so voice-control users can say what they see.
+  const label =
+    state === "adding"
+      ? `Adding… ${name}`
+      : state === "failed"
+        ? `Try again: add ${name} to cart`
+        : `Add to cart: ${name}`;
+
   return (
     <button
       type="button"
       onClick={() => void add()}
-      aria-label={`Add ${name} to cart`}
+      aria-label={label}
       aria-busy={state === "adding"}
       className="absolute inset-x-3 bottom-3 flex translate-y-2 items-center justify-center gap-2 rounded-md bg-forest-deep/90 py-2.5 text-xs font-semibold uppercase tracking-wider text-cream opacity-95 backdrop-blur-sm transition-all duration-300 hover:bg-forest-deep group-hover:translate-y-0 sm:opacity-0 sm:group-hover:opacity-100"
     >

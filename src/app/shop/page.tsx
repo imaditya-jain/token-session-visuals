@@ -52,45 +52,46 @@ export default async function ShopPage({ searchParams }: { searchParams: SearchP
   return (
     <div className="min-h-screen bg-background">
       <Header />
+      <main>
+        <CollectionBanner
+          image="/images/seasonal-greenhouse.jpg"
+          title="Shop all"
+          tagline="Every plant, pot and tool in the greenhouse"
+        />
 
-      <CollectionBanner
-        image="/images/seasonal-greenhouse.jpg"
-        title="Shop all"
-        tagline="Every plant, pot and tool in the greenhouse"
-      />
+        <section className="mx-auto max-w-7xl px-4 pt-16 sm:px-6 sm:pt-20 lg:px-8">
+          <h2 className="sr-only">Products</h2>
+          <ListingToolbar query={query} types={types} basePath={SHOP_PATH} />
 
-      <section className="mx-auto max-w-7xl px-4 pt-16 sm:px-6 sm:pt-20 lg:px-8">
-        <ListingToolbar query={query} types={types} basePath={SHOP_PATH} />
+          <p className="py-5 text-sm font-medium text-foreground" aria-live="polite">
+            {listingSummary(query, pageInfo, products.length)}
+          </p>
 
-        <p className="py-5 text-sm font-medium text-foreground" aria-live="polite">
-          {listingSummary(query, pageInfo, products.length)}
-        </p>
+          {products.length > 0 ? (
+            <div
+              className={`grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4 ${
+                paginated ? "pb-12 lg:pb-16" : "pb-16 lg:pb-24"
+              }`}
+            >
+              {products.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center gap-3 py-16 text-center">
+              <p className="font-display text-xl text-foreground">No products match your filters</p>
+              <p className="text-sm text-muted-foreground">
+                Try widening the price range or clearing availability.
+              </p>
+              <Button variant="outline" asChild className="mt-2">
+                <Link href={SHOP_PATH}>Clear all filters</Link>
+              </Button>
+            </div>
+          )}
 
-        {products.length > 0 ? (
-          <div
-            className={`grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4 ${
-              paginated ? "pb-12 lg:pb-16" : "pb-16 lg:pb-24"
-            }`}
-          >
-            {products.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
-        ) : (
-          <div className="flex flex-col items-center gap-3 py-16 text-center">
-            <p className="font-display text-xl text-foreground">No products match your filters</p>
-            <p className="text-sm text-muted-foreground">
-              Try widening the price range or clearing availability.
-            </p>
-            <Button variant="outline" asChild className="mt-2">
-              <Link href={SHOP_PATH}>Clear all filters</Link>
-            </Button>
-          </div>
-        )}
-
-        <ListingPagination query={query} pageInfo={pageInfo} basePath={SHOP_PATH} />
-      </section>
-
+          <ListingPagination query={query} pageInfo={pageInfo} basePath={SHOP_PATH} />
+        </section>
+      </main>
       <Footer />
     </div>
   );

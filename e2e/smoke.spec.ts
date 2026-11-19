@@ -74,7 +74,7 @@ test.describe("cart UI", () => {
 
   test("an unavailable store is reported on the card, not silently ignored", async ({ page }) => {
     await page.goto("/shop");
-    const add = page.getByRole("button", { name: /^Add .* to cart$/ }).first();
+    const add = page.getByRole("button", { name: /^Try again: add|^Add to cart: / }).first();
     await add.click({ force: true });
     await expect(add).toHaveText(/Try again/);
   });

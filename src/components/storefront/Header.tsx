@@ -73,7 +73,7 @@ export default function Header() {
   return (
     <>
       {/* Announcement bar */}
-      <div className="bg-forest-deep text-cream">
+      <div role="region" aria-label="Announcement" className="bg-forest-deep text-cream">
         <div className="mx-auto flex max-w-7xl items-center justify-center gap-2 px-4 py-2 text-center text-xs tracking-wide sm:text-sm">
           <span className="hidden sm:inline">Free shipping on orders over $75</span>
           <span className="hidden sm:inline text-sage">•</span>
