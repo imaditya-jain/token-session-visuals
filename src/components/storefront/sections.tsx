@@ -277,12 +277,12 @@ export function StoryTestimonial() {
             We believe a plant should arrive ready to thrive, not merely survive. That means honest
             sizing, healthy roots, and guidance that continues long after the box is opened.
           </p>
-          <a
-            href="#footer"
+          <Link
+            href="/about"
             className="mt-8 inline-flex items-center gap-2 rounded-md border border-cream/50 px-7 py-3 text-sm font-semibold text-cream transition-colors hover:bg-cream/10"
           >
             Meet the growers <ArrowRight className="size-4" aria-hidden />
-          </a>
+          </Link>
         </div>
         <Image
           src={storyImage}
@@ -331,19 +331,48 @@ export function Testimonials() {
   );
 }
 
-const footerColumns = [
+type FooterLink = { label: string; href: string };
+
+/** Links without a destination page yet keep pointing at the footer anchor. */
+const PENDING = "#footer";
+
+const footerColumns: { heading: string; links: FooterLink[] }[] = [
   {
     heading: "Shop",
-    links: ["House Plants", "Succulents & Cacti", "Pots & Planters", "Seeds & Tools", "Gift Cards"],
+    links: [
+      { label: "House Plants", href: "/collections/house-plants" },
+      { label: "Succulents & Cacti", href: "/collections/succulents-cacti" },
+      { label: "Pots & Planters", href: "/collections/pots-planters" },
+      { label: "Seeds & Tools", href: "/collections/seeds-tools" },
+      { label: "Gift Cards", href: PENDING },
+    ],
   },
   {
     heading: "Company",
-    links: ["Our Story", "Careers", "Wholesale", "Sustainability", "Press"],
+    links: [
+      { label: "Our Story", href: "/about" },
+      { label: "Careers", href: PENDING },
+      { label: "Wholesale", href: PENDING },
+      { label: "Sustainability", href: PENDING },
+      { label: "Press", href: PENDING },
+    ],
   },
   {
     heading: "Help",
-    links: ["Shipping & Delivery", "Plant Guarantee", "Care Library", "FAQs", "Contact Us"],
+    links: [
+      { label: "Shipping & Delivery", href: "/policies/shipping-policy" },
+      { label: "Plant Guarantee", href: "/policies/refund-policy" },
+      { label: "Care Library", href: "/care-guide" },
+      { label: "FAQs", href: PENDING },
+      { label: "Contact Us", href: "/contact" },
+    ],
   },
+];
+
+const legalLinks: FooterLink[] = [
+  { label: "Privacy Policy", href: "/policies/privacy-policy" },
+  { label: "Terms of Service", href: "/policies/terms-of-service" },
+  { label: "Accessibility", href: PENDING },
 ];
 
 export function Footer() {
@@ -387,10 +416,13 @@ export function Footer() {
               </p>
               <ul className="space-y-3 text-sm">
                 {col.links.map((link) => (
-                  <li key={link}>
-                    <a href="#footer" className="text-cream/75 transition-colors hover:text-cream">
-                      {link}
-                    </a>
+                  <li key={link.label}>
+                    <Link
+                      href={link.href}
+                      className="text-cream/75 transition-colors hover:text-cream"
+                    >
+                      {link.label}
+                    </Link>
                   </li>
                 ))}
               </ul>
@@ -400,15 +432,15 @@ export function Footer() {
         <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-cream/15 pt-6 text-xs text-cream/60 sm:flex-row">
           <p>© {new Date().getFullYear()} Fernwood Nursery Co. All rights reserved.</p>
           <div className="flex gap-6">
-            <a href="#footer" className="transition-colors hover:text-cream">
-              Privacy Policy
-            </a>
-            <a href="#footer" className="transition-colors hover:text-cream">
-              Terms of Service
-            </a>
-            <a href="#footer" className="transition-colors hover:text-cream">
-              Accessibility
-            </a>
+            {legalLinks.map((link) => (
+              <Link
+                key={link.label}
+                href={link.href}
+                className="transition-colors hover:text-cream"
+              >
+                {link.label}
+              </Link>
+            ))}
           </div>
         </div>
       </div>

@@ -19,6 +19,9 @@ const pages = [
   { name: "login", path: "/login" },
   { name: "register", path: "/register" },
   { name: "forgot-password", path: "/forgot-password" },
+  { name: "about", path: "/about" },
+  { name: "care-guide", path: "/care-guide" },
+  { name: "contact", path: "/contact" },
   { name: "reset-password", path: "/reset-password?token=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" },
 ];
 

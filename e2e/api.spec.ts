@@ -712,3 +712,56 @@ test.describe("cart API (Shopify disabled: reads work, writes degrade cleanly)",
     expect((await api.post("/api/cart", { data: {} })).status()).toBe(405);
   });
 });
+
+test.describe("contact API", () => {
+  const valid = {
+    name: "Ada Lovelace",
+    email: "ada@example.com",
+    topic: "Order or delivery",
+    message: "Where is my order? It was due last week.",
+  };
+
+  test("accepts a valid message", async () => {
+    const api = await client();
+    const response = await json(api, "/api/contact", valid);
+    expect(response.status()).toBe(202);
+    expect(await response.json()).toEqual({ data: { accepted: true } });
+  });
+
+  test("a honeypot submission looks identical to a real one", async () => {
+    const api = await client();
+    const response = await json(api, "/api/contact", { ...valid, website: "https://spam.example" });
+    expect(response.status()).toBe(202);
+  });
+
+  for (const [name, body] of [
+    ["header injection", { ...valid, name: "Ada\r\nBcc: x@example.com" }],
+    ["operator objects", { ...valid, message: { $gt: "" } }],
+    ["bad topic", { ...valid, topic: "x" }],
+    ["prototype pollution", JSON.parse('{"__proto__":{"a":1},"name":"x"}')],
+    ["oversized body", { ...valid, message: "x".repeat(20_000) }],
+  ] as const) {
+    test(`rejects ${name} without a server error`, async () => {
+      const api = await client();
+      const response = await json(api, "/api/contact", body);
+      expect([400, 413]).toContain(response.status());
+    });
+  }
+
+  test("cross-origin posts and wrong methods are refused", async () => {
+    const foreign = await client({ origin: "https://evil.example" });
+    expect((await json(foreign, "/api/contact", valid)).status()).toBe(403);
+    const api = await client();
+    expect((await api.get("/api/contact")).status()).toBe(405);
+  });
+
+  test("rate limits repeated submissions", async () => {
+    const email = uniqueEmail("limit");
+    let last = 0;
+    for (let i = 0; i < 4; i++) {
+      const api = await client();
+      last = (await json(api, "/api/contact", { ...valid, email })).status();
+    }
+    expect(last).toBe(429);
+  });
+});

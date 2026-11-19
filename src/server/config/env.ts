@@ -98,6 +98,8 @@ const emailSchema = z.object({
   SMTP_HOST: z.string().min(1).default("smtp.gmail.com"),
   SMTP_PORT: z.coerce.number().int().min(1).max(65535).default(465),
   SMTP_FROM_NAME: z.string().min(1).default("Fernwood"),
+  /** Where contact-form messages are delivered. Defaults to the sending mailbox. */
+  CONTACT_INBOX: z.preprocess((v) => (v === "" ? undefined : v), z.string().email().optional()),
 });
 
 export type EmailEnv = z.infer<typeof emailSchema>;

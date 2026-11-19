@@ -36,6 +36,7 @@ export type RenderedEmail = {
   html: string;
   text: string;
   headers: Record<string, string>;
+  replyTo?: string;
 };
 
 /** Validates the data against the template's schema and renders HTML + plain text. */
@@ -55,12 +56,14 @@ export async function renderEmail<T extends TemplateName>(
     "headers" in entry
       ? (entry.headers as (value: TemplateData<T>) => Record<string, string>)(parsed)
       : {};
-  return { subject, html, text, headers };
+  const replyTo =
+    "replyTo" in entry ? (entry.replyTo as (value: TemplateData<T>) => string)(parsed) : undefined;
+  return { subject, html, text, headers, ...(replyTo ? { replyTo } : {}) };
 }
 
 export async function sendEmail(to: string, template: TemplateName, data: unknown): Promise<void> {
   const { SMTP_EMAIL, SMTP_FROM_NAME } = emailEnv();
-  const { subject, html, text, headers } = await renderEmail(template, data);
+  const { subject, html, text, headers, replyTo } = await renderEmail(template, data);
   await getTransport().sendMail({
     from: { name: SMTP_FROM_NAME, address: SMTP_EMAIL },
     to,
@@ -68,5 +71,6 @@ export async function sendEmail(to: string, template: TemplateName, data: unknow
     html,
     text,
     headers,
+    ...(replyTo ? { replyTo } : {}),
   });
 }
