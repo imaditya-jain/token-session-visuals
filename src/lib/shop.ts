@@ -37,6 +37,8 @@ export type ShopQuery = {
   min?: number;
   max?: number;
   types: string[];
+  /** Normalized search terms (letters/digits only, space separated), e.g. "snake plant". */
+  search?: string;
 };
 
 export type PageInfo = {
@@ -57,6 +59,21 @@ const all = (value: string | string[] | undefined) =>
 const cursor = z.string().min(1).max(512);
 const price = z.coerce.number().finite().min(0).max(1_000_000);
 
+export const MAX_SEARCH_TERMS = 6;
+export const MAX_SEARCH_TERM_LENGTH = 40;
+
+/** Splits free text into safe terms: letters and digits only, so no search-syntax can be injected. */
+export function searchTerms(raw: string | undefined): string[] {
+  if (!raw) return [];
+  return raw
+    .normalize("NFKC")
+    .toLowerCase()
+    .split(/[^\p{L}\p{N}]+/u)
+    .filter(Boolean)
+    .slice(0, MAX_SEARCH_TERMS)
+    .map((term) => term.slice(0, MAX_SEARCH_TERM_LENGTH));
+}
+
 /** Never throws: invalid or hostile input falls back to defaults. */
 export function parseShopQuery(params: RawParams): ShopQuery {
   const after = cursor.safeParse(first(params["after"]));
@@ -73,6 +90,8 @@ export function parseShopQuery(params: RawParams): ShopQuery {
     ),
   ].slice(0, 20);
 
+  const search = searchTerms((first(params["q"]) ?? "").slice(0, 200)).join(" ");
+
   return {
     ...(after.success ? { after: after.data } : before.success ? { before: before.data } : {}),
     page: page.success ? page.data : 1,
@@ -82,12 +101,14 @@ export function parseShopQuery(params: RawParams): ShopQuery {
     ...(min.success ? { min: min.data } : {}),
     ...(max.success ? { max: max.data } : {}),
     types,
+    ...(search ? { search } : {}),
   };
 }
 
 /** Serializes a query back to URL params, omitting defaults. Cursors/page are included only when set. */
 export function shopQueryToSearchParams(query: Partial<ShopQuery>): URLSearchParams {
   const params = new URLSearchParams();
+  if (query.search) params.set("q", query.search);
   if (query.sort && query.sort !== "featured") params.set("sort", query.sort);
   if (query.inStock) params.append("stock", "in");
   if (query.outOfStock) params.append("stock", "out");

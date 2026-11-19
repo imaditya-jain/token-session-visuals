@@ -184,7 +184,13 @@ export default function ListingToolbar({
               clearTimeout(timer.current);
               setDraft({});
               startTransition(() =>
-                router.push(shopHref({ sort: query.sort }, basePath), { scroll: false }),
+                router.push(
+                  shopHref(
+                    { sort: query.sort, ...(query.search ? { search: query.search } : {}) },
+                    basePath,
+                  ),
+                  { scroll: false },
+                ),
               );
             }}
             className="flex items-center gap-1 text-sm font-medium text-clay transition-colors hover:text-clay/80"

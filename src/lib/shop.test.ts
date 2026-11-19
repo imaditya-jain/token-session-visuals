@@ -6,6 +6,7 @@ import {
   resetPaging,
   shopHref,
   shopQueryToSearchParams,
+  searchTerms,
 } from "./shop";
 
 describe("parseShopQuery", () => {
@@ -124,5 +125,43 @@ describe("listingSummary", () => {
         1,
       ),
     ).toBe("Showing 25 product");
+  });
+});
+
+describe("search terms", () => {
+  it("keeps letters and digits only, lowercased", () => {
+    expect(searchTerms('  Snake-Plant! "x" OR (y):z* ')).toEqual([
+      "snake",
+      "plant",
+      "x",
+      "or",
+      "y",
+      "z",
+    ]);
+  });
+
+  it("limits the number and length of terms and keeps non-latin letters", () => {
+    expect(searchTerms("a b c d e f g h")).toHaveLength(6);
+    expect(searchTerms("x".repeat(500))[0]).toHaveLength(40);
+    expect(searchTerms("Zürich 植物")).toEqual(["zürich", "植物"]);
+  });
+
+  it("is empty for blank or missing input", () => {
+    expect(searchTerms(undefined)).toEqual([]);
+    expect(searchTerms("  !!! ")).toEqual([]);
+  });
+
+  it("parses q, ignores hostile values, and round-trips through the URL", () => {
+    expect(parseShopQuery({ q: "Snake  Plant" }).search).toBe("snake plant");
+    expect(parseShopQuery({ q: ["a", "b"] }).search).toBe("a");
+    expect(parseShopQuery({ q: "***" }).search).toBeUndefined();
+    expect(parseShopQuery({}).search).toBeUndefined();
+    const query = parseShopQuery({ q: "fern", sort: "price-asc" });
+    expect(shopQueryToSearchParams(query).toString()).toBe("q=fern&sort=price-asc");
+    expect(resetPaging({ ...query, page: 3, after: "x" })).toMatchObject({ search: "fern" });
+  });
+
+  it("does not count the search term as a filter", () => {
+    expect(activeFilterCount(parseShopQuery({ q: "fern" }))).toBe(0);
   });
 });

@@ -1,4 +1,4 @@
-import { PAGE_SIZE, type ProductPage, type ShopQuery } from "@/lib/shop";
+import { PAGE_SIZE, searchTerms, type ProductPage, type ShopQuery } from "@/lib/shop";
 import type { Product } from "@/lib/types";
 
 /**
@@ -13,7 +13,12 @@ const decode = (cursor: string | undefined): number | undefined => {
 };
 
 function filterProducts(products: Product[], query: ShopQuery): Product[] {
+  const terms = searchTerms(query.search);
   return products.filter((product) => {
+    if (terms.length > 0) {
+      const haystack = `${product.name} ${product.category} ${product.light}`.toLowerCase();
+      if (!terms.every((term) => haystack.includes(term))) return false;
+    }
     if (query.inStock !== query.outOfStock && product.inStock !== query.inStock) return false;
     if (query.min !== undefined && product.price < query.min) return false;
     if (query.max !== undefined && product.price > query.max) return false;

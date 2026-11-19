@@ -49,6 +49,7 @@ export const tags = {
 export const BEST_SELLERS_HANDLE = "home-best-sellers";
 
 const LIST_PAGE_SIZE = 100;
+const SEARCH_REVALIDATE_SECONDS = 300;
 const MAX_PAGES = 20;
 
 type Page<T> = { nodes: T[]; pageInfo: { hasNextPage: boolean; endCursor: string | null } };
@@ -73,8 +74,14 @@ async function run<S extends z.ZodType>(
   query: string,
   variables: Record<string, unknown>,
   queryTags: string[],
+  revalidate?: number,
 ): Promise<z.infer<S>> {
-  return schema.parse(await storefrontQuery(query, variables, { tags: queryTags }));
+  return schema.parse(
+    await storefrontQuery(query, variables, {
+      tags: queryTags,
+      ...(revalidate !== undefined ? { revalidate } : {}),
+    }),
+  );
 }
 
 export async function getCollections(): Promise<Collection[]> {
@@ -197,9 +204,11 @@ async function fetchProductPage(query: ShopQuery): Promise<ProductPage> {
     {
       ...cursorArgs(query),
       query: buildProductSearchQuery(query) ?? null,
-      ...sortArgs(query.sort),
+      ...sortArgs(query.sort, Boolean(query.search)),
     },
     [tags.catalog],
+    // Every distinct search string is its own cache entry, so keep those short-lived.
+    query.search ? SEARCH_REVALIDATE_SECONDS : undefined,
   );
   return toProductPage(products);
 }
