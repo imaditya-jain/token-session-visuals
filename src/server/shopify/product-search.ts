@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { ShopQuery, SortKey } from "@/lib/shop";
+import { searchTerms, type ShopQuery, type SortKey } from "@/lib/shop";
 
 /** Quotes a value for Shopify's search syntax, escaping backslashes and quotes. */
 const quote = (value: string) => `"${value.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
@@ -8,6 +8,9 @@ const quote = (value: string) => `"${value.replace(/\\/g, "\\\\").replace(/"/g, 
 /** Builds the `query` argument of Storefront `products(...)` from validated filters. */
 export function buildProductSearchQuery(query: ShopQuery): string | undefined {
   const parts: string[] = [];
+  const terms = searchTerms(query.search);
+  // Terms are letters/digits only; a trailing `*` makes each one a prefix match ("monst" finds Monstera).
+  if (terms.length > 0) parts.push(`(${terms.map((term) => `${term}*`).join(" AND ")})`);
 
   // Both boxes ticked means "no availability restriction".
   if (query.inStock !== query.outOfStock) {
@@ -22,9 +25,12 @@ export function buildProductSearchQuery(query: ShopQuery): string | undefined {
   return parts.length > 0 ? parts.join(" AND ") : undefined;
 }
 
-type SortArgs = { sortKey: "ID" | "BEST_SELLING" | "TITLE" | "PRICE"; reverse: boolean };
+type SortArgs = {
+  sortKey: "ID" | "RELEVANCE" | "BEST_SELLING" | "TITLE" | "PRICE";
+  reverse: boolean;
+};
 
-export function sortArgs(sort: SortKey): SortArgs {
+export function sortArgs(sort: SortKey, searching = false): SortArgs {
   switch (sort) {
     case "best-selling":
       return { sortKey: "BEST_SELLING", reverse: false };
@@ -37,7 +43,9 @@ export function sortArgs(sort: SortKey): SortArgs {
     case "price-desc":
       return { sortKey: "PRICE", reverse: true };
     default:
-      return { sortKey: "ID", reverse: false };
+      return searching
+        ? { sortKey: "RELEVANCE", reverse: false }
+        : { sortKey: "ID", reverse: false };
   }
 }
 

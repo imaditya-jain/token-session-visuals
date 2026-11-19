@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Menu, Search, ShoppingBag, User, X, ChevronDown } from "lucide-react";
 
 import { navLinks } from "@/data/site";
@@ -14,26 +15,49 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 const isRouteLink = (href: string) => href.startsWith("/");
 
 function SearchOverlay({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const router = useRouter();
+  const [term, setTerm] = useState("");
   if (!open) return null;
+
+  const submit = (event: FormEvent) => {
+    event.preventDefault();
+    const trimmed = term.trim();
+    if (!trimmed) return;
+    onClose();
+    router.push(`/search?q=${encodeURIComponent(trimmed)}`);
+  };
+
   return (
     <div className="fixed inset-x-0 top-0 z-50 animate-rise bg-forest-deep/95 text-cream backdrop-blur-sm">
-      <div className="mx-auto flex max-w-6xl items-center gap-4 px-4 py-5 sm:px-6 lg:px-8">
+      <form
+        role="search"
+        onSubmit={submit}
+        className="mx-auto flex max-w-6xl items-center gap-4 px-4 py-5 sm:px-6 lg:px-8"
+      >
         <Search className="size-5 shrink-0 text-sage" aria-hidden />
         <input
           autoFocus
           type="search"
+          name="q"
+          value={term}
+          maxLength={100}
+          autoComplete="off"
+          enterKeyHint="search"
+          aria-label="Search"
+          onChange={(e) => setTerm(e.target.value)}
           placeholder="Search plants, pots, tools…"
           className="w-full bg-transparent font-display text-lg outline-none placeholder:text-sage sm:text-2xl"
           onKeyDown={(e) => e.key === "Escape" && onClose()}
         />
         <button
+          type="button"
           onClick={onClose}
           aria-label="Close search"
           className="rounded-full p-2 transition-colors hover:bg-cream/10"
         >
           <X className="size-5" />
         </button>
-      </div>
+      </form>
     </div>
   );
 }

@@ -76,3 +76,20 @@ describe("paginateFallback", () => {
     ]);
   });
 });
+
+describe("paginateFallback search", () => {
+  it("matches every term against name, category and light", () => {
+    const names = (params: Record<string, string>) =>
+      paginateFallback(fallbackProducts, q(params)).products.map((p) => p.name);
+    expect(names({ q: "snake plant" })).toContain("Snake Plant Laurentii");
+    expect(names({ q: "MONST" })).toEqual(["Monstera Deliciosa"]);
+    expect(names({ q: "monstera zzzz" })).toEqual([]);
+  });
+
+  it("combines search with filters", () => {
+    const all = paginateFallback(fallbackProducts, q({ q: "plant" })).products;
+    const inStock = paginateFallback(fallbackProducts, q({ q: "plant", stock: "in" })).products;
+    expect(inStock.every((p) => p.inStock)).toBe(true);
+    expect(inStock.length).toBeLessThanOrEqual(all.length);
+  });
+});

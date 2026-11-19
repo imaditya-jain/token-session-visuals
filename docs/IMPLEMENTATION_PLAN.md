@@ -18,7 +18,8 @@ Rules: see `CLAUDE.md`. One task = one branch from `dev`. Every phase ends with 
 - [x] Orders: API + /account/orders + detail (verified accounts only; 12 integration tests, 10 e2e + visual baselines). Live check pending a real test order (dev store has none)
 - [x] Newsletter + campaign groundwork (double opt-in, one-click unsubscribe, enqueueCampaign) · security headers · 503 on DB outage · black-box contract tests for every API endpoint (61) — 183 unit+integration tests, 144 e2e
 - [x] Cart: Shopify Cart API, signed guest cookie, mini-cart, real header badge (27 integration + 13 e2e tests; verified live against the dev store)
-- [ ] Next: search, then content pages (about, shipping, returns, FAQ, contact, care guide, legal), Shopify customer mirror, strict CSP;
+- [x] Search: `/search` results page + working overlay, prefix/relevance on Shopify, injection-safe terms (unit + 6 e2e; verified live)
+- [ ] Next: content pages (about, shipping, returns, FAQ, contact, care guide, legal), Shopify customer mirror, strict CSP;
 
 ## Blocking inputs from the user
 | Needed by | Input |

@@ -79,3 +79,26 @@ describe("collection listings", () => {
     expect(buildCollectionFilters(parseShopQuery({ max: "5" }))).toEqual([{ price: { max: 5 } }]);
   });
 });
+
+describe("free-text search", () => {
+  it("builds prefix terms and combines them with filters", () => {
+    expect(buildProductSearchQuery(parseShopQuery({ q: "Snake plant" }))).toBe(
+      "(snake* AND plant*)",
+    );
+    expect(buildProductSearchQuery(parseShopQuery({ q: "fern", stock: "in" }))).toBe(
+      "(fern*) AND available_for_sale:true",
+    );
+  });
+
+  it("cannot inject search syntax", () => {
+    const built = buildProductSearchQuery(parseShopQuery({ q: 'x" OR tag:secret -foo (' }));
+    expect(built).toBe("(x* AND or* AND tag* AND secret* AND foo*)");
+    expect(built).not.toMatch(/[":()-]\S*secret|"|:/);
+  });
+
+  it("sorts by relevance only when searching with the default sort", () => {
+    expect(sortArgs("featured", true)).toEqual({ sortKey: "RELEVANCE", reverse: false });
+    expect(sortArgs("price-asc", true)).toEqual({ sortKey: "PRICE", reverse: false });
+    expect(sortArgs("featured")).toEqual({ sortKey: "ID", reverse: false });
+  });
+});
