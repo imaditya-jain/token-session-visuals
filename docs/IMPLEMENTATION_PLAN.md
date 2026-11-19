@@ -20,7 +20,8 @@ Rules: see `CLAUDE.md`. One task = one branch from `dev`. Every phase ends with 
 - [x] Cart: Shopify Cart API, signed guest cookie, mini-cart, real header badge (27 integration + 13 e2e tests; verified live against the dev store)
 - [x] Search: `/search` results page + working overlay, prefix/relevance on Shopify, injection-safe terms (unit + 6 e2e; verified live)
 - [x] Content pages: about, care guide, contact (outbox email), Shopify-sourced policy pages (privacy/terms/shipping/refund), footer wired; 12 new golden baselines
-- [ ] Next: FAQ (needs your policy facts), cart↔account link, Shopify customer mirror, strict CSP;
+- [x] CSP: hardened, nonce-free (owner decision to keep static/ISR pages), violation-free tour in e2e
+- [ ] Next: FAQ (needs your policy facts), cart↔account link, Shopify customer mirror;
 
 ## Blocking inputs from the user
 | Needed by | Input |
@@ -92,7 +93,7 @@ Branch `feat/orders`, `feat/notifications`, `feat/email`
 Branch `chore/cicd`, `chore/hardening`
 1. GitHub Actions: PR + `dev` gates (lint, types, unit, integration w/ service containers, build, Playwright+visual, audit, gitleaks); `main` deploy to Vercel; post-deploy prod smoke; auto-rollback (`vercel rollback`) + issue on failure.
 2. Branch protection on `main`/`dev`; Dependabot.
-3. Security headers/CSP with nonces; penetration checklist (OWASP ASVS L2); secret rotation doc.
+3. Security headers + hardened CSP (nonce-free by decision, keeps ISR); penetration checklist (OWASP ASVS L2); secret rotation doc.
 4. Sentry, uptime checks, alerts; Lighthouse CI budgets.
 5. k6 load test (cart/auth endpoints + cache-miss storm) and CDN cache hit-rate verification; tune Mongo pool & rate limits.
 6. Runbooks: rollback, incident, key rotation.

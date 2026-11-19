@@ -93,6 +93,23 @@ test.describe("security headers", () => {
       expect(headers["cross-origin-opener-policy"]).toBe("same-origin");
       expect(headers["x-powered-by"]).toBeUndefined();
     });
+
+    test(`${path} carries a locked-down Content-Security-Policy`, async () => {
+      const response = await (await client()).get(path, { failOnStatusCode: false });
+      const csp = response.headers()["content-security-policy"] ?? "";
+      for (const directive of [
+        "default-src 'self'",
+        "object-src 'none'",
+        "base-uri 'self'",
+        "form-action 'self'",
+        "frame-ancestors 'none'",
+        "connect-src 'self'",
+        "img-src 'self' data: blob:",
+      ])
+        expect(csp).toContain(directive);
+      expect(csp).not.toContain("unsafe-eval");
+      expect(csp).not.toMatch(/(^|;)\s*[a-z-]+ [^;]*\*/);
+    });
   }
 });
 
