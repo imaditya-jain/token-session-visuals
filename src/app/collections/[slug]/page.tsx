@@ -39,8 +39,16 @@ export async function generateMetadata({
     alternates: { canonical: `/collections/${slug}` },
     // Filtered and paginated variants are for people, not for the search index.
     robots: hasParams ? { index: false, follow: true } : undefined,
-    openGraph: { title, description: collection.description, type: "website" },
-    twitter: { card: "summary_large_image" },
+    openGraph: {
+      title,
+      description: collection.description,
+      type: "website",
+      ...(collection.image ? { images: [{ url: collection.image, alt: collection.name }] } : {}),
+    },
+    twitter: {
+      card: "summary_large_image",
+      ...(collection.image ? { images: [collection.image] } : {}),
+    },
   };
 }
 

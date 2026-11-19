@@ -1,3 +1,7 @@
+import JsonLd from "@/components/seo/JsonLd";
+import { store } from "@/data/store-info";
+import { productJsonLd } from "@/lib/structured-data";
+import { publicOrigin } from "@/server/config/site";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -35,8 +39,17 @@ export async function generateMetadata({
   return {
     title,
     description,
-    openGraph: { title, description, type: "website" },
-    twitter: { card: "summary_large_image" },
+    alternates: { canonical: `/products/${slug}` },
+    openGraph: {
+      title,
+      description,
+      type: "website",
+      ...(product.image ? { images: [{ url: product.image, alt: product.name }] } : {}),
+    },
+    twitter: {
+      card: "summary_large_image",
+      ...(product.image ? { images: [product.image] } : {}),
+    },
   };
 }
 
@@ -57,6 +70,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+      <JsonLd data={productJsonLd(product, publicOrigin(), store.currency)} />
       <Header />
       <main>
         <div className="mx-auto max-w-7xl px-4 pt-6 sm:px-6 lg:px-8">
