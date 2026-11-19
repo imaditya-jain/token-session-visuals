@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 
 import ContactCta from "@/components/content/ContactCta";
 import ContentShell from "@/components/content/ContentShell";
+import JsonLd from "@/components/seo/JsonLd";
 import { money, store } from "@/data/store-info";
 
 export const metadata: Metadata = {
@@ -203,13 +204,7 @@ export default function FaqPage() {
       title="Frequently asked questions"
       intro="Quick answers about orders, plants and your account."
     >
-      <script
-        type="application/ld+json"
-        // `<` is escaped so no string in the data can close the script element.
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(structuredData).replace(/</g, "\\u003c"),
-        }}
-      />
+      <JsonLd data={structuredData} />
       <div className="space-y-10">
         {groups.map((group) => (
           <section key={group.title} aria-labelledby={`faq-${group.title}`}>
