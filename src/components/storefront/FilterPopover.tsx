@@ -27,7 +27,11 @@ export default function FilterPopover({
           <ChevronDown className="size-4 text-muted-foreground" aria-hidden />
         </button>
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-64 rounded-xl border-border bg-card p-5">
+      <PopoverContent
+        align="start"
+        aria-label={`Filter by ${label.toLowerCase()}`}
+        className="w-64 rounded-xl border-border bg-card p-5"
+      >
         {children}
       </PopoverContent>
     </Popover>

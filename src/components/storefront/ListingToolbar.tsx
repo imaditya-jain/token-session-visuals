@@ -203,7 +203,10 @@ export default function ListingToolbar({
       <div className="flex items-center gap-2">
         <span className="text-sm font-semibold text-foreground">Sort by:</span>
         <Select value={query.sort} onValueChange={(value) => navigate({ sort: value as SortKey })}>
-          <SelectTrigger className="w-[220px] rounded-md border-border bg-card hover:border-forest hover:text-forest">
+          <SelectTrigger
+            aria-label="Sort products"
+            className="w-[220px] rounded-md border-border bg-card hover:border-forest hover:text-forest"
+          >
             <SelectValue />
           </SelectTrigger>
           <SelectContent className="rounded-xl border-border">

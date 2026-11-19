@@ -24,23 +24,25 @@ export default function AuthShell({
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Header />
-      {/* Same banner as the shop and collection pages, so every page opens the same way. */}
-      <CollectionBanner image="/images/seasonal-greenhouse.jpg" title={title} tagline={eyebrow} />
-      <main className="mx-auto max-w-7xl px-4 pb-14 pt-16 sm:px-6 sm:pb-20 sm:pt-20 lg:px-8">
-        <div className={`mx-auto w-full ${wide ? "max-w-2xl" : "max-w-md"}`}>
-          {description ? (
-            <p className="mb-8 text-center text-muted-foreground">{description}</p>
-          ) : null}
-          {wide ? (
-            <div>{children}</div>
-          ) : (
-            <div className="rounded-2xl bg-card p-6 shadow-sm ring-1 ring-border/60 sm:p-8">
-              {children}
-            </div>
-          )}
-          {footer ? (
-            <div className="mt-6 text-center text-sm text-muted-foreground">{footer}</div>
-          ) : null}
+      <main>
+        {/* Same banner as the shop and collection pages, so every page opens the same way. */}
+        <CollectionBanner image="/images/seasonal-greenhouse.jpg" title={title} tagline={eyebrow} />
+        <div className="mx-auto max-w-7xl px-4 pb-14 pt-16 sm:px-6 sm:pb-20 sm:pt-20 lg:px-8">
+          <div className={`mx-auto w-full ${wide ? "max-w-2xl" : "max-w-md"}`}>
+            {description ? (
+              <p className="mb-8 text-center text-muted-foreground">{description}</p>
+            ) : null}
+            {wide ? (
+              <div>{children}</div>
+            ) : (
+              <div className="rounded-2xl bg-card p-6 shadow-sm ring-1 ring-border/60 sm:p-8">
+                {children}
+              </div>
+            )}
+            {footer ? (
+              <div className="mt-6 text-center text-sm text-muted-foreground">{footer}</div>
+            ) : null}
+          </div>
         </div>
       </main>
       <Footer />

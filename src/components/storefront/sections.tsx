@@ -291,7 +291,7 @@ export function Testimonials() {
             className="flex flex-col rounded-2xl bg-card p-7 shadow-sm ring-1 ring-border/60"
           >
             <Quote className="mb-4 size-7 text-clay/60" aria-hidden />
-            <div className="mb-3 flex gap-0.5" aria-label="5 out of 5 stars">
+            <div className="mb-3 flex gap-0.5" role="img" aria-label="5 out of 5 stars">
               {Array.from({ length: 5 }).map((_, i) => (
                 <Star key={i} className="size-4 fill-clay text-clay" aria-hidden />
               ))}

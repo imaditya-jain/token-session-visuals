@@ -26,6 +26,7 @@ Rules: see `CLAUDE.md`. One task = one branch from `dev`. Every phase ends with 
 - [x] Every page linked and built (collections index, FAQ, shipping, guarantee, gift cards, careers, wholesale, press, sustainability, accessibility); shared banner on all pages (owner-approved); link-crawl e2e guard
 - [x] Shopify GID mirror (products+variants, collections, orders; webhooks + daily backfill; verified live) and customer-sync security fix
 - [x] SEO: robots + sitemap, metadataBase, Product/Organization/WebSite JSON-LD, canonical + social images (9 unit + 7 e2e)
+- [x] Accessibility: axe suite (all pages, desktop+mobile, overlays/forms) green; fixed unnamed sort control, landmarks, heading order, label-in-name, dialog names, 404 main. Open design question: clay eyebrow contrast 3.35:1
 - [ ] Next: register webhooks on the production URL, social profile URLs, order/mirror-backed history (optional)
 
 ## Blocking inputs from the user
