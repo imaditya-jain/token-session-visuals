@@ -115,8 +115,9 @@ describe("syncing", () => {
     expect((await Job.findById(job._id).lean())?.status).toBe("done");
   });
 
-  it("links an existing guest customer instead of creating a duplicate", async () => {
+  it("links an existing guest customer instead of creating a duplicate (verified mailbox)", async () => {
     const { user } = await register();
+    await User.updateOne({ _id: user.id }, { emailVerifiedAt: new Date() });
     admin.query
       .mockResolvedValueOnce(found([customer("gid://shopify/Customer/5")]))
       .mockResolvedValueOnce(updatedOk);
@@ -129,6 +130,16 @@ describe("syncing", () => {
     expect((await User.findById(user.id).lean())?.shopifyCustomerId).toBe(
       "gid://shopify/Customer/5",
     );
+  });
+
+  it("an unverified account leaves an existing customer untouched", async () => {
+    const { user } = await register();
+    admin.query.mockResolvedValueOnce(found([customer("gid://shopify/Customer/5")]));
+    expect(await processJob((await onlyJob())._id)).toBe("done");
+    expect(admin.query).toHaveBeenCalledTimes(1);
+    expect(inputsOf("CustomerUpdate")).toHaveLength(0);
+    expect(inputsOf("CustomerCreate")).toHaveLength(0);
+    expect((await User.findById(user.id).lean())?.shopifyCustomerId).toBeUndefined();
   });
 
   it("updates in place once linked, without searching or touching tags", async () => {
@@ -159,8 +170,9 @@ describe("syncing", () => {
     );
   });
 
-  it("falls back to lookup when creation loses a race on the email", async () => {
+  it("falls back to lookup when creation loses a race on the email (verified mailbox)", async () => {
     const { user } = await register();
+    await User.updateOne({ _id: user.id }, { emailVerifiedAt: new Date() });
     admin.query
       .mockResolvedValueOnce(found([]))
       .mockResolvedValueOnce({
@@ -171,6 +183,16 @@ describe("syncing", () => {
     expect((await User.findById(user.id).lean())?.shopifyCustomerId).toBe(
       "gid://shopify/Customer/3",
     );
+  });
+
+  it("does not adopt the customer that won the race when the mailbox is unverified", async () => {
+    const { user } = await register();
+    admin.query.mockResolvedValueOnce(found([])).mockResolvedValueOnce({
+      customerCreate: { customer: null, userErrors: err("Email has already been taken") },
+    });
+    expect(await processJob((await onlyJob())._id)).toBe("done");
+    expect(admin.query).toHaveBeenCalledTimes(2);
+    expect((await User.findById(user.id).lean())?.shopifyCustomerId).toBeUndefined();
   });
 
   it("sends international phone numbers only, and retries without a phone Shopify refuses", async () => {

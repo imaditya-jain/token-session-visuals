@@ -3,6 +3,7 @@ import "server-only";
 import type { z } from "zod";
 
 import { connectDb } from "@/server/db/connection";
+import { linkOrdersToUser } from "@/server/services/shopify-mirror";
 import { User } from "@/server/db/models/user";
 import { adminQuery } from "@/server/shopify/admin";
 import {
@@ -105,16 +106,29 @@ export async function syncCustomer(userId: string): Promise<void> {
     phone: toE164(user.phone),
   };
 
-  if (user.shopifyCustomerId && (await updateCustomer(user.shopifyCustomerId, profile)) === "ok")
+  if (user.shopifyCustomerId && (await updateCustomer(user.shopifyCustomerId, profile)) === "ok") {
+    await linkOrdersToUser(user);
     return;
+  }
 
   let id = await findByEmail(user.email);
+  // A customer we did not create (for example from a guest checkout) belongs to whoever owns that mailbox.
+  // Until this account proves it, never adopt it and never overwrite its details: otherwise anyone could
+  // register with someone else's email and rewrite their Shopify record. Verification re-runs this sync.
+  if (id && !user.emailVerifiedAt) return;
   if (id) {
     if ((await updateCustomer(id, profile)) === "missing") id = null;
   }
   if (!id) {
-    id = (await createCustomer(user.email, profile)) ?? (await findByEmail(user.email));
+    id = await createCustomer(user.email, profile);
+    if (!id) {
+      // The email was taken between our lookup and the create. Same rule as above: an unproven mailbox
+      // must not adopt someone else's customer.
+      if (!user.emailVerifiedAt) return;
+      id = await findByEmail(user.email);
+    }
     if (!id) throw new Error("Shopify customer could neither be created nor found");
   }
   await User.updateOne({ _id: user._id }, { $set: { shopifyCustomerId: id } });
+  await linkOrdersToUser({ ...user, shopifyCustomerId: id });
 }

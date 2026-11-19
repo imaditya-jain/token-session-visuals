@@ -71,7 +71,10 @@ export async function processJob(jobId: string | Types.ObjectId): Promise<JobOut
   try {
     const handler = jobHandlers[job.type as JobType];
     if (!handler) throw new Error(`Unknown job type: ${job.type}`);
-    await handler.run(handler.schema.parse(job.payload) as never);
+    const followUps = await handler.run(handler.schema.parse(job.payload) as never);
+    // Queued before this job is marked done: if queueing fails the whole job is retried (handlers are idempotent).
+    for (const next of followUps ?? [])
+      await enqueueJob(next.type, next.payload, next.key ? { key: next.key } : {});
     await Job.updateOne(
       { _id: job._id },
       {

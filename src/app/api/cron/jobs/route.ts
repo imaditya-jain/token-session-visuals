@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 
 import { drainDueEmailJobs } from "@/server/email/outbox";
 import { drainDueJobs } from "@/server/queue/jobs";
+import { enqueueMirrorBackfill } from "@/server/queue/producers";
 import { route } from "@/server/http/handler";
 import { forbidden } from "@/server/http/errors";
 
@@ -29,6 +30,8 @@ export const GET = route(async ({ request }) => {
     );
   if (!safeEqual(request.headers.get("authorization") ?? "", `Bearer ${secret}`))
     throw forbidden("Forbidden");
+  // Daily safety net for missed webhooks: queue a full pass, then run whatever is due.
+  await enqueueMirrorBackfill();
   const [emails, jobs] = [await drainDueEmailJobs(), await drainDueJobs()];
   return NextResponse.json({ data: { ...emails, jobs } });
 });

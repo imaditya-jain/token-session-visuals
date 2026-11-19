@@ -1,7 +1,13 @@
 import { revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
 
-import { tagsForWebhook, verifyShopifyHmac } from "@/server/shopify/webhook";
+import { logger } from "@/server/logger";
+import { enqueueMirrorSync } from "@/server/queue/producers";
+import {
+  mirrorActionForWebhook,
+  tagsForWebhook,
+  verifyShopifyHmac,
+} from "@/server/shopify/webhook";
 
 export const dynamic = "force-dynamic";
 
@@ -37,6 +43,24 @@ export async function POST(request: Request) {
 
   const topic = request.headers.get("x-shopify-topic") ?? "";
   for (const tag of tagsForWebhook(topic, payload)) revalidateTag(tag, "max");
-  // Revalidation is idempotent, so redelivered webhooks are harmless (no dedupe store needed yet).
+
+  // Mirror the record's GID into our database. Queued (not done inline) so Shopify gets its 200 quickly; the
+  // job re-reads the record, so redelivered or out-of-order webhooks are harmless and need no dedupe store.
+  const mirror = mirrorActionForWebhook(topic, payload);
+  if (mirror) {
+    try {
+      await enqueueMirrorSync(mirror.action, mirror.resource, mirror.gid);
+    } catch (error) {
+      // Our queue is down: ask Shopify to redeliver instead of silently losing the change.
+      logger.error(
+        { err: error instanceof Error ? error : String(error), topic },
+        "Webhook not queued",
+      );
+      return NextResponse.json(
+        { error: { code: "service_unavailable" } },
+        { status: 503, headers: { "Retry-After": "30" } },
+      );
+    }
+  }
   return NextResponse.json({ data: { received: true } });
 }
