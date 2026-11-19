@@ -24,6 +24,7 @@ const product = (
   priceRange: { minVariantPrice: { amount: "10.0" } },
   compareAtPriceRange: { minVariantPrice: { amount: "0.0" } },
   featuredImage: { url: "https://cdn.shopify.com/s/files/1/x/files/a.jpg" },
+  variants: { nodes: [{ id: "gid://shopify/ProductVariant/2001" }] },
   light: null,
   size: null,
   collections: {

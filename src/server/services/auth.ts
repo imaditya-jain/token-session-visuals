@@ -340,7 +340,7 @@ export async function updateProfile(userId: string, patch: ProfileInput): Promis
         ? { $set: rest, $unset: { phone: 1 } }
         : { $set: { ...rest, phone } };
   const user = await User.findByIdAndUpdate(userId, update, {
-    new: true,
+    returnDocument: "after",
     runValidators: true,
   }).lean();
   if (!user) throw unauthorized("Account not found", "session_revoked");
@@ -402,7 +402,7 @@ export async function resetPassword(rawToken: string, newPassword: string): Prom
   const user = await User.findByIdAndUpdate(
     userId,
     { $set: { passwordHash, sessions: [], failedLoginCount: 0 }, $unset: { lockedUntil: 1 } },
-    { new: true },
+    { returnDocument: "after" },
   ).lean();
   if (!user) throw badRequest("This reset link is invalid or has expired.", "invalid_token");
 

@@ -71,7 +71,7 @@ export async function processEmailJob(jobId: string | Types.ObjectId): Promise<D
       $set: { status: "processing", lockedUntil: new Date(now.getTime() + LOCK_MS) },
       $inc: { attempts: 1 },
     },
-    { new: true },
+    { returnDocument: "after" },
   ).lean();
   if (!job) return "skipped";
 

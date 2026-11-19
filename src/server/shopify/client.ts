@@ -26,12 +26,15 @@ const envelope = z.object({
     .optional(),
 });
 
-type FetchOptions = {
-  /** Next.js cache tags used for on-demand revalidation from webhooks. */
-  tags: string[];
-  /** Fallback time-based revalidation (seconds) in case a webhook is missed. */
-  revalidate?: number;
-};
+type FetchOptions =
+  | {
+      /** Next.js cache tags used for on-demand revalidation from webhooks. */
+      tags: string[];
+      /** Fallback time-based revalidation (seconds) in case a webhook is missed. */
+      revalidate?: number;
+    }
+  /** Per-visitor data (carts) must never enter the shared data cache. */
+  | { noStore: true };
 
 const TIMEOUT_MS = 8_000;
 const MAX_ATTEMPTS = 3;
@@ -42,7 +45,7 @@ const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 export async function storefrontQuery(
   query: string,
   variables: Record<string, unknown>,
-  { tags, revalidate = 3600 }: FetchOptions,
+  options: FetchOptions,
 ): Promise<unknown> {
   const { SHOPIFY_STORE_URL, SHOPIFY_STOREFRONT_API_ACCESS_TOKEN } = shopifyEnv();
   const url = `https://${SHOPIFY_STORE_URL}/api/${SHOPIFY_API_VERSION}/graphql.json`;
@@ -59,7 +62,9 @@ export async function storefrontQuery(
         },
         body: JSON.stringify({ query, variables }),
         signal: AbortSignal.timeout(TIMEOUT_MS),
-        next: { tags, revalidate },
+        ...("noStore" in options
+          ? { cache: "no-store" as const }
+          : { next: { tags: options.tags, revalidate: options.revalidate ?? 3600 } }),
       });
       if (response.status === 429 || response.status >= 500) {
         lastError = new ShopifyError(`Shopify responded ${response.status}`, response.status);

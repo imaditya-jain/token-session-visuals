@@ -1,7 +1,7 @@
-import { ShoppingBag } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
+import AddToCartButton from "@/components/storefront/AddToCartButton";
 import { formatPrice } from "@/lib/format";
 import type { Product } from "@/lib/types";
 
@@ -55,13 +55,7 @@ export default function ProductCard({ product }: { product: Product }) {
             Sold out
           </span>
         ) : (
-          <button
-            aria-label={`Add ${product.name} to cart`}
-            className="absolute inset-x-3 bottom-3 flex translate-y-2 items-center justify-center gap-2 rounded-md bg-forest-deep/90 py-2.5 text-xs font-semibold uppercase tracking-wider text-cream opacity-95 backdrop-blur-sm transition-all duration-300 hover:bg-forest-deep group-hover:translate-y-0 sm:opacity-0 sm:group-hover:opacity-100"
-          >
-            <ShoppingBag className="size-4" aria-hidden />
-            Add to cart
-          </button>
+          <AddToCartButton name={product.name} variantId={product.variantId} />
         )}
       </div>
 

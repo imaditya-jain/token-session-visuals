@@ -34,7 +34,7 @@ class MongoRateLimiter implements RateLimiter {
           },
           { $unset: "active" },
         ],
-        { upsert: true, new: true, updatePipeline: true },
+        { upsert: true, returnDocument: "after", updatePipeline: true },
       ).lean();
 
     let doc;

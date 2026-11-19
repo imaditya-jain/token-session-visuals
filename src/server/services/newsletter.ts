@@ -23,7 +23,7 @@ export async function subscribe(email: string, source: SubscriberSource): Promis
   const subscriber = await Subscriber.findOneAndUpdate(
     { email },
     { $set: { status: "pending", source, consentAt: now }, $unset: { unsubscribedAt: 1 } },
-    { upsert: true, new: true },
+    { upsert: true, returnDocument: "after" },
   ).lean();
   if (!subscriber) throw new Error("Could not save subscriber");
 

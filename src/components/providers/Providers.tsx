@@ -5,6 +5,7 @@ import { Provider } from "react-redux";
 
 import SmoothScroll from "@/components/providers/SmoothScroll";
 import { restoreSession } from "@/features/auth/authThunks";
+import { loadCart } from "@/features/cart/cartThunks";
 import { bindStore } from "@/lib/api-client";
 import { makeStore, type AppStore } from "@/store";
 
@@ -17,6 +18,7 @@ export default function Providers({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     void store.dispatch(restoreSession());
+    void store.dispatch(loadCart());
   }, [store]);
 
   return (

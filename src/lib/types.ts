@@ -23,5 +23,7 @@ export type Product = {
   light: string;
   size: string;
   inStock: boolean;
+  /** Shopify variant a cart line is created from (the first variant). Absent in the offline fallback catalog. */
+  variantId?: string;
   collectionSlugs: string[];
 };

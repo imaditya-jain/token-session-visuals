@@ -15,6 +15,7 @@ export const productNodeSchema = z.object({
   priceRange: z.object({ minVariantPrice: money }),
   compareAtPriceRange: z.object({ minVariantPrice: money }),
   featuredImage: z.object({ url: z.string().url() }).nullable(),
+  variants: z.object({ nodes: z.array(z.object({ id: z.string() })) }),
   light: metafield,
   size: metafield,
   collections: z.object({
