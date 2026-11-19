@@ -5,6 +5,9 @@ const CART_FIELDS = /* GraphQL */ `
     id
     checkoutUrl
     totalQuantity
+    buyerIdentity {
+      email
+    }
     cost {
       subtotalAmount {
         amount
@@ -99,6 +102,18 @@ export const CART_LINES_REMOVE = /* GraphQL */ `
   ${CART_FIELDS}
   mutation CartLinesRemove($cartId: ID!, $lineIds: [ID!]!) {
     cartLinesRemove(cartId: $cartId, lineIds: $lineIds) {
+      cart {
+        ...CartFields
+      }
+      ${USER_ERRORS}
+    }
+  }
+`;
+
+export const CART_BUYER_IDENTITY_UPDATE = /* GraphQL */ `
+  ${CART_FIELDS}
+  mutation CartBuyerIdentityUpdate($cartId: ID!, $email: String) {
+    cartBuyerIdentityUpdate(cartId: $cartId, buyerIdentity: { email: $email }) {
       cart {
         ...CartFields
       }

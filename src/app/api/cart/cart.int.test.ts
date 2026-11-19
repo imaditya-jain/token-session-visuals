@@ -43,6 +43,7 @@ const cartNode = (quantity = 1) => ({
   id: CART_ID,
   checkoutUrl: "https://shop.example/checkouts/cn/abc",
   totalQuantity: quantity,
+  buyerIdentity: { email: null },
   cost: { subtotalAmount: { amount: "48.0", currencyCode: "USD" } },
   lines: {
     nodes: [

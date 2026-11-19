@@ -12,6 +12,7 @@ export const mapCart = (node: CartNode): Cart => ({
     currency: node.cost.subtotalAmount.currencyCode,
   },
   checkoutUrl: node.checkoutUrl,
+  identified: Boolean(node.buyerIdentity.email),
   lines: node.lines.nodes.map((line) => ({
     id: line.id,
     quantity: line.quantity,

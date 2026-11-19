@@ -21,7 +21,8 @@ Rules: see `CLAUDE.md`. One task = one branch from `dev`. Every phase ends with 
 - [x] Search: `/search` results page + working overlay, prefix/relevance on Shopify, injection-safe terms (unit + 6 e2e; verified live)
 - [x] Content pages: about, care guide, contact (outbox email), Shopify-sourced policy pages (privacy/terms/shipping/refund), footer wired; 12 new golden baselines
 - [x] CSP: hardened, nonce-free (owner decision to keep static/ISR pages), violation-free tour in e2e
-- [ ] Next: FAQ (needs your policy facts), cart↔account link, Shopify customer mirror;
+- [x] Cart↔account link: buyer email on the Shopify cart (checkout pre-fill, order history match), unlink on sign-out (13 integration + 7 component + 3 e2e tests)
+- [ ] Next: FAQ (needs your policy facts), Shopify customer mirror;
 
 ## Blocking inputs from the user
 | Needed by | Input |

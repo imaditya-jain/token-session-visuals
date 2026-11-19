@@ -782,3 +782,28 @@ test.describe("contact API", () => {
     expect(last).toBe(429);
   });
 });
+
+test.describe("cart identity API", () => {
+  test("linking needs a valid access token", async () => {
+    const api = await client();
+    expect((await api.put("/api/cart/identity")).status()).toBe(401);
+    const bad = await api.put("/api/cart/identity", { headers: { authorization: "Bearer nope" } });
+    expect(bad.status()).toBe(401);
+  });
+
+  test("unlinking without a cart is a harmless no-op", async () => {
+    const api = await client();
+    const response = await api.delete("/api/cart/identity");
+    expect(response.status()).toBe(200);
+    expect(await response.json()).toEqual({ data: { cart: null } });
+  });
+
+  test("cross-origin requests are blocked and other methods refused", async () => {
+    const foreign = await client({ origin: "https://evil.example" });
+    expect((await foreign.delete("/api/cart/identity")).status()).toBe(403);
+    expect((await foreign.put("/api/cart/identity")).status()).toBe(403);
+    const api = await client();
+    expect((await api.post("/api/cart/identity", { data: {} })).status()).toBe(405);
+    expect((await api.get("/api/cart/identity")).status()).toBe(405);
+  });
+});

@@ -7,6 +7,7 @@ import { AppError, badRequest, conflict } from "@/server/http/errors";
 import { logger } from "@/server/logger";
 import { mapCart } from "@/server/shopify/cart-mapper";
 import {
+  CART_BUYER_IDENTITY_UPDATE,
   CART_CREATE,
   CART_LINES_ADD,
   CART_LINES_REMOVE,
@@ -14,6 +15,7 @@ import {
   CART_QUERY,
 } from "@/server/shopify/cart-queries";
 import {
+  cartBuyerIdentityResponse,
   cartCreateResponse,
   cartLinesAddResponse,
   cartLinesRemoveResponse,
@@ -110,4 +112,22 @@ export async function removeLine(cartId: string | null, lineId: string): Promise
     lineIds: [lineId],
   });
   return unwrap(cartLinesRemove);
+}
+
+/**
+ * Links the cart to an account (or unlinks it with `null`). Shopify then pre-fills checkout with this email,
+ * which is what ties the finished order to the account's order history. Returns the refreshed cart because
+ * Shopify issues a new checkout URL.
+ */
+export async function setBuyerEmail(
+  cartId: string | null,
+  email: string | null,
+): Promise<CartResult> {
+  if (!cartId) return { cart: null, cartId: null };
+  const { cartBuyerIdentityUpdate } = await run(
+    cartBuyerIdentityResponse,
+    CART_BUYER_IDENTITY_UPDATE,
+    { cartId, email },
+  );
+  return unwrap(cartBuyerIdentityUpdate);
 }
