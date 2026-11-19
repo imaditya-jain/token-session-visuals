@@ -1,6 +1,9 @@
 import { z } from "zod";
 
+import { CONTACT_TOPICS } from "@/lib/contact-schemas";
+
 import CampaignEmail from "./CampaignEmail";
+import ContactMessage from "./ContactMessage";
 import NewsletterConfirm from "./NewsletterConfirm";
 import PasswordChanged from "./PasswordChanged";
 import ResetPassword from "./ResetPassword";
@@ -48,6 +51,21 @@ export const templates = {
     subject: "Confirm your Fernwood subscription",
     schema: z.object({ url: z.string().url() }),
     element: (data: { url: string }) => <NewsletterConfirm {...data} />,
+  },
+  "contact-message": {
+    subject: (data: { name: string; topic: string }) =>
+      `Website message: ${data.topic} (${data.name})`,
+    schema: z.object({
+      name: z.string().min(1).max(80),
+      email: z.string().email(),
+      topic: z.enum(CONTACT_TOPICS),
+      message: z.string().min(1).max(3000),
+    }),
+    element: (data: { name: string; email: string; topic: string; message: string }) => (
+      <ContactMessage {...data} />
+    ),
+    /** Lets the team answer the visitor with a plain "Reply". */
+    replyTo: (data: { email: string }) => data.email,
   },
   campaign: {
     subject: (data: { subject: string }) => data.subject,
