@@ -34,7 +34,7 @@ const principles = [
 
 export default function AboutPage() {
   return (
-    <ContentShell eyebrow="Our story" title="Three generations of growers, one shared obsession">
+    <ContentShell eyebrow="Three generations of growers" title="Our story">
       <Image
         src="/images/story-nursery.jpg"
         alt="A Fernwood grower holding a tray of seedlings in the nursery"
@@ -45,7 +45,10 @@ export default function AboutPage() {
         className="aspect-[5/4] w-full rounded-2xl object-cover shadow-xl"
       />
 
-      <div className={`${proseClass} mt-10`}>
+      <h2 id="our-story" className="mt-10 font-display text-3xl font-medium text-forest">
+        Three generations of growers, one shared obsession
+      </h2>
+      <div className={`${proseClass} mt-4`}>
         <p>
           Fernwood began as a single glasshouse on our family farm in 1962. Today we propagate over
           120 species across four nurseries, and every plant still passes through the hands of a

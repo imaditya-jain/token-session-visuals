@@ -1,5 +1,6 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
 import { useId, useState, type FormEvent } from "react";
 
 import FormAlert from "@/components/auth/FormAlert";
@@ -19,11 +20,14 @@ const fieldClass =
 
 export default function ContactForm() {
   const topicId = useId();
+  const requestedTopic = useSearchParams().get("topic");
   const messageId = useId();
   const [values, setValues] = useState({
     name: "",
     email: "",
-    topic: CONTACT_TOPICS[0] as string,
+    // Links from other pages preselect a topic; anything not on the list is ignored.
+    topic:
+      CONTACT_TOPICS.find((topic) => topic === requestedTopic) ?? (CONTACT_TOPICS[0] as string),
     message: "",
     website: "",
   });

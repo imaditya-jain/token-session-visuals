@@ -18,6 +18,7 @@ import { siteUrl } from "@/server/config/env";
 import { enqueueEmail } from "@/server/email/outbox";
 import { AppError, badRequest, conflict, unauthorized } from "@/server/http/errors";
 import { logger } from "@/server/logger";
+import { enqueueCustomerSync } from "@/server/queue/producers";
 import { consumeAuthToken, issueAuthToken } from "@/server/services/auth-tokens";
 import { syncMarketingConsent } from "@/server/services/newsletter";
 
@@ -138,6 +139,7 @@ export async function registerUser(input: RegisterInput, meta: SessionMeta): Pro
         "Could not enqueue verification email",
       ),
     );
+    await enqueueCustomerSync(String(record._id));
     return await startSession(record, meta);
   } catch (error) {
     if ((error as { code?: number }).code === 11000) {
@@ -348,6 +350,7 @@ export async function updateProfile(userId: string, patch: ProfileInput): Promis
   if (rest.acceptsMarketing !== undefined && (user.emailVerifiedAt || !rest.acceptsMarketing)) {
     await syncMarketingConsent(user.email, rest.acceptsMarketing);
   }
+  await enqueueCustomerSync(String(user._id));
   return toPublicUser(user);
 }
 
@@ -378,6 +381,8 @@ export async function confirmEmailVerification(rawToken: string): Promise<void> 
   ).lean();
   // The marketing box ticked at sign-up counts as consent once the mailbox is proven.
   if (verified?.acceptsMarketing) await syncMarketingConsent(verified.email, true);
+  // A proven mailbox may now adopt an existing Shopify customer and claim its earlier orders.
+  if (verified) await enqueueCustomerSync(String(userId));
 }
 
 /** Always resolves, whether or not the email has an account, so the endpoint can't be used to enumerate users. */
@@ -406,10 +411,11 @@ export async function resetPassword(rawToken: string, newPassword: string): Prom
   ).lean();
   if (!user) throw badRequest("This reset link is invalid or has expired.", "invalid_token");
 
-  await User.updateOne(
+  const verifiedNow = await User.updateOne(
     { _id: userId, emailVerifiedAt: { $exists: false } },
     { $set: { emailVerifiedAt: new Date() } },
   );
+  if (verifiedNow.modifiedCount > 0) await enqueueCustomerSync(String(userId));
   await enqueueEmail("password-changed", user.email, { firstName: user.firstName }).catch(
     (error: unknown) =>
       logger.error(

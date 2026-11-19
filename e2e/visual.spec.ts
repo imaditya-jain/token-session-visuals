@@ -22,6 +22,12 @@ const pages = [
   { name: "about", path: "/about" },
   { name: "care-guide", path: "/care-guide" },
   { name: "contact", path: "/contact" },
+  { name: "collections", path: "/collections" },
+  { name: "faq", path: "/faq" },
+  { name: "shipping-delivery", path: "/shipping-delivery" },
+  { name: "plant-guarantee", path: "/plant-guarantee" },
+  { name: "sustainability", path: "/sustainability" },
+  { name: "accessibility", path: "/accessibility" },
   { name: "reset-password", path: "/reset-password?token=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" },
 ];
 

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Menu, Search, ShoppingBag, User, X, ChevronDown } from "lucide-react";
 
 import { navLinks } from "@/data/site";
+import { store } from "@/data/store-info";
 import MiniCart from "@/components/storefront/MiniCart";
 import { setCartOpen } from "@/features/cart/cartSlice";
 import { setSearchOpen } from "@/features/ui/uiSlice";
@@ -131,7 +132,12 @@ export default function Header() {
               </nav>
               <div className="mt-auto px-6 pb-8 text-sm text-sage">
                 <p className="font-medium text-cream">Need help choosing?</p>
-                <p>hello@fernwood.shop</p>
+                <a
+                  href={`mailto:${store.email}`}
+                  className="block transition-colors hover:text-cream"
+                >
+                  {store.email}
+                </a>
               </div>
             </SheetContent>
           </Sheet>
