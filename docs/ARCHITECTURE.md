@@ -113,7 +113,7 @@ Phase 4 uses Shopify Storefront `predictiveSearch`/`search` through a token-prot
 
 ## 12. Security architecture
 - Threats modeled: credential stuffing, token theft/replay, CSRF, IDOR, webhook spoofing, SSRF, XSS, dependency compromise, bot scraping.
-- Controls: argon2id, rotation + reuse detection, Redis rate limits (IP+account), zod everywhere, `userId` from token only, HMAC webhooks, strict CSP with nonces, `server-only` boundaries, least-privilege Shopify scopes, secret scanning (gitleaks) in CI, audit logging of auth events (no PII beyond ids).
+- Controls: argon2id, rotation + reuse detection, Redis rate limits (IP+account), zod everywhere, `userId` from token only, HMAC webhooks, hardened CSP (no `unsafe-eval`, same-origin sources; nonce-free to keep ISR), `server-only` boundaries, least-privilege Shopify scopes, secret scanning (gitleaks) in CI, audit logging of auth events (no PII beyond ids).
 - "No public endpoints": catalog is RSC-only; the API surface is authenticated or signature-verified. Unauthenticated exceptions are explicit and rate-limited (register/login/refresh/forgot/reset).
 - Email: SPF/DKIM/DMARC on sending domain.
 
