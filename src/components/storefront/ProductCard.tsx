@@ -1,7 +1,9 @@
-import { ShoppingBag } from "lucide-react";
-import { Link } from "@tanstack/react-router";
+import Image from "next/image";
+import Link from "next/link";
 
-import { formatPrice, type Product } from "@/data/catalog";
+import AddToCartButton from "@/components/storefront/AddToCartButton";
+import { formatPrice } from "@/lib/format";
+import type { Product } from "@/lib/types";
 
 export default function ProductCard({ product }: { product: Product }) {
   const onSale = product.compareAtPrice !== undefined;
@@ -11,17 +13,16 @@ export default function ProductCard({ product }: { product: Product }) {
     <article className="group relative flex flex-col overflow-hidden rounded-xl bg-card shadow-sm ring-1 ring-border/60 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
       <div className="relative overflow-hidden bg-sand">
         <Link
-          to="/products/$slug"
-          params={{ slug: product.slug }}
+          href={`/products/${product.slug}`}
           aria-label={`View ${product.name}`}
           className="block"
         >
-          <img
+          <Image
             src={product.image}
             alt={product.name}
-            loading="lazy"
             width={800}
             height={1000}
+            sizes="(min-width: 1280px) 300px, (min-width: 1024px) 25vw, 50vw"
             className={`aspect-[4/5] w-full object-cover transition-transform duration-500 ease-out group-hover:scale-105 ${
               soldOut ? "opacity-55" : ""
             }`}
@@ -54,13 +55,7 @@ export default function ProductCard({ product }: { product: Product }) {
             Sold out
           </span>
         ) : (
-          <button
-            aria-label={`Add ${product.name} to cart`}
-            className="absolute inset-x-3 bottom-3 flex translate-y-2 items-center justify-center gap-2 rounded-md bg-forest-deep/90 py-2.5 text-xs font-semibold uppercase tracking-wider text-cream opacity-95 backdrop-blur-sm transition-all duration-300 hover:bg-forest-deep group-hover:translate-y-0 sm:opacity-0 sm:group-hover:opacity-100"
-          >
-            <ShoppingBag className="size-4" aria-hidden />
-            Add to cart
-          </button>
+          <AddToCartButton name={product.name} variantId={product.variantId} />
         )}
       </div>
 
@@ -69,19 +64,13 @@ export default function ProductCard({ product }: { product: Product }) {
           {product.category}
         </p>
         <h3 className="font-display text-lg font-medium leading-snug text-foreground">
-          <Link
-            to="/products/$slug"
-            params={{ slug: product.slug }}
-            className="transition-colors hover:text-clay"
-          >
+          <Link href={`/products/${product.slug}`} className="transition-colors hover:text-clay">
             {product.name}
           </Link>
         </h3>
         <p className="text-xs text-muted-foreground">{product.light}</p>
         <div className="mt-1 flex items-baseline gap-2">
-          <span className="text-base font-semibold text-forest">
-            {formatPrice(product.price)}
-          </span>
+          <span className="text-base font-semibold text-forest">{formatPrice(product.price)}</span>
           {onSale && (
             <span className="text-sm text-muted-foreground line-through">
               {formatPrice(product.compareAtPrice!)}

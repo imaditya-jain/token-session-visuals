@@ -4,13 +4,13 @@ import {
   BestSellers,
   Collections,
   Footer,
-  Newsletter,
   PromoSplit,
   SeasonalBanner,
   StoryTestimonial,
   Testimonials,
   WhyUs,
 } from "@/components/storefront/sections";
+import Newsletter from "@/components/storefront/Newsletter";
 
 export default function HomePage() {
   return (

@@ -48,8 +48,8 @@
   --color-clay-deep: var(--clay-deep);
   --color-sage: var(--sage);
   --color-sage-light: var(--sage-light);
-  --font-display: "Fraunces", ui-serif, Georgia, serif;
-  --font-sans: "Work Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-fraunces), "Fraunces", ui-serif, Georgia, serif;
+  --font-sans: var(--font-work-sans), "Work Sans", ui-sans-serif, system-ui, sans-serif;
 }
 
 :root {
@@ -109,8 +109,8 @@
 }
 
 @theme inline {
-  --font-display: "Fraunces", ui-serif, Georgia, serif;
-  --font-sans: "Work Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-fraunces), "Fraunces", ui-serif, Georgia, serif;
+  --font-sans: var(--font-work-sans), "Work Sans", ui-sans-serif, system-ui, sans-serif;
 }
 
 @layer base {

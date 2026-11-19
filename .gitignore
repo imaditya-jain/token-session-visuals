@@ -30,3 +30,20 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Playwright
+test-results/
+playwright-report/
+
+# Next.js
+.next/
+next-env.d.ts
+tsbuildinfo
+
+# Secrets (commit only .env.example)
+.env
+.env.*
+!.env.example
+
+# E2E runtime handshake
+.e2e-runtime.json

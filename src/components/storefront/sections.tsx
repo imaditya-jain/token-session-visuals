@@ -1,11 +1,15 @@
-import { Link } from "@tanstack/react-router";
+import Image from "next/image";
+import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
-import { bestSellers, collections, formatPrice, testimonials } from "@/data/catalog";
+import { getBestSellers, getCollections } from "@/data/catalog";
+import { testimonials } from "@/data/site";
+import { store } from "@/data/store-info";
+import CollectionCard from "@/components/storefront/CollectionCard";
 import ProductCard from "@/components/storefront/ProductCard";
-import promoImage from "@/assets/promo-repotting.jpg";
-import seasonalImage from "@/assets/seasonal-greenhouse.jpg";
-import storyImage from "@/assets/story-nursery.jpg";
+const promoImage = "/images/promo-repotting.jpg";
+const seasonalImage = "/images/seasonal-greenhouse.jpg";
+const storyImage = "/images/story-nursery.jpg";
 import {
   Truck,
   Leaf,
@@ -43,47 +47,30 @@ function SectionHeading({
   );
 }
 
-export function Collections() {
+export async function Collections() {
+  const collections = await getCollections();
+  if (collections.length === 0) return null;
   return (
-    <section id="collections" className="mx-auto max-w-7xl px-4 pb-20 pt-14 sm:px-6 lg:px-8 lg:pb-28">
+    <section
+      id="collections"
+      className="mx-auto max-w-7xl px-4 pb-20 pt-14 sm:px-6 lg:px-8 lg:pb-28"
+    >
       <SectionHeading
         title="Shop house plants"
         description="Curated collections for every corner — from sun-drenched shelves to cozy low-light nooks."
       />
       <div className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
         {collections.map((collection) => (
-          <Link
-            key={collection.slug}
-            to="/collections/$slug"
-            params={{ slug: collection.slug }}
-            className="group relative overflow-hidden rounded-2xl bg-sand shadow-sm ring-1 ring-border/60"
-          >
-            <img
-              src={collection.image}
-              alt={collection.name}
-              loading="lazy"
-              width={800}
-              height={1000}
-              className="aspect-[4/5] w-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-forest-deep/70 via-transparent to-transparent" />
-            <div className="absolute inset-x-0 bottom-0 p-4 sm:p-5">
-              <h3 className="font-display text-lg font-medium text-cream sm:text-xl">
-                {collection.name}
-              </h3>
-              <p className="mt-0.5 text-xs text-cream/85 sm:text-sm">{collection.tagline}</p>
-              <span className="mt-2 inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-cream opacity-90 transition-all group-hover:gap-2">
-                Explore <ArrowRight className="size-3.5" aria-hidden />
-              </span>
-            </div>
-          </Link>
+          <CollectionCard key={collection.slug} collection={collection} />
         ))}
       </div>
     </section>
   );
 }
 
-export function BestSellers() {
+export async function BestSellers() {
+  const bestSellers = await getBestSellers();
+  if (bestSellers.length === 0) return null;
   return (
     <section id="best-sellers" className="bg-sage-light/60 py-20 lg:py-28">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -99,8 +86,7 @@ export function BestSellers() {
         </div>
         <div className="mt-10 text-center">
           <Link
-            to="/collections/$slug"
-            params={{ slug: "house-plants" }}
+            href="/collections/house-plants"
             className="inline-flex items-center gap-2 rounded-md border border-forest bg-transparent px-7 py-3 text-sm font-semibold text-forest transition-colors hover:bg-forest hover:text-cream"
           >
             View all plants <ArrowRight className="size-4" aria-hidden />
@@ -116,12 +102,12 @@ export function PromoSplit() {
     <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
       <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
         <div className="relative order-2 lg:order-1">
-          <img
+          <Image
             src={promoImage}
             alt="Hands repotting a plant into a terracotta pot"
-            loading="lazy"
             width={1200}
             height={900}
+            sizes="(min-width: 1024px) 600px, 100vw"
             className="aspect-[5/4] w-full rounded-2xl object-cover shadow-md"
           />
           <div className="absolute -bottom-5 left-6 hidden rounded-xl bg-forest px-6 py-4 text-cream shadow-lg sm:block">
@@ -137,9 +123,8 @@ export function PromoSplit() {
             Everything your plants need to put down roots
           </h2>
           <p className="mt-5 leading-relaxed text-muted-foreground">
-            From breathable terracotta to our chunky, well-draining houseplant
-            mix, every Fernwood essential is tested in our own greenhouse
-            before it ever reaches your shelf.
+            From breathable terracotta to our chunky, well-draining houseplant mix, every Fernwood
+            essential is tested in our own greenhouse before it ever reaches your shelf.
           </p>
           <ul className="mt-6 space-y-3 text-sm text-foreground/90">
             {[
@@ -168,12 +153,12 @@ export function PromoSplit() {
 export function SeasonalBanner() {
   return (
     <section className="relative overflow-hidden">
-      <img
+      <Image
         src={seasonalImage}
         alt="Sunlit Victorian greenhouse filled with plants"
-        loading="lazy"
         width={1600}
         height={900}
+        sizes="100vw"
         className="h-[480px] w-full object-cover sm:h-[560px]"
       />
       <div className="absolute inset-0 bg-gradient-to-r from-forest-deep/70 via-forest-deep/30 to-transparent" />
@@ -187,9 +172,8 @@ export function SeasonalBanner() {
               The Winter Greenhouse Edit
             </h2>
             <p className="mt-4 leading-relaxed text-muted-foreground">
-              Statement plants that shrug off short days — plus our warmest
-              grow-light picks for the darker months. Save up to 25% while the
-              collection lasts.
+              Statement plants that shrug off short days — plus our warmest grow-light picks for the
+              darker months. Save up to 25% while the collection lasts.
             </p>
             <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center">
               <a
@@ -198,9 +182,7 @@ export function SeasonalBanner() {
               >
                 Shop the edit <ArrowRight className="size-4" aria-hidden />
               </a>
-              <p className="text-xs text-muted-foreground">
-                Ends Sunday · Free heat pack included
-              </p>
+              <p className="text-xs text-muted-foreground">Ends Sunday · Free heat pack included</p>
             </div>
           </div>
         </div>
@@ -235,10 +217,7 @@ const perks = [
 export function WhyUs() {
   return (
     <section id="our-story" className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
-      <SectionHeading
-        eyebrow="Why shop with us"
-        title="From our greenhouse to your home"
-      />
+      <SectionHeading eyebrow="Why shop with us" title="From our greenhouse to your home" />
       <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
         {perks.map((perk) => (
           <div
@@ -269,29 +248,27 @@ export function StoryTestimonial() {
             Three generations of growers, one shared obsession
           </h2>
           <p className="mt-5 leading-relaxed text-cream/85">
-            Fernwood began as a single glasshouse on our family farm in 1962.
-            Today we propagate over 120 species across four nurseries — and
-            every plant still passes through the hands of a grower before it
-            ships.
+            Fernwood began as a single glasshouse on our family farm in 1962. Today we propagate
+            over 120 species across four nurseries — and every plant still passes through the hands
+            of a grower before it ships.
           </p>
           <p className="mt-4 leading-relaxed text-cream/85">
-            We believe a plant should arrive ready to thrive, not merely
-            survive. That means honest sizing, healthy roots, and guidance
-            that continues long after the box is opened.
+            We believe a plant should arrive ready to thrive, not merely survive. That means honest
+            sizing, healthy roots, and guidance that continues long after the box is opened.
           </p>
-          <a
-            href="#footer"
+          <Link
+            href="/about"
             className="mt-8 inline-flex items-center gap-2 rounded-md border border-cream/50 px-7 py-3 text-sm font-semibold text-cream transition-colors hover:bg-cream/10"
           >
             Meet the growers <ArrowRight className="size-4" aria-hidden />
-          </a>
+          </Link>
         </div>
-        <img
+        <Image
           src={storyImage}
           alt="A Fernwood grower holding a tray of seedlings in the nursery"
-          loading="lazy"
           width={1200}
           height={900}
+          sizes="(min-width: 1024px) 600px, 100vw"
           className="aspect-[5/4] w-full rounded-2xl object-cover shadow-xl"
         />
       </div>
@@ -333,60 +310,45 @@ export function Testimonials() {
   );
 }
 
-export function Newsletter() {
-  return (
-    <section className="mx-auto max-w-7xl px-4 pb-20 sm:px-6 lg:px-8 lg:pb-28">
-      <div className="overflow-hidden rounded-3xl bg-forest px-6 py-14 text-center text-cream sm:px-12 lg:py-16">
-        <p className="mb-3 text-xs font-semibold uppercase tracking-[0.25em] text-sage">
-          Join the greenhouse club
-        </p>
-        <h2 className="mx-auto max-w-xl font-display text-3xl font-medium sm:text-4xl">
-          Get 10% off your first order
-        </h2>
-        <p className="mx-auto mt-4 max-w-lg text-sm text-cream/85">
-          Seasonal care tips, early access to rare drops and members-only
-          savings — one thoughtful email a month, never spam.
-        </p>
-        <form
-          className="mx-auto mt-8 flex max-w-md flex-col gap-3 sm:flex-row"
-          onSubmit={(e) => e.preventDefault()}
-        >
-          <label className="sr-only" htmlFor="newsletter-email">
-            Email address
-          </label>
-          <input
-            id="newsletter-email"
-            type="email"
-            required
-            placeholder="you@example.com"
-            className="w-full flex-1 rounded-md border border-cream/25 bg-cream/10 px-4 py-3 text-sm text-cream outline-none transition-colors placeholder:text-cream/50 focus:border-sage"
-          />
-          <button
-            type="submit"
-            className="rounded-md bg-cream px-6 py-3 text-sm font-semibold text-forest-deep transition-colors hover:bg-cream/90"
-          >
-            Subscribe
-          </button>
-        </form>
-        <p className="mt-4 text-xs text-cream/60">Unsubscribe anytime. No green thumb required.</p>
-      </div>
-    </section>
-  );
-}
+type FooterLink = { label: string; href: string };
 
-const footerColumns = [
+const footerColumns: { heading: string; links: FooterLink[] }[] = [
   {
     heading: "Shop",
-    links: ["House Plants", "Succulents & Cacti", "Pots & Planters", "Seeds & Tools", "Gift Cards"],
+    links: [
+      { label: "House Plants", href: "/collections/house-plants" },
+      { label: "Succulents & Cacti", href: "/collections/succulents-cacti" },
+      { label: "Pots & Planters", href: "/collections/pots-planters" },
+      { label: "Seeds & Tools", href: "/collections/seeds-tools" },
+      { label: "Gift Cards", href: "/gift-cards" },
+    ],
   },
   {
     heading: "Company",
-    links: ["Our Story", "Careers", "Wholesale", "Sustainability", "Press"],
+    links: [
+      { label: "Our Story", href: "/about" },
+      { label: "Careers", href: "/careers" },
+      { label: "Wholesale", href: "/wholesale" },
+      { label: "Sustainability", href: "/sustainability" },
+      { label: "Press", href: "/press" },
+    ],
   },
   {
     heading: "Help",
-    links: ["Shipping & Delivery", "Plant Guarantee", "Care Library", "FAQs", "Contact Us"],
+    links: [
+      { label: "Shipping & Delivery", href: "/shipping-delivery" },
+      { label: "Plant Guarantee", href: "/plant-guarantee" },
+      { label: "Care Library", href: "/care-guide" },
+      { label: "FAQs", href: "/faq" },
+      { label: "Contact Us", href: "/contact" },
+    ],
   },
+];
+
+const legalLinks: FooterLink[] = [
+  { label: "Privacy Policy", href: "/policies/privacy-policy" },
+  { label: "Terms of Service", href: "/policies/terms-of-service" },
+  { label: "Accessibility", href: "/accessibility" },
 ];
 
 export function Footer() {
@@ -397,8 +359,8 @@ export function Footer() {
           <div>
             <p className="font-display text-3xl font-medium">Fernwood</p>
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-cream/75">
-              Premium nursery-grown plants, handmade pots and honest advice —
-              helping homes go green since 1962.
+              Premium nursery-grown plants, handmade pots and honest advice — helping homes go green
+              since 1962.
             </p>
             <div className="mt-6 flex gap-3">
               {[
@@ -419,7 +381,15 @@ export function Footer() {
             </div>
             <div className="mt-6 space-y-1 text-sm text-cream/75">
               <p>1234 Greenhouse Lane, Portland, OR 97210</p>
-              <p>hello@fernwood.shop · (503) 555-0142</p>
+              <p>
+                <a href={`mailto:${store.email}`} className="transition-colors hover:text-cream">
+                  {store.email}
+                </a>{" "}
+                ·{" "}
+                <a href={store.phoneHref} className="transition-colors hover:text-cream">
+                  {store.phone}
+                </a>
+              </p>
               <p>Mon–Sat, 9am–6pm PST</p>
             </div>
           </div>
@@ -430,10 +400,13 @@ export function Footer() {
               </p>
               <ul className="space-y-3 text-sm">
                 {col.links.map((link) => (
-                  <li key={link}>
-                    <a href="#footer" className="text-cream/75 transition-colors hover:text-cream">
-                      {link}
-                    </a>
+                  <li key={link.label}>
+                    <Link
+                      href={link.href}
+                      className="text-cream/75 transition-colors hover:text-cream"
+                    >
+                      {link.label}
+                    </Link>
                   </li>
                 ))}
               </ul>
@@ -443,15 +416,15 @@ export function Footer() {
         <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-cream/15 pt-6 text-xs text-cream/60 sm:flex-row">
           <p>© {new Date().getFullYear()} Fernwood Nursery Co. All rights reserved.</p>
           <div className="flex gap-6">
-            <a href="#footer" className="transition-colors hover:text-cream">
-              Privacy Policy
-            </a>
-            <a href="#footer" className="transition-colors hover:text-cream">
-              Terms of Service
-            </a>
-            <a href="#footer" className="transition-colors hover:text-cream">
-              Accessibility
-            </a>
+            {legalLinks.map((link) => (
+              <Link
+                key={link.label}
+                href={link.href}
+                className="transition-colors hover:text-cream"
+              >
+                {link.label}
+              </Link>
+            ))}
           </div>
         </div>
       </div>
