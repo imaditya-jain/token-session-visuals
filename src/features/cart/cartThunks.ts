@@ -1,12 +1,12 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 
 import type { ApiFailure } from "@/features/auth/types";
-import { ApiError, publicJson } from "@/lib/api-client";
+import { ApiError, apiFetch, publicJson } from "@/lib/api-client";
 import type { Cart } from "@/lib/cart";
 
-import { cartFailed, cartReceived, cartStarted, setCartOpen } from "./cartSlice";
+import { cartFailed, cartLinked, cartReceived, cartStarted, setCartOpen } from "./cartSlice";
 
-type CartResponse = { cart: Cart | null };
+type CartResponse = { cart: Cart | null; linkedUserId?: string };
 
 const failure = (error: unknown): ApiFailure =>
   error instanceof ApiError
@@ -22,7 +22,9 @@ const cartThunk = <Arg>(type: string, request: (arg: Arg) => Promise<CartRespons
   createAsyncThunk<boolean, Arg, { rejectValue: ApiFailure }>(type, async (arg, { dispatch }) => {
     dispatch(cartStarted());
     try {
-      dispatch(cartReceived((await request(arg)).cart));
+      const result = await request(arg);
+      dispatch(cartReceived(result.cart));
+      if (result.cart && result.linkedUserId) dispatch(cartLinked(result.linkedUserId));
       return true;
     } catch (error) {
       dispatch(cartFailed(failure(error)));
@@ -60,3 +62,14 @@ export const removeCartLine = cartThunk("cart/remove", async (input: { lineId: s
 );
 
 export const openCart = () => setCartOpen(true);
+
+/** Links the cart to the signed-in account so checkout is pre-filled and the order lands in their history. */
+export const linkCartIdentity = cartThunk("cart/link", async (userId: string) => {
+  const result = await apiFetch<CartResponse>("/api/cart/identity", { method: "PUT" });
+  return { ...result, linkedUserId: userId };
+});
+
+/** Removes the account email from the cart after sign-out. */
+export const unlinkCartIdentity = cartThunk<void>("cart/unlink", async () =>
+  publicJson<CartResponse>("/api/cart/identity", "DELETE"),
+);

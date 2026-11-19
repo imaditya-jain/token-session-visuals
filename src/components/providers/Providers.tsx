@@ -4,6 +4,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { Provider } from "react-redux";
 import { z } from "zod";
 
+import CartIdentitySync from "@/components/providers/CartIdentitySync";
 import SmoothScroll from "@/components/providers/SmoothScroll";
 import { restoreSession } from "@/features/auth/authThunks";
 import { loadCart } from "@/features/cart/cartThunks";
@@ -31,6 +32,7 @@ export default function Providers({ children }: { children: ReactNode }) {
   return (
     <Provider store={store}>
       <SmoothScroll />
+      <CartIdentitySync />
       {children}
     </Provider>
   );

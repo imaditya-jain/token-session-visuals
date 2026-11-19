@@ -40,4 +40,6 @@ export type Cart = {
   totalQuantity: number;
   subtotal: { amount: string; currency: string };
   checkoutUrl: string;
+  /** True when the cart carries a buyer email (it is linked to an account). The address itself never leaves the server. */
+  identified: boolean;
 };
