@@ -4,6 +4,7 @@ import { NextRequest } from "next/server";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { disconnectDb } from "@/server/db/connection";
+import { Job } from "@/server/db/models/job";
 import { RateLimit } from "@/server/db/models/rate-limit";
 import { User } from "@/server/db/models/user";
 import { startTestDatabase } from "@/test/mongo";
@@ -509,9 +510,15 @@ describe("GET /api/cron/jobs", () => {
     const sendMail = vi.fn().mockResolvedValue({});
     setTransportForTests({ sendMail });
     await signUp();
+    // Registration also queues a Shopify customer sync; this test is about the email sweep only.
+    await Job.deleteMany({});
     const response = await call("Bearer cron-secret-for-tests-0123456789");
     expect(response.status).toBe(200);
-    expect((await response.json()).data).toEqual({ attempted: 1, sent: 1 });
+    expect((await response.json()).data).toEqual({
+      attempted: 1,
+      sent: 1,
+      jobs: { attempted: 0, done: 0 },
+    });
     expect(sendMail).toHaveBeenCalledTimes(1);
     setTransportForTests(undefined);
   });

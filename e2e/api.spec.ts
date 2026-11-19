@@ -594,7 +594,12 @@ test.describe("operational endpoints", () => {
     const response = await api.get("/api/cron/jobs", { headers: bearer(runtime().cronSecret) });
     expect(response.status()).toBe(200);
     const { data } = await body(response);
-    expect(data).toEqual({ attempted: expect.any(Number), sent: 0 }); // SMTP is a closed port in this environment
+    // SMTP is a closed port in this environment; no Shopify Admin token, so no sync jobs exist.
+    expect(data).toEqual({
+      attempted: expect.any(Number),
+      sent: 0,
+      jobs: { attempted: 0, done: 0 },
+    });
   });
 
   test("Shopify webhook: HMAC verified on the raw body; bad, missing and tampered signatures are 401", async () => {

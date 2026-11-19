@@ -18,6 +18,7 @@ import { siteUrl } from "@/server/config/env";
 import { enqueueEmail } from "@/server/email/outbox";
 import { AppError, badRequest, conflict, unauthorized } from "@/server/http/errors";
 import { logger } from "@/server/logger";
+import { enqueueCustomerSync } from "@/server/queue/producers";
 import { consumeAuthToken, issueAuthToken } from "@/server/services/auth-tokens";
 import { syncMarketingConsent } from "@/server/services/newsletter";
 
@@ -138,6 +139,7 @@ export async function registerUser(input: RegisterInput, meta: SessionMeta): Pro
         "Could not enqueue verification email",
       ),
     );
+    await enqueueCustomerSync(String(record._id));
     return await startSession(record, meta);
   } catch (error) {
     if ((error as { code?: number }).code === 11000) {
@@ -348,6 +350,7 @@ export async function updateProfile(userId: string, patch: ProfileInput): Promis
   if (rest.acceptsMarketing !== undefined && (user.emailVerifiedAt || !rest.acceptsMarketing)) {
     await syncMarketingConsent(user.email, rest.acceptsMarketing);
   }
+  await enqueueCustomerSync(String(user._id));
   return toPublicUser(user);
 }
 

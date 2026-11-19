@@ -3,6 +3,7 @@ import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 
 import { drainDueEmailJobs } from "@/server/email/outbox";
+import { drainDueJobs } from "@/server/queue/jobs";
 import { route } from "@/server/http/handler";
 import { forbidden } from "@/server/http/errors";
 
@@ -28,5 +29,6 @@ export const GET = route(async ({ request }) => {
     );
   if (!safeEqual(request.headers.get("authorization") ?? "", `Bearer ${secret}`))
     throw forbidden("Forbidden");
-  return NextResponse.json({ data: await drainDueEmailJobs() });
+  const [emails, jobs] = [await drainDueEmailJobs(), await drainDueJobs()];
+  return NextResponse.json({ data: { ...emails, jobs } });
 });
