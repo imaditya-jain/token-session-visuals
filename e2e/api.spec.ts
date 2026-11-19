@@ -652,3 +652,63 @@ test.describe("operational endpoints", () => {
     ).toBe(200);
   });
 });
+
+test.describe("cart API (Shopify disabled: reads work, writes degrade cleanly)", () => {
+  const variantId = "gid://shopify/ProductVariant/1001";
+  const lineId = "gid://shopify/CartLine/abc?cart=def";
+
+  test("an anonymous visitor has an empty cart", async () => {
+    const api = await client();
+    const response = await api.get("/api/cart");
+    expect(response.status()).toBe(200);
+    expect(await response.json()).toEqual({ data: { cart: null } });
+    expect(response.headers()["cache-control"]).toBe("no-store");
+  });
+
+  test("a forged cart cookie is ignored", async () => {
+    const api = await client();
+    const response = await api.get("/api/cart", { headers: { cookie: "fw_cart=aaa.bbb" } });
+    expect(await response.json()).toEqual({ data: { cart: null } });
+  });
+
+  test("adding degrades to a clean 503 without leaking details", async () => {
+    const api = await client();
+    const response = await json(api, "/api/cart/lines", { variantId });
+    expect(response.status()).toBe(503);
+    const body = await response.json();
+    expect(body.error.code).toBe("cart_unavailable");
+    expect(JSON.stringify(body)).not.toMatch(/shopify|token|stack/i);
+  });
+
+  for (const [name, body] of [
+    ["non-gid variant", { variantId: "1" }],
+    ["quantity too large", { variantId, quantity: 99 }],
+    ["quantity negative", { variantId, quantity: -1 }],
+    ["prototype pollution", JSON.parse('{"__proto__":{"x":1},"variantId":"bad"}')],
+    ["operator object", { variantId: { $ne: "" } }],
+  ] as const) {
+    test(`rejects ${name}`, async () => {
+      const api = await client();
+      expect((await json(api, "/api/cart/lines", body)).status()).toBe(400);
+    });
+  }
+
+  test("updates and removals need a cart", async () => {
+    const api = await client();
+    expect((await json(api, "/api/cart/lines", { lineId, quantity: 1 }, "patch")).status()).toBe(
+      400,
+    );
+    expect((await json(api, "/api/cart/lines", { lineId }, "delete")).status()).toBe(400);
+  });
+
+  test("cross-origin writes are blocked", async () => {
+    const api = await client({ origin: "https://evil.example" });
+    expect((await json(api, "/api/cart/lines", { variantId })).status()).toBe(403);
+  });
+
+  test("unsupported methods are refused", async () => {
+    const api = await client();
+    expect((await api.put("/api/cart/lines", { data: {} })).status()).toBe(405);
+    expect((await api.post("/api/cart", { data: {} })).status()).toBe(405);
+  });
+});

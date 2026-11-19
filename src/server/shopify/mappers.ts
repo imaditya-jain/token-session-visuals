@@ -19,6 +19,7 @@ const toAmount = (value: string): number => {
 export function mapProduct(node: ProductNode): Product {
   const price = toAmount(node.priceRange.minVariantPrice.amount);
   const compare = toAmount(node.compareAtPriceRange.minVariantPrice.amount);
+  const variantId = node.variants.nodes[0]?.id;
   const badge = BADGE_PRIORITY.find((candidate) => node.tags.includes(candidate));
 
   return {
@@ -33,6 +34,7 @@ export function mapProduct(node: ProductNode): Product {
     light: node.light?.value ?? "",
     size: node.size?.value ?? "",
     inStock: node.availableForSale,
+    ...(variantId ? { variantId } : {}),
     collectionSlugs: node.collections.nodes.filter(isStorefrontCollection).map((c) => c.handle),
   };
 }

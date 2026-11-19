@@ -12,6 +12,7 @@ const baseProduct: ProductNode = {
   availableForSale: true,
   priceRange: { minVariantPrice: { amount: "49.0" } },
   compareAtPriceRange: { minVariantPrice: { amount: "0.0" } },
+  variants: { nodes: [{ id: "gid://shopify/ProductVariant/1001" }] },
   featuredImage: { url: "https://cdn.shopify.com/s/files/1/x/files/product-monstera.jpg" },
   light: { value: "Bright, indirect light" },
   size: { value: '24" — 34" tall' },

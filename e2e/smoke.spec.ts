@@ -57,3 +57,25 @@ test.describe("smoke", () => {
     await expect(page.getByPlaceholder("Search plants, pots, tools…")).toBeHidden();
   });
 });
+
+test.describe("cart UI", () => {
+  test("header shows no badge for an empty cart and opens the empty mini-cart", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    const cart = page.getByRole("button", { name: "Cart, 0 items" });
+    await expect(cart).toBeVisible();
+    await cart.click();
+    const dialog = page.getByRole("dialog", { name: "Your cart" });
+    await expect(dialog.getByText("Your cart is empty")).toBeVisible();
+    await dialog.getByRole("link", { name: "Shop all plants" }).click();
+    await expect(page).toHaveURL(/\/shop$/);
+  });
+
+  test("an unavailable store is reported on the card, not silently ignored", async ({ page }) => {
+    await page.goto("/shop");
+    const add = page.getByRole("button", { name: /^Add .* to cart$/ }).first();
+    await add.click({ force: true });
+    await expect(add).toHaveText(/Try again/);
+  });
+});

@@ -5,6 +5,8 @@ import Link from "next/link";
 import { Menu, Search, ShoppingBag, User, X, ChevronDown } from "lucide-react";
 
 import { navLinks } from "@/data/site";
+import MiniCart from "@/components/storefront/MiniCart";
+import { setCartOpen } from "@/features/cart/cartSlice";
 import { setSearchOpen } from "@/features/ui/uiSlice";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -40,6 +42,7 @@ export default function Header() {
   const dispatch = useAppDispatch();
   const searchOpen = useAppSelector((state) => state.ui.searchOpen);
   const signedIn = useAppSelector((state) => state.auth.status === "authenticated");
+  const cartCount = useAppSelector((state) => state.cart.cart?.totalQuantity ?? 0);
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
@@ -159,18 +162,22 @@ export default function Header() {
               <User className="size-5" />
             </Link>
             <button
-              aria-label="Cart, 2 items"
+              onClick={() => dispatch(setCartOpen(true))}
+              aria-label={`Cart, ${cartCount} ${cartCount === 1 ? "item" : "items"}`}
               className="relative rounded-full p-2 text-foreground transition-colors hover:bg-sand"
             >
               <ShoppingBag className="size-5" />
-              <span className="absolute -right-0.5 -top-0.5 flex size-4.5 items-center justify-center rounded-full bg-clay text-[10px] font-semibold text-cream">
-                2
-              </span>
+              {cartCount > 0 ? (
+                <span className="absolute -right-0.5 -top-0.5 flex size-4.5 items-center justify-center rounded-full bg-clay text-[10px] font-semibold text-cream">
+                  {cartCount}
+                </span>
+              ) : null}
             </button>
           </div>
         </div>
       </header>
 
+      <MiniCart />
       <SearchOverlay open={searchOpen} onClose={() => dispatch(setSearchOpen(false))} />
     </>
   );

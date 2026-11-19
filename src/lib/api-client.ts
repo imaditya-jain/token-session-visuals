@@ -112,6 +112,18 @@ export async function postJson<T>(path: string, json: unknown): Promise<T> {
   return parse<T>(response);
 }
 
+/** Public call with any method (guest cart): cookie-authorised, no bearer token involved. */
+export async function publicJson<T>(path: string, method: string, json?: unknown): Promise<T> {
+  const response = await fetch(path, {
+    method,
+    credentials: "same-origin",
+    ...(json !== undefined
+      ? { headers: { "Content-Type": "application/json" }, body: JSON.stringify(json) }
+      : {}),
+  });
+  return parse<T>(response);
+}
+
 /** Authenticated call with automatic refresh-and-retry. */
 export async function apiFetch<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const { json, headers, ...init } = options;

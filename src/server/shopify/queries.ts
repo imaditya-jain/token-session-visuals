@@ -21,6 +21,11 @@ const PRODUCT_FIELDS = /* GraphQL */ `
     featuredImage {
       url
     }
+    variants(first: 1) {
+      nodes {
+        id
+      }
+    }
     light: metafield(namespace: "custom", key: "light") {
       value
     }
