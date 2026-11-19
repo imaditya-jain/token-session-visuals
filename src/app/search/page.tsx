@@ -42,55 +42,56 @@ export default async function SearchPage({ searchParams }: { searchParams: Searc
   return (
     <div className="min-h-screen bg-background">
       <Header />
+      <main>
+        <CollectionBanner
+          image="/images/seasonal-greenhouse.jpg"
+          title="Search"
+          tagline={searching ? `Results for “${query.search}”` : "Find plants, pots and tools"}
+        />
 
-      <CollectionBanner
-        image="/images/seasonal-greenhouse.jpg"
-        title="Search"
-        tagline={searching ? `Results for “${query.search}”` : "Find plants, pots and tools"}
-      />
+        <section className="mx-auto max-w-7xl px-4 pt-16 sm:px-6 sm:pt-20 lg:px-8">
+          <h2 className="sr-only">Search results</h2>
+          {searching ? (
+            <>
+              <ListingToolbar query={query} types={types} basePath={SEARCH_PATH} />
 
-      <section className="mx-auto max-w-7xl px-4 pt-16 sm:px-6 sm:pt-20 lg:px-8">
-        {searching ? (
-          <>
-            <ListingToolbar query={query} types={types} basePath={SEARCH_PATH} />
+              <p className="py-5 text-sm font-medium text-foreground" aria-live="polite">
+                {listingSummary(query, pageInfo, products.length)}
+              </p>
+            </>
+          ) : null}
 
-            <p className="py-5 text-sm font-medium text-foreground" aria-live="polite">
-              {listingSummary(query, pageInfo, products.length)}
-            </p>
-          </>
-        ) : null}
+          {products.length > 0 ? (
+            <div
+              className={`grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4 ${
+                paginated ? "pb-12 lg:pb-16" : "pb-16 lg:pb-24"
+              }`}
+            >
+              {products.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center gap-3 py-16 text-center">
+              <p className="font-display text-xl text-foreground">
+                {searching ? `No results for “${query.search}”` : "What are you looking for?"}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {searching
+                  ? "Check the spelling, try a shorter word, or browse everything."
+                  : "Use the search icon in the header to look for a plant, pot or tool."}
+              </p>
+              <Button variant="outline" asChild className="mt-2">
+                <Link href="/shop">Shop all plants</Link>
+              </Button>
+            </div>
+          )}
 
-        {products.length > 0 ? (
-          <div
-            className={`grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4 ${
-              paginated ? "pb-12 lg:pb-16" : "pb-16 lg:pb-24"
-            }`}
-          >
-            {products.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
-        ) : (
-          <div className="flex flex-col items-center gap-3 py-16 text-center">
-            <p className="font-display text-xl text-foreground">
-              {searching ? `No results for “${query.search}”` : "What are you looking for?"}
-            </p>
-            <p className="text-sm text-muted-foreground">
-              {searching
-                ? "Check the spelling, try a shorter word, or browse everything."
-                : "Use the search icon in the header to look for a plant, pot or tool."}
-            </p>
-            <Button variant="outline" asChild className="mt-2">
-              <Link href="/shop">Shop all plants</Link>
-            </Button>
-          </div>
-        )}
-
-        {searching ? (
-          <ListingPagination query={query} pageInfo={pageInfo} basePath={SEARCH_PATH} />
-        ) : null}
-      </section>
-
+          {searching ? (
+            <ListingPagination query={query} pageInfo={pageInfo} basePath={SEARCH_PATH} />
+          ) : null}
+        </section>
+      </main>
       <Footer />
     </div>
   );
