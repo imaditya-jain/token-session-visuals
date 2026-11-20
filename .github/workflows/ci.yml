@@ -117,6 +117,21 @@ jobs:
           include-hidden-files: true
           retention-days: 7
 
+  docker:
+    name: Docker image + Compose
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate the Compose file
+        run: docker compose config --quiet
+      - name: Build the image (BuildKit, with the optional build secret)
+        run: |
+          printf 'SITE_URL=http://localhost:3300\n' > "$RUNNER_TEMP/build.env"
+          DOCKER_BUILDKIT=1 docker build --secret id=build_env,src="$RUNNER_TEMP/build.env" -t fernwood:ci .
+      - name: Smoke test the running container
+        run: scripts/docker-smoke.sh fernwood:ci
+
   security:
     name: Dependency audit + secret scan
     runs-on: ubuntu-latest
