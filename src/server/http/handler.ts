@@ -8,6 +8,7 @@ import { z } from "zod";
 
 import { authEnv } from "@/server/config/env";
 import { logger } from "@/server/logger";
+import { reportError } from "@/server/monitoring";
 
 import { AppError, badRequest, forbidden } from "./errors";
 
@@ -81,6 +82,7 @@ export function route(fn: RouteFn): (request: NextRequest) => Promise<NextRespon
         { err: error, requestId, path: request.nextUrl.pathname },
         "Unhandled route error",
       );
+      reportError(error, { requestId, route: request.nextUrl.pathname });
       return NextResponse.json(
         { error: { code: "internal_error", message: "Something went wrong." } },
         { status: 500, headers: baseHeaders(requestId) },
