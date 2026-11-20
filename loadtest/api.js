@@ -35,7 +35,6 @@ export const options = {
   },
 };
 
-const email = (n) => `load+${n}@example.com`;
 const PASSWORD = "correct-horse-battery";
 
 export function setup() {
@@ -71,7 +70,7 @@ const readRefreshCookie = (res) => {
   return cookie ? `${name}=${cookie.value}` : null;
 };
 
-export default function (data) {
+export default function customer(data) {
   const headers = { "X-Forwarded-For": ipFor(__VU) };
 
   if (!token) {

@@ -48,7 +48,7 @@ const WORDS = [
 ];
 const rnd = (n) => Math.floor(Math.random() * n);
 
-export default function () {
+export default function storm() {
   const headers = { "X-Forwarded-For": ipFor(__VU, __ITER) };
   const urls = [
     `/search?q=${WORDS[rnd(WORDS.length)]}+${WORDS[rnd(WORDS.length)]}${rnd(1e6)}`,

@@ -48,7 +48,7 @@ const DYNAMIC_PAGES = [
 
 const pick = (list) => list[Math.floor(Math.random() * list.length)];
 
-export default function () {
+export default function shopper() {
   const headers = { "X-Forwarded-For": ipFor(__VU, __ITER) };
   const isStatic = Math.random() < 0.65;
   const path = isStatic ? pick(STATIC_PAGES) : pick(DYNAMIC_PAGES);
