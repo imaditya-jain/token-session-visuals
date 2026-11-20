@@ -29,6 +29,8 @@ Rules: see `CLAUDE.md`. One task = one branch from `dev`. Every phase ends with 
 - [x] Accessibility: axe suite (all pages, desktop+mobile, overlays/forms) green; fixed unnamed sort control, landmarks, heading order, label-in-name, dialog names, 404 main. Open design question: clay eyebrow contrast 3.35:1
 - [x] Observability: health/readiness endpoints, opt-in privacy-first Sentry (verified in a browser), uptime probe workflow
 - [x] Performance gate: Lighthouse CI (error gates + target warnings) and fixes: CLS to 0, forms server-rendered, inline CSS, -35 KB JS. LCP/TBT targets not yet met (see CLAUDE.md)
+- [x] Branch protection on main/dev (no force-push, no deletion, applies to admins; no PR requirement so the merge workflow is unchanged)
+- [x] Docker: image (non-root, health check, standalone), Compose (mongo + app + scheduler), smoke script + CI job
 - [ ] Next: register webhooks on the production URL, social profile URLs, order/mirror-backed history (optional)
 
 ## Blocking inputs from the user

@@ -1,0 +1,63 @@
+# Local development and self-hosting.
+#
+#   docker compose up -d mongo         # just a local MongoDB for `npm run dev` (MONGODB_URI=mongodb://127.0.0.1:27017)
+#   docker compose up -d --build       # the whole stack: database, app on :3000, background-job scheduler
+#
+# Secrets live in `.env` (never committed); this file only overrides what must differ inside Compose.
+# The bundled MongoDB has no authentication and listens on localhost only: it is for development.
+# In production use a managed, authenticated database (MongoDB Atlas) and set MONGODB_URI accordingly.
+
+services:
+  mongo:
+    image: mongo:8
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  app:
+    build: .
+    image: fernwood:local
+    restart: unless-stopped
+    depends_on:
+      mongo:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      MONGODB_URI: mongodb://mongo:27017
+      MONGODB_DB_NAME: ${MONGODB_DB_NAME:-fernwood}
+      SITE_URL: ${SITE_URL:-http://localhost:3000}
+
+  # Vercel Cron does not exist outside Vercel, so this calls the same endpoint on a schedule: it delivers queued
+  # emails, retries failed jobs and refreshes the Shopify mirror. Needs CRON_SECRET in `.env`.
+  scheduler:
+    image: curlimages/curl:8.11.1
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_started
+    env_file:
+      - path: .env
+        required: false
+    entrypoint:
+      - sh
+      - -c
+      - |
+        while true; do
+          sleep 300
+          curl --silent --show-error --max-time 60 -H "Authorization: Bearer $$CRON_SECRET" http://app:3000/api/cron/jobs >/dev/null || true
+        done
+
+volumes:
+  mongo-data:

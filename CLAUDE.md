@@ -156,7 +156,7 @@ GitHub Actions on every PR and push to `dev`/`main`: lint, typecheck, unit, buil
 
 ## 14. Commands
 `npm run dev|build|start|lint|typecheck|test|test:e2e`. Visual lock against a running server: `BASE_URL=http://localhost:3100 npx playwright test` (without BASE_URL Playwright builds and starts the app itself on :3100).
-Later: `docker compose up -d mongo` (Phase 3), `docker compose up worker` (Phase B).
+Docker: `docker compose up -d mongo` (local MongoDB for `npm run dev`), `docker compose up -d --build` (database + app on :3000 + a `scheduler` that calls `/api/cron/jobs` every 5 min because Vercel Cron doesn't exist off Vercel), `docker build -t fernwood .` then `scripts/docker-smoke.sh fernwood` (runs the image beside a throwaway MongoDB and checks non-root, health, pages, register/argon2, cron; CI job `docker` runs the same). The Dockerfile uses `output: standalone` only when `NEXT_OUTPUT=standalone` (never on Vercel/e2e); an optional BuildKit secret `build_env` bakes a fresh Shopify catalog into static pages without leaving credentials in a layer. The image is for self-hosting; Vercel doesn't use it. Later: `docker compose up worker` (Phase B).
 Cautions: never `pkill -f` with a pattern matching your own command line; `npx`/`npm` wrappers hide the real PID — start servers with `node node_modules/next/dist/bin/next start` and kill that PID.
 
 ## 15. Working agreement
