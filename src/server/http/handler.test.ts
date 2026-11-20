@@ -3,6 +3,8 @@ import { describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 
 vi.mock("@/server/logger", () => ({ logger: { error: vi.fn(), warn: vi.fn() } }));
+const monitoring = vi.hoisted(() => ({ reportError: vi.fn() }));
+vi.mock("@/server/monitoring", () => monitoring);
 
 import { AppError, tooManyRequests } from "./errors";
 import { assertSameOrigin, clientIp, readJson, route } from "./handler";
@@ -15,6 +17,29 @@ const request = (
 const failWith = (error: unknown) => route(async () => Promise.reject(error))(request());
 const named = (name: string) =>
   Object.assign(new Error("boom: mongodb+srv://user:secret@cluster"), { name });
+
+describe("route() error reporting", () => {
+  it("reports unexpected errors with the request id and route, never the request data", async () => {
+    monitoring.reportError.mockClear();
+    const response = await route(async () => Promise.reject(new Error("unexpected")))(
+      request({ headers: { "x-request-id": "req-123", authorization: "Bearer secret" } }),
+    );
+    expect(response.status).toBe(500);
+    expect(monitoring.reportError).toHaveBeenCalledTimes(1);
+    expect(monitoring.reportError).toHaveBeenCalledWith(expect.any(Error), {
+      requestId: "req-123",
+      route: "/api/x",
+    });
+    expect(JSON.stringify(monitoring.reportError.mock.calls)).not.toContain("secret");
+  });
+
+  it("does not report expected client errors", async () => {
+    monitoring.reportError.mockClear();
+    await failWith(tooManyRequests(1));
+    await failWith(new z.ZodError([]));
+    expect(monitoring.reportError).not.toHaveBeenCalled();
+  });
+});
 
 describe("route() error mapping", () => {
   it("maps AppError to its status, envelope and headers", async () => {

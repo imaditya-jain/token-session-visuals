@@ -815,3 +815,29 @@ test.describe("cart identity API", () => {
     expect((await api.get("/api/cart/identity")).status()).toBe(405);
   });
 });
+
+test.describe("health endpoints", () => {
+  test("liveness is public, minimal and uncached", async () => {
+    const api = await client({ origin: null });
+    const response = await api.get("/api/health");
+    expect(response.status()).toBe(200);
+    expect(await response.json()).toEqual({ data: { status: "ok" } });
+    expect(response.headers()["cache-control"]).toBe("no-store");
+  });
+
+  test("readiness needs the secret and reports the database", async () => {
+    const api = await client({ origin: null });
+    expect((await api.get("/api/health/ready")).status()).toBe(403);
+    expect((await api.get("/api/health/ready", { headers: bearer("wrong") })).status()).toBe(403);
+    const response = await api.get("/api/health/ready", { headers: bearer(runtime().cronSecret) });
+    expect(response.status()).toBe(200);
+    const { data } = await body(response);
+    expect(data).toMatchObject({ status: "ok", checks: { database: "ok" } });
+  });
+
+  test("health endpoints accept only GET", async () => {
+    const api = await client();
+    expect((await api.post("/api/health", { data: {} })).status()).toBe(405);
+    expect((await api.delete("/api/health/ready")).status()).toBe(405);
+  });
+});
