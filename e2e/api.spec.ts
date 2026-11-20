@@ -172,7 +172,9 @@ test.describe("methods", () => {
     ["GET", "/api/auth/reset-password"],
     ["GET", "/api/auth/verify-email/confirm"],
     ["PUT", "/api/me"],
-    ["DELETE", "/api/me"],
+    ["POST", "/api/me"],
+    ["POST", "/api/me/export"],
+    ["DELETE", "/api/me/export"],
     ["POST", "/api/orders"],
     ["DELETE", "/api/orders/1"],
     ["GET", "/api/newsletter"],
@@ -839,5 +841,51 @@ test.describe("health endpoints", () => {
     const api = await client();
     expect((await api.post("/api/health", { data: {} })).status()).toBe(405);
     expect((await api.delete("/api/health/ready")).status()).toBe(405);
+  });
+});
+
+test.describe("privacy API", () => {
+  test("export and delete need a valid session", async () => {
+    const api = await client();
+    expect((await api.get("/api/me/export")).status()).toBe(401);
+    expect(
+      (await api.get("/api/me/export", { headers: { authorization: "Bearer nope" } })).status(),
+    ).toBe(401);
+    expect((await json(api, "/api/me", { password: "x" }, "delete")).status()).toBe(401);
+  });
+
+  test("delete is same-site only and validates its body", async () => {
+    const foreign = await client({ origin: "https://evil.example" });
+    expect((await json(foreign, "/api/me", { password: "x" }, "delete")).status()).toBe(403);
+  });
+
+  test("a full lifecycle: export, wrong password, delete, then nothing works", async () => {
+    const api = await client();
+    const email = uniqueEmail("gone");
+    const registered = await json(api, "/api/auth/register", {
+      email,
+      password,
+      firstName: "G",
+      lastName: "O",
+      acceptsMarketing: false,
+    });
+    expect(registered.status()).toBe(201);
+    const { data } = await body(registered);
+    const auth = { authorization: `Bearer ${data.accessToken}` };
+
+    const exported = await api.get("/api/me/export", { headers: auth });
+    expect(exported.status()).toBe(200);
+    expect(exported.headers()["content-disposition"]).toContain("attachment");
+    expect((await body(exported)).data.account.email).toBe(email);
+
+    const wrong = await json(api, "/api/me", { password: "definitely wrong" }, "delete", auth);
+    expect(wrong.status()).toBe(403);
+    expect((await body(wrong)).error.code).toBe("invalid_password");
+    expect((await api.get("/api/me", { headers: auth })).status()).toBe(200);
+
+    expect((await json(api, "/api/me", { password }, "delete", auth)).status()).toBe(200);
+    expect((await api.get("/api/me", { headers: auth })).status()).toBe(401);
+    expect((await api.get("/api/me/export", { headers: auth })).status()).toBe(401);
+    expect((await json(api, "/api/auth/login", { email, password })).status()).toBe(401);
   });
 });
