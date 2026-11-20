@@ -45,6 +45,11 @@ export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type ProfileInput = z.infer<typeof profileSchema>;
 
+/** Deleting an account re-asks for the password: a stolen session alone must not be enough to destroy it. */
+export const deleteAccountSchema = z.object({
+  password: z.string().min(1, "Enter your password").max(200),
+});
+
 const oneTimeToken = z.string().trim().min(20, "Invalid link").max(200, "Invalid link");
 
 export const forgotPasswordSchema = z.object({ email });

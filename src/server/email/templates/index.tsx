@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { CONTACT_TOPICS } from "@/lib/contact-schemas";
 
+import AccountDeleted from "./AccountDeleted";
 import CampaignEmail from "./CampaignEmail";
 import ContactMessage from "./ContactMessage";
 import NewsletterConfirm from "./NewsletterConfirm";
@@ -46,6 +47,11 @@ export const templates = {
     subject: "Your Fernwood password was changed",
     schema: z.object({ firstName: z.string() }),
     element: (data: { firstName: string }) => <PasswordChanged {...data} />,
+  },
+  "account-deleted": {
+    subject: "Your Fernwood account has been deleted",
+    schema: z.object({ firstName: z.string() }),
+    element: (data: { firstName: string }) => <AccountDeleted {...data} />,
   },
   "newsletter-confirm": {
     subject: "Confirm your Fernwood subscription",

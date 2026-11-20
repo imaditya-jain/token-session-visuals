@@ -24,6 +24,7 @@ export default function LoginForm() {
   const dispatch = useAppDispatch();
   const status = useAppSelector((state) => state.auth.status);
   const next = safeRedirectPath(useQueryParam("next"));
+  const accountDeleted = useQueryParam("deleted") === "1";
 
   const [values, setValues] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState<FieldErrors>({});
@@ -51,6 +52,14 @@ export default function LoginForm() {
 
   return (
     <form onSubmit={onSubmit} noValidate className="space-y-5" aria-busy={pending}>
+      {accountDeleted ? (
+        <p
+          role="status"
+          className="rounded-md border border-sage/50 bg-sage-light/50 px-4 py-3 text-sm text-forest"
+        >
+          Your account has been deleted. We&apos;ve emailed you a confirmation.
+        </p>
+      ) : null}
       <FormAlert failure={failure} />
       <TextField
         label="Email"

@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 
 import FormAlert from "@/components/auth/FormAlert";
+import PrivacyPanel from "@/components/auth/PrivacyPanel";
 import TextField from "@/components/auth/TextField";
 import {
   fieldErrorsFromFailure,
@@ -225,6 +226,8 @@ export default function AccountPanel() {
           </Button>
         </div>
       </section>
+
+      <PrivacyPanel />
     </div>
   );
 }

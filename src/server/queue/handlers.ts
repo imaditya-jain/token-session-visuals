@@ -3,6 +3,7 @@ import "server-only";
 import { z } from "zod";
 
 import { gidSchema, MIRROR_RESOURCES } from "@/lib/shopify-gid";
+import { requestCustomerErasure } from "@/server/services/customer-erasure";
 import { syncCustomer } from "@/server/services/customer-sync";
 import { markDeleted, mirrorOne, mirrorPage } from "@/server/services/shopify-mirror";
 
@@ -24,6 +25,13 @@ export const jobHandlers = {
     schema: z.object({ userId: z.string().regex(/^[a-f\d]{24}$/i) }),
     run: async ({ userId }: { userId: string }): Promise<FollowUp[] | void> => {
       await syncCustomer(userId);
+    },
+  },
+  "shopify.customer.erase": {
+    // Only the Shopify id: the account (and its email) is already gone when this runs.
+    schema: z.object({ customerGid: gidSchema("customer") }),
+    run: async ({ customerGid }: { customerGid: string }): Promise<FollowUp[] | void> => {
+      await requestCustomerErasure(customerGid);
     },
   },
   "shopify.mirror.sync": {
