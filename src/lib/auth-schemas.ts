@@ -1,5 +1,9 @@
 import { z } from "zod";
 
+import { configureZodForBrowser } from "@/lib/zod-browser";
+
+configureZodForBrowser();
+
 /** Shared by the API (authoritative) and the forms (instant feedback). */
 const email = z.string().trim().toLowerCase().pipe(z.email("Enter a valid email address").max(254));
 const name = z.string().trim().min(1, "Required").max(80);

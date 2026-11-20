@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
 
 import AuthShell from "@/components/auth/AuthShell";
 import LoginForm from "@/components/auth/LoginForm";
@@ -18,9 +17,7 @@ export default function LoginPage() {
       title="Welcome back"
       description="Sign in to see your details and keep shopping."
     >
-      <Suspense>
-        <LoginForm />
-      </Suspense>
+      <LoginForm />
     </AuthShell>
   );
 }

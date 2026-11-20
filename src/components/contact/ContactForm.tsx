@@ -1,6 +1,5 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
 import { useId, useState, type FormEvent } from "react";
 
 import FormAlert from "@/components/auth/FormAlert";
@@ -12,6 +11,7 @@ import {
 } from "@/components/auth/useFormErrors";
 import { Button } from "@/components/ui/button";
 import type { ApiFailure } from "@/features/auth/types";
+import { useQueryParam } from "@/lib/use-query-param";
 import { ApiError, publicJson } from "@/lib/api-client";
 import { CONTACT_TOPICS, contactSchema } from "@/lib/contact-schemas";
 
@@ -20,17 +20,17 @@ const fieldClass =
 
 export default function ContactForm() {
   const topicId = useId();
-  const requestedTopic = useSearchParams().get("topic");
+  const requestedTopic = useQueryParam("topic");
   const messageId = useId();
-  const [values, setValues] = useState({
-    name: "",
-    email: "",
-    // Links from other pages preselect a topic; anything not on the list is ignored.
-    topic:
-      CONTACT_TOPICS.find((topic) => topic === requestedTopic) ?? (CONTACT_TOPICS[0] as string),
-    message: "",
-    website: "",
-  });
+  const [values, setValues] = useState({ name: "", email: "", message: "", website: "" });
+  // The URL can preselect a topic (`/contact?topic=Wholesale`), but it is only known after hydration, so the
+  // default is derived from it on every render until the visitor chooses one themselves. Anything not on the
+  // list is ignored.
+  const [chosenTopic, setChosenTopic] = useState<string | null>(null);
+  const topic: string =
+    chosenTopic ??
+    CONTACT_TOPICS.find((candidate) => candidate === requestedTopic) ??
+    (CONTACT_TOPICS[0] as string);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [failure, setFailure] = useState<ApiFailure | null>(null);
   const [pending, setPending] = useState(false);
@@ -42,7 +42,7 @@ export default function ContactForm() {
   const onSubmit = async (event: FormEvent) => {
     event.preventDefault();
     setFailure(null);
-    const parsed = contactSchema.safeParse(values);
+    const parsed = contactSchema.safeParse({ ...values, topic });
     if (!parsed.success) return setErrors(fieldErrorsFromZod(parsed.error));
     setErrors({});
     setPending(true);
@@ -104,8 +104,8 @@ export default function ContactForm() {
         </label>
         <select
           id={topicId}
-          value={values.topic}
-          onChange={(event) => set("topic")(event.target.value)}
+          value={topic}
+          onChange={(event) => setChosenTopic(event.target.value)}
           className={`${fieldClass} h-11`}
         >
           {CONTACT_TOPICS.map((topic) => (
