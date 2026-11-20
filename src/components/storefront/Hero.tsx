@@ -14,6 +14,7 @@ export default function Hero() {
           width={1920}
           height={1080}
           priority
+          fetchPriority="high"
         />
         {/* Soft scrim so text stays legible over the photo */}
         <div className="absolute inset-0 bg-gradient-to-b from-forest-deep/35 via-transparent to-forest-deep/20" />

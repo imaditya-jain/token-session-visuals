@@ -45,6 +45,9 @@ const securityHeaders = [
 const config: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  // The site's CSS is ~12 KB gzipped. Inlining it into the HTML removes a render-blocking round trip on every
+  // first load (the dominant cost on slow mobile connections). Allowed by the CSP (`style-src 'unsafe-inline'`).
+  experimental: { inlineCss: true },
   // Pin the workspace root to this project; otherwise Next infers it from stray lockfiles in parent folders.
   turbopack: { root: fileURLToPath(new URL(".", import.meta.url)) },
   async headers() {

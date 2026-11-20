@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { addLineSchema, removeLineSchema, updateLineSchema } from "@/lib/cart";
+import { addLineSchema, removeLineSchema, updateLineSchema } from "@/lib/cart-schemas";
 import { assertSameOrigin, clientIp, readJson, route } from "@/server/http/handler";
 import { readCartCookie, setCartCookie } from "@/server/cart/token";
 import { enforceRateLimit } from "@/server/ratelimit/enforce";

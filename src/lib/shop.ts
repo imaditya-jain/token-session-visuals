@@ -1,5 +1,3 @@
-import { z } from "zod";
-
 import type { Product } from "@/lib/types";
 
 export const PAGE_SIZE = 12;
@@ -56,8 +54,23 @@ const first = (value: string | string[] | undefined) => (Array.isArray(value) ? 
 const all = (value: string | string[] | undefined) =>
   value === undefined ? [] : Array.isArray(value) ? value : [value];
 
-const cursor = z.string().min(1).max(512);
-const price = z.coerce.number().finite().min(0).max(1_000_000);
+/** An opaque pagination cursor: 1 to 512 characters, otherwise ignored. */
+const cursorOf = (value: string | undefined): string | undefined =>
+  value !== undefined && value.length >= 1 && value.length <= 512 ? value : undefined;
+
+const sortOf = (value: string | undefined): SortKey | undefined =>
+  (SORT_KEYS as readonly string[]).includes(value ?? "") ? (value as SortKey) : undefined;
+
+/** A finite number within [min, max] (and an integer when asked), otherwise ignored. Same rules as `Number()`. */
+const numberOf = (
+  value: string | undefined,
+  { min, max, integer = false }: { min: number; max: number; integer?: boolean },
+): number | undefined => {
+  if (value === undefined) return undefined;
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < min || parsed > max) return undefined;
+  return integer && !Number.isInteger(parsed) ? undefined : parsed;
+};
 
 export const MAX_SEARCH_TERMS = 6;
 export const MAX_SEARCH_TERM_LENGTH = 40;
@@ -76,12 +89,12 @@ export function searchTerms(raw: string | undefined): string[] {
 
 /** Never throws: invalid or hostile input falls back to defaults. */
 export function parseShopQuery(params: RawParams): ShopQuery {
-  const after = cursor.safeParse(first(params["after"]));
-  const before = cursor.safeParse(first(params["before"]));
-  const sort = z.enum(SORT_KEYS).safeParse(first(params["sort"]));
-  const min = price.safeParse(first(params["min"]) || undefined);
-  const max = price.safeParse(first(params["max"]) || undefined);
-  const page = z.coerce.number().int().min(1).max(10_000).safeParse(first(params["page"]));
+  const after = cursorOf(first(params["after"]));
+  const before = cursorOf(first(params["before"]));
+  const sort = sortOf(first(params["sort"]));
+  const min = numberOf(first(params["min"]) || undefined, { min: 0, max: 1_000_000 });
+  const max = numberOf(first(params["max"]) || undefined, { min: 0, max: 1_000_000 });
+  const page = numberOf(first(params["page"]), { min: 1, max: 10_000, integer: true });
   const types = [
     ...new Set(
       all(params["type"])
@@ -93,13 +106,13 @@ export function parseShopQuery(params: RawParams): ShopQuery {
   const search = searchTerms((first(params["q"]) ?? "").slice(0, 200)).join(" ");
 
   return {
-    ...(after.success ? { after: after.data } : before.success ? { before: before.data } : {}),
-    page: page.success ? page.data : 1,
-    sort: sort.success ? sort.data : "featured",
+    ...(after !== undefined ? { after } : before !== undefined ? { before } : {}),
+    page: page ?? 1,
+    sort: sort ?? "featured",
     inStock: all(params["stock"]).includes("in"),
     outOfStock: all(params["stock"]).includes("out"),
-    ...(min.success ? { min: min.data } : {}),
-    ...(max.success ? { max: max.data } : {}),
+    ...(min !== undefined ? { min } : {}),
+    ...(max !== undefined ? { max } : {}),
     types,
     ...(search ? { search } : {}),
   };

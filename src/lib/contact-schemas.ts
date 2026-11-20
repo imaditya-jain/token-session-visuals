@@ -1,5 +1,9 @@
 import { z } from "zod";
 
+import { configureZodForBrowser } from "@/lib/zod-browser";
+
+configureZodForBrowser();
+
 export const CONTACT_TOPICS = [
   "Order or delivery",
   "Plant care advice",

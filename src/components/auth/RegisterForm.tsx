@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 
 import FormAlert from "@/components/auth/FormAlert";
@@ -11,6 +11,7 @@ import {
   fieldErrorsFromZod,
   type FieldErrors,
 } from "@/components/auth/useFormErrors";
+import { useQueryParam } from "@/lib/use-query-param";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { register } from "@/features/auth/authThunks";
@@ -23,7 +24,7 @@ export default function RegisterForm() {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const status = useAppSelector((state) => state.auth.status);
-  const next = safeRedirectPath(useSearchParams().get("next"));
+  const next = safeRedirectPath(useQueryParam("next"));
 
   const [values, setValues] = useState({
     firstName: "",
