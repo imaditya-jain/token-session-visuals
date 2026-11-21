@@ -737,6 +737,51 @@ test.describe("cart API (Shopify disabled: reads work, writes degrade cleanly)",
   });
 });
 
+test.describe("wholesale API", () => {
+  // A fresh address per test: the endpoint allows 3 applications per address per hour.
+  const valid = {
+    businessName: "Green Corner Café",
+    contactName: "Ada Lovelace",
+    get email() {
+      return uniqueEmail("wholesale");
+    },
+    phone: "+91 98765 43210",
+    businessType: "Café or restaurant",
+    location: "Pune, India",
+    message: "We want 40 plants for a new café and ongoing monthly supply.",
+  };
+
+  test("accepts a valid application, and a honeypot looks identical", async () => {
+    const api = await client();
+    const response = await json(api, "/api/wholesale", valid);
+    expect(response.status()).toBe(202);
+    expect(await response.json()).toEqual({ data: { accepted: true } });
+    expect(
+      (await json(api, "/api/wholesale", { ...valid, website: "https://spam.example" })).status(),
+    ).toBe(202);
+  });
+
+  for (const [name, body] of [
+    ["header injection", { ...valid, businessName: "Cafe\r\nBcc: x@example.com" }],
+    ["operator objects", { ...valid, message: { $gt: "" } }],
+    ["bad business type", { ...valid, businessType: "x" }],
+    ["prototype pollution", JSON.parse('{"__proto__":{"a":1},"businessName":"x"}')],
+    ["oversized body", { ...valid, message: "x".repeat(20_000) }],
+  ] as const) {
+    test(`rejects ${name} without a server error`, async () => {
+      const api = await client();
+      expect([400, 413]).toContain((await json(api, "/api/wholesale", body)).status());
+    });
+  }
+
+  test("cross-origin posts and wrong methods are refused", async () => {
+    const foreign = await client({ origin: "https://evil.example" });
+    expect((await json(foreign, "/api/wholesale", valid)).status()).toBe(403);
+    const api = await client();
+    expect((await api.get("/api/wholesale")).status()).toBe(405);
+  });
+});
+
 test.describe("contact API", () => {
   // A fresh address per test: the endpoint allows 3 messages per address per hour.
   const valid = {

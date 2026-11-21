@@ -90,6 +90,7 @@ test.describe("every link goes somewhere real", () => {
     const expected: Record<string, string> = {
       "Gift Cards": "/gift-cards",
       Wholesale: "/wholesale",
+      "Gardener Services": "/gardener-services",
       "Shipping & Delivery": "/shipping-delivery",
       "Plant Guarantee": "/plant-guarantee",
       "Care Library": "/care-guide",
@@ -178,9 +179,9 @@ test.describe("new pages", () => {
   });
 
   test("links into the contact form preselect the topic", async ({ page }) => {
-    await page.goto("/wholesale");
-    await page.getByRole("link", { name: "Ask about wholesale" }).click();
-    await expect(page.getByLabel("Topic")).toHaveValue("Wholesale");
+    await page.goto("/careers");
+    await page.getByRole("link", { name: "Get in touch" }).click();
+    await expect(page.getByLabel("Topic")).toHaveValue("Careers");
     await page.goto("/contact?topic=Bogus%20Topic");
     await expect(page.getByLabel("Topic")).toHaveValue("Order or delivery");
   });

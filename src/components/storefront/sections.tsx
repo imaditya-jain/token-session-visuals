@@ -328,6 +328,7 @@ const footerColumns: { heading: string; links: FooterLink[] }[] = [
     links: [
       { label: "Our Story", href: "/about" },
       { label: "Wholesale", href: "/wholesale" },
+      { label: "Gardener Services", href: "/gardener-services" },
     ],
   },
   {

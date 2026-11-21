@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { CONTACT_TOPICS } from "@/lib/contact-schemas";
+import { BUSINESS_TYPES } from "@/lib/wholesale-schemas";
 
 import AccountDeleted from "./AccountDeleted";
 import CampaignEmail from "./CampaignEmail";
@@ -10,6 +11,7 @@ import NewsletterConfirm from "./NewsletterConfirm";
 import PasswordChanged from "./PasswordChanged";
 import ResetPassword from "./ResetPassword";
 import VerifyEmail from "./VerifyEmail";
+import WholesaleApplication, { type WholesaleApplicationData } from "./WholesaleApplication";
 
 const https = z
   .string()
@@ -89,6 +91,22 @@ export const templates = {
       <ContactMessage {...data} />
     ),
     /** Lets the team answer the visitor with a plain "Reply". */
+    replyTo: (data: { email: string }) => data.email,
+  },
+  "wholesale-application": {
+    subject: (data: { businessName: string }) => `Wholesale application: ${data.businessName}`,
+    schema: z.object({
+      businessName: z.string().min(1).max(120),
+      contactName: z.string().min(1).max(80),
+      email: z.string().email(),
+      phone: z.string().min(7).max(20),
+      businessType: z.enum(BUSINESS_TYPES),
+      location: z.string().min(1).max(120),
+      taxId: z.string().max(40),
+      message: z.string().min(1).max(3000),
+    }),
+    element: (data: WholesaleApplicationData) => <WholesaleApplication {...data} />,
+    /** Lets the team answer the applicant with a plain "Reply". */
     replyTo: (data: { email: string }) => data.email,
   },
   campaign: {
