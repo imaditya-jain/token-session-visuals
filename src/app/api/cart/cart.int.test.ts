@@ -175,6 +175,8 @@ describe("POST /api/cart/lines", () => {
           variantId: VARIANT,
           sellingPlanId: "gid://shopify/SellingPlan/6677430387",
           booking: {
+            name: "Ada Lovelace",
+            email: "ada@example.com",
             city: "Pune",
             address: "12 Garden Road, Baner",
             date: new Date(Date.now() + 5 * 86_400_000).toISOString().slice(0, 10),
@@ -192,6 +194,7 @@ describe("POST /api/cart/lines", () => {
       sellingPlanId: "gid://shopify/SellingPlan/6677430387",
     });
     expect(line?.["attributes"]).toEqual([
+      { key: "Name", value: "Ada Lovelace" },
       { key: "City", value: "Pune" },
       { key: "Address", value: "12 Garden Road, Baner" },
       { key: "Preferred date", value: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/) },
@@ -206,6 +209,8 @@ describe("POST /api/cart/lines", () => {
       "an unsupported city",
       {
         booking: {
+          name: "Ada Lovelace",
+          email: "ada@example.com",
           city: "Delhi",
           address: "12 Garden Road",
           date: "2999-01-01",
@@ -217,6 +222,8 @@ describe("POST /api/cart/lines", () => {
       "a past date",
       {
         booking: {
+          name: "Ada Lovelace",
+          email: "ada@example.com",
           city: "Pune",
           address: "12 Garden Road",
           date: "2001-01-01",
@@ -228,6 +235,8 @@ describe("POST /api/cart/lines", () => {
       "control characters in notes",
       {
         booking: {
+          name: "Ada Lovelace",
+          email: "ada@example.com",
           city: "Pune",
           address: "12 Garden Road",
           date: "2999-01-01",

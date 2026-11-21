@@ -5,6 +5,7 @@ import { z } from "zod";
 import { gidSchema, MIRROR_RESOURCES } from "@/lib/shopify-gid";
 import { requestCustomerErasure } from "@/server/services/customer-erasure";
 import { syncCustomer } from "@/server/services/customer-sync";
+import { syncMarketingConsentToShopify } from "@/server/services/customer-marketing";
 import { markDeleted, mirrorOne, mirrorPage } from "@/server/services/shopify-mirror";
 
 /** A job a handler asks to be queued once it succeeds (keeps handlers free of the queue implementation). */
@@ -24,7 +25,23 @@ export const jobHandlers = {
   "shopify.customer.sync": {
     schema: z.object({ userId: z.string().regex(/^[a-f\d]{24}$/i) }),
     run: async ({ userId }: { userId: string }): Promise<FollowUp[] | void> => {
-      await syncCustomer(userId);
+      const { marketingSubscriberId } = await syncCustomer(userId);
+      // The customer now exists: bring its marketing consent in line with the mailing list.
+      if (marketingSubscriberId)
+        return [
+          {
+            type: "shopify.customer.marketing",
+            payload: { subscriberId: marketingSubscriberId },
+            key: marketingSubscriberId,
+          },
+        ];
+    },
+  },
+  /** Mirrors a mailing-list decision (confirmed or unsubscribed) onto the matching Shopify customer, if any. */
+  "shopify.customer.marketing": {
+    schema: z.object({ subscriberId: z.string().regex(/^[a-f\d]{24}$/i) }),
+    run: async ({ subscriberId }: { subscriberId: string }): Promise<FollowUp[] | void> => {
+      await syncMarketingConsentToShopify(subscriberId);
     },
   },
   "shopify.customer.erase": {

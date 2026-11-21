@@ -7,7 +7,9 @@ import { disconnectDb } from "@/server/db/connection";
 import { EmailJob } from "@/server/db/models/email-job";
 import { Job } from "@/server/db/models/job";
 import { RateLimit } from "@/server/db/models/rate-limit";
+import { Subscriber } from "@/server/db/models/subscriber";
 import { User } from "@/server/db/models/user";
+import { subscribe } from "@/server/services/newsletter";
 import { registerUser, updateProfile } from "@/server/services/auth";
 import { startTestDatabase } from "@/test/mongo";
 
@@ -33,6 +35,7 @@ beforeEach(async () => {
   await connectDb();
   await Promise.all([
     User.deleteMany({}),
+    Subscriber.deleteMany({}),
     Job.deleteMany({}),
     EmailJob.deleteMany({}),
     RateLimit.deleteMany({}),
@@ -282,5 +285,35 @@ describe("reliability", () => {
     const next = (await Job.findOne({ status: "pending" }).lean())!;
     await processJob(next._id);
     expect(inputsOf("CustomerCreate")).toHaveLength(1);
+  });
+});
+
+describe("marketing consent", () => {
+  it("a new customer for a subscribed address queues a consent sync from the mailing list", async () => {
+    const { user } = await register();
+    await Subscriber.create({
+      email: "ada@example.com",
+      status: "subscribed",
+      source: "footer",
+      consentAt: new Date(),
+      confirmedAt: new Date(),
+    });
+    admin.query
+      .mockResolvedValueOnce(found([]))
+      .mockResolvedValueOnce(created("gid://shopify/Customer/77"));
+    const [syncJob] = await Job.find({ type: "shopify.customer.sync" }).lean();
+    await processJob(syncJob!._id);
+    const subscriber = await Subscriber.findOne({ email: "ada@example.com" }).lean();
+    const followUp = await Job.findOne({ type: "shopify.customer.marketing" }).lean();
+    expect(followUp?.payload).toEqual({ subscriberId: String(subscriber!._id) });
+    expect(JSON.stringify(followUp)).not.toContain("ada@example.com");
+    expect(user.id).toBeTruthy();
+  });
+
+  it("confirming a subscription queues one consent sync holding only the subscriber id", async () => {
+    await subscribe("guest@example.com", "booking");
+    expect(await Job.countDocuments({ type: "shopify.customer.marketing" })).toBe(0); // pending: no consent yet
+    const subscriber = await Subscriber.findOne({ email: "guest@example.com" }).lean();
+    expect(subscriber).toMatchObject({ status: "pending", source: "booking" });
   });
 });

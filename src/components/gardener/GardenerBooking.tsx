@@ -37,7 +37,11 @@ export default function GardenerBooking({ service }: { service: GardenerService 
   const cityId = useId();
   const notesId = useId();
   const [plan, setPlan] = useState<string>(ONE_TIME);
+  const marketingId = useId();
+  const [acceptsMarketing, setAcceptsMarketing] = useState(false);
   const [values, setValues] = useState({
+    name: "",
+    email: "",
     city: "",
     address: "",
     date: "",
@@ -55,6 +59,7 @@ export default function GardenerBooking({ service }: { service: GardenerService 
     setFailure(null);
     const parsed = bookingSchema.safeParse({
       ...values,
+      acceptsMarketing,
       notes: values.notes || undefined,
     });
     if (!parsed.success) return setErrors(fieldErrorsFromZod(parsed.error));
@@ -122,6 +127,26 @@ export default function GardenerBooking({ service }: { service: GardenerService 
         ))}
       </fieldset>
 
+      <TextField
+        label="Full name"
+        autoComplete="name"
+        required
+        maxLength={80}
+        value={values.name}
+        error={errors["name"]}
+        onChange={(event) => set("name")(event.target.value)}
+      />
+      <TextField
+        label="Email"
+        type="email"
+        autoComplete="email"
+        inputMode="email"
+        required
+        hint="We send your booking confirmation here."
+        value={values.email}
+        error={errors["email"]}
+        onChange={(event) => set("email")(event.target.value)}
+      />
       <div>
         <label htmlFor={cityId} className="mb-1.5 block text-sm font-medium text-foreground">
           City
@@ -190,6 +215,21 @@ export default function GardenerBooking({ service }: { service: GardenerService 
           <p className="mt-1.5 text-sm text-destructive">{errors["notes"]}</p>
         ) : null}
       </div>
+      <label
+        htmlFor={marketingId}
+        className="flex min-h-11 cursor-pointer items-start gap-3 text-sm text-foreground"
+      >
+        <input
+          id={marketingId}
+          type="checkbox"
+          checked={acceptsMarketing}
+          onChange={(event) => setAcceptsMarketing(event.target.checked)}
+          className="mt-0.5 size-4 accent-forest"
+        />
+        <span>
+          Send me plant care tips and offers by email (optional). We will ask you to confirm.
+        </span>
+      </label>
       <Button type="submit" disabled={busy} className="h-11 w-full text-sm font-semibold">
         {busy ? "Adding…" : "Add booking to cart"}
       </Button>

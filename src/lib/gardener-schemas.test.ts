@@ -3,6 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { bookingAttributes, bookingSchema } from "./gardener-schemas";
 
 const valid = {
+  name: "Ada Lovelace",
+  email: "Ada@Example.com",
   city: "Mumbai",
   address: "12 Garden Road, Bandra",
   date: "2026-12-01",
@@ -15,7 +17,10 @@ afterEach(() => vi.useRealTimers());
 describe("bookingSchema", () => {
   it("accepts a complete booking and keeps optional notes out when empty", () => {
     const parsed = bookingSchema.parse(valid);
+    expect(parsed.email).toBe("ada@example.com");
+    expect(parsed.acceptsMarketing).toBe(false);
     expect(bookingAttributes(parsed).map((row) => row.key)).toEqual([
+      "Name",
       "City",
       "Address",
       "Preferred date",
@@ -35,6 +40,8 @@ describe("bookingSchema", () => {
     ["past date", { date: "2026-11-01" }],
     ["impossible date", { date: "2026-13-45" }],
     ["bad phone", { phone: "call me" }],
+    ["missing name", { name: "A" }],
+    ["bad email", { email: "nope" }],
     ["control characters", { address: "12 Garden Road\r\nBcc: x@y.z" }],
     ["very long notes", { notes: "n".repeat(501) }],
   ])("rejects %s", (_label, patch) => {

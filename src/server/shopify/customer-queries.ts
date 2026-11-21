@@ -47,3 +47,17 @@ export const CUSTOMER_UPDATE = /* GraphQL */ `
     }
   }
 `;
+
+export const CUSTOMER_MARKETING_UPDATE = /* GraphQL */ `
+  mutation CustomerMarketingUpdate($input: CustomerEmailMarketingConsentUpdateInput!) {
+    customerEmailMarketingConsentUpdate(input: $input) {
+      customer {
+        id
+      }
+      userErrors {
+        field
+        message
+      }
+    }
+  }
+`;
