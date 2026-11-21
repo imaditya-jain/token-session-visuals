@@ -51,6 +51,7 @@ const cartNode = (quantity = 1) => ({
         id: LINE,
         quantity,
         cost: { amountPerQuantity: { amount: "48.0" }, totalAmount: { amount: "48.0" } },
+        sellingPlanAllocation: null,
         merchandise: {
           title: "Default Title",
           image: null,
@@ -163,6 +164,94 @@ describe("POST /api/cart/lines", () => {
     expect(storefront.query.mock.calls[0]?.[1]).toEqual({
       lines: [{ merchandiseId: VARIANT, quantity: 1 }],
     });
+  });
+
+  it("sends a subscription plan and the booking details as line attributes", async () => {
+    storefront.query.mockResolvedValue(ok("cartCreate"));
+    const response = await POST(
+      request("/api/cart/lines", {
+        method: "POST",
+        body: {
+          variantId: VARIANT,
+          sellingPlanId: "gid://shopify/SellingPlan/6677430387",
+          booking: {
+            city: "Pune",
+            address: "12 Garden Road, Baner",
+            date: new Date(Date.now() + 5 * 86_400_000).toISOString().slice(0, 10),
+            phone: "+91 98765 43210",
+            notes: "Gate code 1234",
+          },
+        },
+      }),
+    );
+    expect(response.status).toBe(201);
+    const line = (storefront.query.mock.calls[0]?.[1] as { lines: Record<string, unknown>[] })
+      .lines[0];
+    expect(line).toMatchObject({
+      merchandiseId: VARIANT,
+      sellingPlanId: "gid://shopify/SellingPlan/6677430387",
+    });
+    expect(line?.["attributes"]).toEqual([
+      { key: "City", value: "Pune" },
+      { key: "Address", value: "12 Garden Road, Baner" },
+      { key: "Preferred date", value: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/) },
+      { key: "Phone", value: "+91 98765 43210" },
+      { key: "Notes", value: "Gate code 1234" },
+    ]);
+  });
+
+  it.each([
+    ["a bad plan id", { sellingPlanId: "gid://shopify/Product/1" }],
+    [
+      "an unsupported city",
+      {
+        booking: {
+          city: "Delhi",
+          address: "12 Garden Road",
+          date: "2999-01-01",
+          phone: "+91 98765 43210",
+        },
+      },
+    ],
+    [
+      "a past date",
+      {
+        booking: {
+          city: "Pune",
+          address: "12 Garden Road",
+          date: "2001-01-01",
+          phone: "+91 98765 43210",
+        },
+      },
+    ],
+    [
+      "control characters in notes",
+      {
+        booking: {
+          city: "Pune",
+          address: "12 Garden Road",
+          date: "2999-01-01",
+          phone: "+91 98765 43210",
+          notes: "a\nb",
+        },
+      },
+    ],
+  ])("rejects %s", async (_label, extra) => {
+    const response = await POST(
+      request("/api/cart/lines", { method: "POST", body: { variantId: VARIANT, ...extra } }),
+    );
+    expect(response.status).toBe(400);
+    expect(storefront.query).not.toHaveBeenCalled();
+  });
+
+  it("shows the subscription plan name where a variant title would be", async () => {
+    const node = cartNode();
+    node.lines.nodes[0]!.sellingPlanAllocation = {
+      sellingPlan: { name: "Monthly garden visit" },
+    } as never;
+    storefront.query.mockResolvedValue({ cart: node });
+    const response = await GET(request("/api/cart", { cookie: cookieFor() }));
+    expect((await response.json()).data.cart.lines[0].variantTitle).toBe("Monthly garden visit");
   });
 
   it("adds to the existing cart", async () => {
