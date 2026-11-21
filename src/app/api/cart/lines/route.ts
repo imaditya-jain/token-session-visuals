@@ -5,6 +5,8 @@ import { bookingAttributes } from "@/lib/gardener-schemas";
 import { assertSameOrigin, clientIp, readJson, route } from "@/server/http/handler";
 import { readCartCookie, setCartCookie } from "@/server/cart/token";
 import { enforceRateLimit } from "@/server/ratelimit/enforce";
+import { ensureBookingCustomer } from "@/server/services/booking-customer";
+import { toE164 } from "@/server/services/customer-sync";
 import { addLine, removeLine, updateLine, type CartResult } from "@/server/services/cart";
 import type { NextRequest } from "next/server";
 
@@ -25,10 +27,12 @@ function respond({ cart, cartId }: CartResult, status = 200): NextResponse {
 export const POST = route(async ({ request }) => {
   const cartId = await guard(request);
   const { variantId, quantity, sellingPlanId, booking } = await readJson(request, addLineSchema);
+  if (booking) await ensureBookingCustomer(booking);
   return respond(
     await addLine(cartId, variantId, quantity, {
       sellingPlanId,
       attributes: booking ? bookingAttributes(booking) : undefined,
+      buyer: booking ? { email: booking.email, phone: toE164(booking.phone) } : undefined,
     }),
     201,
   );

@@ -31,6 +31,11 @@ const isoDate = z
 
 /** What the customer tells us about the visit. Stored on the order line, so it reaches the owner with the order. */
 export const bookingSchema = z.object({
+  /** Full name; the first word is the first name, the rest the last name. */
+  name: text("Name", 2, 80),
+  email: z.string().trim().toLowerCase().pipe(z.email("Enter a valid email address").max(254)),
+  /** Optional marketing opt-in; consent is only recorded after the mailbox confirms it (double opt-in). */
+  acceptsMarketing: z.boolean().optional().default(false),
   city: z.enum(GARDENER_CITIES, { message: "Choose a city" }),
   address: text("Address", 8, 300),
   date: isoDate,
@@ -46,11 +51,14 @@ export const bookingSchema = z.object({
     .optional(),
 });
 
-export type Booking = z.infer<typeof bookingSchema>;
+/** What the form submits (marketing choice defaults to off). */
+export type BookingInput = z.input<typeof bookingSchema>;
+export type Booking = z.output<typeof bookingSchema>;
 
 /** The label/value pairs Shopify shows on the order line, in the order the owner reads them. */
 export function bookingAttributes(booking: Booking): { key: string; value: string }[] {
   const rows: { key: string; value: string }[] = [
+    { key: "Name", value: booking.name },
     { key: "City", value: booking.city },
     { key: "Address", value: booking.address },
     { key: "Preferred date", value: booking.date },

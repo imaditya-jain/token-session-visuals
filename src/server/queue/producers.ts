@@ -8,7 +8,7 @@ import type { MirrorResource } from "@/lib/shopify-gid";
 
 import { enqueueJob } from "./jobs";
 
-const adminConfigured = (): boolean => {
+export const adminConfigured = (): boolean => {
   try {
     adminEnv();
     return true;
@@ -88,5 +88,18 @@ export async function enqueueCustomerErasure(customerGid: string): Promise<void>
       "Could not queue Shopify customer erasure",
     );
     reportError(error, { task: "customer-erasure", customerGid });
+  }
+}
+
+/** Queues a mirror of one mailing-list decision onto the Shopify customer. Never throws (the list is the record). */
+export async function enqueueMarketingSync(subscriberId: string): Promise<void> {
+  if (!adminConfigured()) return;
+  try {
+    await enqueueJob("shopify.customer.marketing", { subscriberId }, { key: subscriberId });
+  } catch (error) {
+    logger.error(
+      { err: error instanceof Error ? error : String(error), subscriberId },
+      "Could not queue marketing consent sync",
+    );
   }
 }

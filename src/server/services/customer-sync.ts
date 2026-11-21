@@ -4,6 +4,7 @@ import type { z } from "zod";
 
 import { connectDb } from "@/server/db/connection";
 import { linkOrdersToUser } from "@/server/services/shopify-mirror";
+import { Subscriber } from "@/server/db/models/subscriber";
 import { User } from "@/server/db/models/user";
 import { adminQuery } from "@/server/shopify/admin";
 import {
@@ -18,7 +19,7 @@ import {
 } from "@/server/shopify/customer-schemas";
 
 /** Shopify only accepts international (E.164) phone numbers; anything else is left out rather than rejected. */
-const toE164 = (phone: string | undefined): string | undefined => {
+export const toE164 = (phone: string | undefined): string | undefined => {
   const compact = phone?.replace(/[\s()-]/g, "");
   return compact && /^\+[1-9]\d{6,14}$/.test(compact) ? compact : undefined;
 };
@@ -31,7 +32,7 @@ const run = async <S extends z.ZodType>(
   variables: Record<string, unknown>,
 ): Promise<z.infer<S>> => schema.parse(await adminQuery(query, variables));
 
-async function findByEmail(email: string): Promise<string | null> {
+export async function findByEmail(email: string): Promise<string | null> {
   // Addresses are validated at registration; refuse anything that could break out of the quoted search term.
   if (/["\\]/.test(email)) throw new Error("Unsafe email for customer search");
   const { customers } = await run(customerByEmailResponse, CUSTOMER_BY_EMAIL_QUERY, {
@@ -46,7 +47,7 @@ const mentionsPhone = (errors: UserError[]) => errors.some((e) => e.field?.inclu
 const isMissing = (errors: UserError[]) =>
   errors.some((e) => /does not exist|not found|invalid id/i.test(e.message));
 
-type Profile = { firstName: string; lastName: string; phone: string | undefined };
+export type Profile = { firstName: string; lastName: string; phone: string | undefined };
 
 /** Updates a customer. Returns "missing" if it was deleted in Shopify so the caller can recreate it. */
 async function updateCustomer(id: string, profile: Profile): Promise<"ok" | "missing"> {
@@ -69,7 +70,14 @@ async function updateCustomer(id: string, profile: Profile): Promise<"ok" | "mis
   return "ok";
 }
 
-async function createCustomer(email: string, profile: Profile): Promise<string | null> {
+/** Extra fields only some callers have (a booking knows an address; an account does not). */
+type CreateExtras = { tags?: string[]; addresses?: Record<string, unknown>[] };
+
+export async function createCustomer(
+  email: string,
+  profile: Profile,
+  extras: CreateExtras = {},
+): Promise<string | null> {
   for (const withPhone of [true, false]) {
     const phone = withPhone ? profile.phone : undefined;
     const { customerCreate } = await run(customerCreateResponse, CUSTOMER_CREATE, {
@@ -78,7 +86,8 @@ async function createCustomer(email: string, profile: Profile): Promise<string |
         firstName: profile.firstName,
         lastName: profile.lastName,
         ...(phone ? { phone } : {}),
-        tags: ["fernwood-web"],
+        tags: extras.tags ?? ["fernwood-web"],
+        ...(extras.addresses ? { addresses: extras.addresses } : {}),
       },
     });
     if (customerCreate.customer && customerCreate.userErrors.length === 0)
@@ -94,12 +103,14 @@ async function createCustomer(email: string, profile: Profile): Promise<string |
  * Makes the Shopify customer match the account: links an existing customer with the same email (for example
  * from an earlier guest checkout, so their past orders belong to the account), otherwise creates one, and
  * records the id. Idempotent and safe to repeat; always reads the current account data. Marketing consent is
- * deliberately not touched: the newsletter system owns it.
+ * mirrored separately from the mailing list (`syncMarketing`), which stays the source of truth.
  */
-export async function syncCustomer(userId: string): Promise<void> {
+export async function syncCustomer(
+  userId: string,
+): Promise<{ marketingSubscriberId: string | null }> {
   await connectDb();
   const user = await User.findById(userId).lean();
-  if (!user) return; // account deleted after the job was queued
+  if (!user) return { marketingSubscriberId: null }; // account deleted after the job was queued
   const profile: Profile = {
     firstName: user.firstName,
     lastName: user.lastName,
@@ -108,14 +119,14 @@ export async function syncCustomer(userId: string): Promise<void> {
 
   if (user.shopifyCustomerId && (await updateCustomer(user.shopifyCustomerId, profile)) === "ok") {
     await linkOrdersToUser(user);
-    return;
+    return { marketingSubscriberId: await subscriberIdFor(user.email) };
   }
 
   let id = await findByEmail(user.email);
   // A customer we did not create (for example from a guest checkout) belongs to whoever owns that mailbox.
   // Until this account proves it, never adopt it and never overwrite its details: otherwise anyone could
   // register with someone else's email and rewrite their Shopify record. Verification re-runs this sync.
-  if (id && !user.emailVerifiedAt) return;
+  if (id && !user.emailVerifiedAt) return { marketingSubscriberId: null };
   if (id) {
     if ((await updateCustomer(id, profile)) === "missing") id = null;
   }
@@ -124,11 +135,18 @@ export async function syncCustomer(userId: string): Promise<void> {
     if (!id) {
       // The email was taken between our lookup and the create. Same rule as above: an unproven mailbox
       // must not adopt someone else's customer.
-      if (!user.emailVerifiedAt) return;
+      if (!user.emailVerifiedAt) return { marketingSubscriberId: null };
       id = await findByEmail(user.email);
     }
     if (!id) throw new Error("Shopify customer could neither be created nor found");
   }
   await User.updateOne({ _id: user._id }, { $set: { shopifyCustomerId: id } });
   await linkOrdersToUser({ ...user, shopifyCustomerId: id });
+  // A brand-new Shopify customer starts without consent: the caller queues a consent sync from the mailing list.
+  return { marketingSubscriberId: await subscriberIdFor(user.email) };
 }
+
+const subscriberIdFor = async (email: string): Promise<string | null> => {
+  const subscriber = await Subscriber.findOne({ email }, { _id: 1 }).lean();
+  return subscriber ? String(subscriber._id) : null;
+};
