@@ -2,6 +2,14 @@
 
 Written for the owner, who will take this from staging to production. Everything below was built and verified against the **development store** (`StorePilot AI`) with real Shopify data. Nothing has been deployed or merged to `main`.
 
+## 0. Deployed (staging)
+
+- **Vercel project `fernwood`** (team "Aditya Jain's projects", Hobby plan), production branch `main`, live at **https://fernwood-ruby.vercel.app** (`fernwood.vercel.app` was already taken by someone else's project). Pushes to `main` deploy automatically through Vercel's Git integration; change that under Project > Settings > Git if you want manual deploys.
+- Environment variables on Vercel point at the **dev store**, the same Atlas database and the same Gmail sender. The auth and cron secrets are fresh (not the local ones). All values are stored as Secret (write-only). `SITE_URL` is baked in at build time, so changing it needs a redeploy.
+- Shopify webhooks for the dev store are registered to this URL (a signed test webhook returned 200). The repo variable `PROD_URL` is set, so the `Uptime` workflow probes `/api/health` every 15 minutes.
+- Verified on the live URL: 53 of 53 sitemap pages return 200, database ok (`/api/health/ready`; the very first call after a cold start can report `degraded` because of its 3 s timeout), a gardener booking creates the customer and prices the plan, quick add reaches checkout.
+- To go to production proper: connect your domain in Vercel, set `SITE_URL` to it and redeploy, point checkout at a `checkout.` subdomain (section 2b), swap the Shopify values for the production store, and use fresh secrets.
+
 ## 1. What is built
 
 | Area | State |
