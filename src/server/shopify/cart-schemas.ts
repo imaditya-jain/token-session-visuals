@@ -16,6 +16,7 @@ export const cartNodeSchema = z.object({
         id: z.string(),
         quantity: z.number().int(),
         cost: z.object({ amountPerQuantity: money, totalAmount: money }),
+        sellingPlanAllocation: z.object({ sellingPlan: z.object({ name: z.string() }) }).nullable(),
         merchandise: z.object({
           title: z.string(),
           image: z.object({ url: z.string() }).nullable(),

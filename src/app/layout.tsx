@@ -15,6 +15,9 @@ const fraunces = localFont({
     { path: "../fonts/fraunces-latin-v38.woff2", weight: "600", style: "normal" },
   ],
   display: "swap",
+  // Metric-adjusted fallback: until the web font arrives, text is laid out in the same space, so nothing moves
+  // when it swaps in (no layout shift).
+  adjustFontFallback: "Times New Roman",
   variable: "--font-fraunces",
 });
 
@@ -26,6 +29,7 @@ const workSans = localFont({
     { path: "../fonts/work-sans-latin-v24.woff2", weight: "600", style: "normal" },
   ],
   display: "swap",
+  adjustFontFallback: "Arial",
   variable: "--font-work-sans",
 });
 

@@ -5,7 +5,7 @@ import { Schema } from "mongoose";
 import { defineModel } from "@/server/db/define-model";
 
 export type SubscriberStatus = "pending" | "subscribed" | "unsubscribed";
-export type SubscriberSource = "footer" | "account";
+export type SubscriberSource = "footer" | "account" | "booking";
 
 export type SubscriberRecord = {
   email: string;
@@ -35,7 +35,7 @@ const subscriberSchema = new Schema<SubscriberRecord>(
       required: true,
       default: "pending",
     },
-    source: { type: String, enum: ["footer", "account"], required: true },
+    source: { type: String, enum: ["footer", "account", "booking"], required: true },
     consentAt: { type: Date, required: true },
     confirmedAt: { type: Date },
     unsubscribedAt: { type: Date },

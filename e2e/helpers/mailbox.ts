@@ -39,3 +39,31 @@ export const toLocal = (url: string, baseURL: string): string => {
   const parsed = new URL(url);
   return `${baseURL.replace(/\/$/, "")}${parsed.pathname}${parsed.search}`;
 };
+
+/** Gives an account order-update notifications, as the order sync would after Shopify webhooks (none exist in e2e). */
+export async function seedNotifications(
+  email: string,
+  items: { title: string; body: string; link: string }[],
+): Promise<void> {
+  const { mongoUri, dbName } = runtime();
+  const client = new MongoClient(mongoUri);
+  try {
+    await client.connect();
+    const db = client.db(dbName);
+    const user = await db.collection("users").findOne({ email });
+    if (!user) throw new Error(`No account for ${email}`);
+    const now = Date.now();
+    await db.collection("notifications").insertMany(
+      items.map((item, index) => ({
+        userId: user["_id"],
+        kind: "order.shipped",
+        ...item,
+        dedupeKey: `e2e:${email}:${index}`,
+        createdAt: new Date(now - index * 60_000),
+        expireAt: new Date(now + 86_400_000),
+      })),
+    );
+  } finally {
+    await client.close();
+  }
+}

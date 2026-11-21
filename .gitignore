@@ -47,3 +47,4 @@ tsbuildinfo
 
 # E2E runtime handshake
 .e2e-runtime.json
+.lighthouseci/

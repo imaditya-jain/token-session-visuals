@@ -27,6 +27,13 @@ Rules: see `CLAUDE.md`. One task = one branch from `dev`. Every phase ends with 
 - [x] Shopify GID mirror (products+variants, collections, orders; webhooks + daily backfill; verified live) and customer-sync security fix
 - [x] SEO: robots + sitemap, metadataBase, Product/Organization/WebSite JSON-LD, canonical + social images (9 unit + 7 e2e)
 - [x] Accessibility: axe suite (all pages, desktop+mobile, overlays/forms) green; fixed unnamed sort control, landmarks, heading order, label-in-name, dialog names, 404 main. Open design question: clay eyebrow contrast 3.35:1
+- [x] Observability: health/readiness endpoints, opt-in privacy-first Sentry (verified in a browser), uptime probe workflow
+- [x] Performance gate: Lighthouse CI (error gates + target warnings) and fixes: CLS to 0, forms server-rendered, inline CSS, -35 KB JS. LCP/TBT targets not yet met (see CLAUDE.md)
+- [x] Branch protection on main/dev (no force-push, no deletion, applies to admins; no PR requirement so the merge workflow is unchanged)
+- [x] Docker: image (non-root, health check, standalone), Compose (mongo + app + scheduler), smoke script + CI job
+- [x] k6 load tests (browse / api / cache-miss storm) with thresholds, runner script and manual staging workflow; all pass locally with 0% errors
+- [x] Privacy: data export + account deletion (password re-check, ordered cleanup, Shopify erasure verified live, confirmation email, UI); 19 integration + 6 unit + 6 e2e tests
+- [x] Notifications: transition-based order events, in-app list with polling, opt-in branded order emails; 11 unit + 20 integration + 5 e2e tests
 - [ ] Next: register webhooks on the production URL, social profile URLs, order/mirror-backed history (optional)
 
 ## Blocking inputs from the user

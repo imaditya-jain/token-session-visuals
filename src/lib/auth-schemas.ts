@@ -1,5 +1,9 @@
 import { z } from "zod";
 
+import { configureZodForBrowser } from "@/lib/zod-browser";
+
+configureZodForBrowser();
+
 /** Shared by the API (authoritative) and the forms (instant feedback). */
 const email = z.string().trim().toLowerCase().pipe(z.email("Enter a valid email address").max(254));
 const name = z.string().trim().min(1, "Required").max(80);
@@ -40,6 +44,11 @@ export const profileSchema = z
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type ProfileInput = z.infer<typeof profileSchema>;
+
+/** Deleting an account re-asks for the password: a stolen session alone must not be enough to destroy it. */
+export const deleteAccountSchema = z.object({
+  password: z.string().min(1, "Enter your password").max(200),
+});
 
 const oneTimeToken = z.string().trim().min(20, "Invalid link").max(200, "Invalid link");
 

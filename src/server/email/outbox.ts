@@ -6,6 +6,7 @@ import type { Types } from "mongoose";
 import { connectDb } from "@/server/db/connection";
 import { EmailJob } from "@/server/db/models/email-job";
 import { logger } from "@/server/logger";
+import { reportError } from "@/server/monitoring";
 
 import { sendEmail } from "./mailer";
 import { type TemplateData, type TemplateName, templates } from "./templates";
@@ -96,6 +97,7 @@ export async function processEmailJob(jobId: string | Types.ObjectId): Promise<D
       "Email delivery failed",
     );
     if (job.attempts >= MAX_ATTEMPTS) {
+      reportError(error, { emailTemplate: job.template, jobId: String(job._id) });
       await EmailJob.updateOne(
         { _id: job._id },
         {

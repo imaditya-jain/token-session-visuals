@@ -8,6 +8,35 @@ export default defineConfig([
   js.configs.recommended,
   ...nextVitals,
   ...nextTs,
-  globalIgnores([".next/**", "out/**", "node_modules/**", "next-env.d.ts", "test-results/**"]),
+  globalIgnores([
+    ".next/**",
+    "out/**",
+    "node_modules/**",
+    "next-env.d.ts",
+    "test-results/**",
+    "playwright-report/**",
+    ".lighthouseci/**",
+  ]),
+  {
+    // CommonJS tool configs (Lighthouse CI) use `module.exports` and `require`.
+    files: ["**/*.cjs"],
+    languageOptions: {
+      sourceType: "commonjs",
+      globals: {
+        module: "writable",
+        require: "readonly",
+        process: "readonly",
+        __dirname: "readonly",
+      },
+    },
+    rules: { "@typescript-eslint/no-require-imports": "off" },
+  },
+  {
+    // k6 scripts run in k6's own runtime, which provides these globals.
+    files: ["loadtest/**/*.js"],
+    languageOptions: {
+      globals: { __ENV: "readonly", __VU: "readonly", __ITER: "readonly" },
+    },
+  },
   eslintPluginPrettier,
 ]);

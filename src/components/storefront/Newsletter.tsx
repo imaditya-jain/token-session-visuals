@@ -3,7 +3,6 @@
 import { useState, type FormEvent } from "react";
 
 import { ApiError, postJson } from "@/lib/api-client";
-import { subscribeSchema } from "@/lib/newsletter-schemas";
 
 type State =
   | { phase: "idle" | "sending" }
@@ -16,6 +15,8 @@ export default function Newsletter() {
 
   const onSubmit = async (event: FormEvent) => {
     event.preventDefault();
+    // Loaded on first submit so zod stays out of the initial bundle of every page that shows the footer.
+    const { subscribeSchema } = await import("@/lib/newsletter-schemas");
     const parsed = subscribeSchema.safeParse({ email });
     if (!parsed.success) {
       setState({

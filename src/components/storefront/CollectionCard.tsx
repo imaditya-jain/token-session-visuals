@@ -16,7 +16,7 @@ export default function CollectionCard({ collection }: { collection: Collection 
         alt={collection.name}
         width={800}
         height={1000}
-        sizes="(min-width: 1280px) 300px, (min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
+        sizes="(min-width: 1280px) 300px, (min-width: 1024px) 25vw, 50vw"
         className="aspect-[4/5] w-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
       />
       <div className="absolute inset-0 bg-gradient-to-t from-forest-deep/70 via-transparent to-transparent" />

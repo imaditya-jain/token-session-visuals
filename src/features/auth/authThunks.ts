@@ -58,6 +58,30 @@ export const logoutAll = thunk<void, void>("auth/logoutAll", async (_arg, dispat
   dispatch(signedOut());
 });
 
+/** Downloads everything we hold about the signed-in person as a JSON file. */
+export const exportMyData = thunk<void, void>("auth/exportData", async () => {
+  const data = await apiFetch<unknown>("/api/me/export");
+  const url = URL.createObjectURL(
+    new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }),
+  );
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "fernwood-my-data.json";
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 0);
+});
+
+/** Permanently deletes the account (the server re-checks the password), then ends the local session. */
+export const deleteMyAccount = thunk<string, void>(
+  "auth/deleteAccount",
+  async (password, dispatch) => {
+    await apiFetch<void>("/api/me", { method: "DELETE", json: { password } });
+    dispatch(signedOut());
+  },
+);
+
 export const updateProfile = thunk<ProfileInput, AuthUser>(
   "auth/updateProfile",
   async (patch, dispatch) => {

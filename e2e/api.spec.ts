@@ -172,7 +172,9 @@ test.describe("methods", () => {
     ["GET", "/api/auth/reset-password"],
     ["GET", "/api/auth/verify-email/confirm"],
     ["PUT", "/api/me"],
-    ["DELETE", "/api/me"],
+    ["POST", "/api/me"],
+    ["POST", "/api/me/export"],
+    ["DELETE", "/api/me/export"],
     ["POST", "/api/orders"],
     ["DELETE", "/api/orders/1"],
     ["GET", "/api/newsletter"],
@@ -735,6 +737,51 @@ test.describe("cart API (Shopify disabled: reads work, writes degrade cleanly)",
   });
 });
 
+test.describe("wholesale API", () => {
+  // A fresh address per test: the endpoint allows 3 applications per address per hour.
+  const valid = {
+    businessName: "Green Corner Café",
+    contactName: "Ada Lovelace",
+    get email() {
+      return uniqueEmail("wholesale");
+    },
+    phone: "+91 98765 43210",
+    businessType: "Café or restaurant",
+    location: "Pune, India",
+    message: "We want 40 plants for a new café and ongoing monthly supply.",
+  };
+
+  test("accepts a valid application, and a honeypot looks identical", async () => {
+    const api = await client();
+    const response = await json(api, "/api/wholesale", valid);
+    expect(response.status()).toBe(202);
+    expect(await response.json()).toEqual({ data: { accepted: true } });
+    expect(
+      (await json(api, "/api/wholesale", { ...valid, website: "https://spam.example" })).status(),
+    ).toBe(202);
+  });
+
+  for (const [name, body] of [
+    ["header injection", { ...valid, businessName: "Cafe\r\nBcc: x@example.com" }],
+    ["operator objects", { ...valid, message: { $gt: "" } }],
+    ["bad business type", { ...valid, businessType: "x" }],
+    ["prototype pollution", JSON.parse('{"__proto__":{"a":1},"businessName":"x"}')],
+    ["oversized body", { ...valid, message: "x".repeat(20_000) }],
+  ] as const) {
+    test(`rejects ${name} without a server error`, async () => {
+      const api = await client();
+      expect([400, 413]).toContain((await json(api, "/api/wholesale", body)).status());
+    });
+  }
+
+  test("cross-origin posts and wrong methods are refused", async () => {
+    const foreign = await client({ origin: "https://evil.example" });
+    expect((await json(foreign, "/api/wholesale", valid)).status()).toBe(403);
+    const api = await client();
+    expect((await api.get("/api/wholesale")).status()).toBe(405);
+  });
+});
+
 test.describe("contact API", () => {
   // A fresh address per test: the endpoint allows 3 messages per address per hour.
   const valid = {
@@ -813,5 +860,122 @@ test.describe("cart identity API", () => {
     const api = await client();
     expect((await api.post("/api/cart/identity", { data: {} })).status()).toBe(405);
     expect((await api.get("/api/cart/identity")).status()).toBe(405);
+  });
+});
+
+test.describe("health endpoints", () => {
+  test("liveness is public, minimal and uncached", async () => {
+    const api = await client({ origin: null });
+    const response = await api.get("/api/health");
+    expect(response.status()).toBe(200);
+    expect(await response.json()).toEqual({ data: { status: "ok" } });
+    expect(response.headers()["cache-control"]).toBe("no-store");
+  });
+
+  test("readiness needs the secret and reports the database", async () => {
+    const api = await client({ origin: null });
+    expect((await api.get("/api/health/ready")).status()).toBe(403);
+    expect((await api.get("/api/health/ready", { headers: bearer("wrong") })).status()).toBe(403);
+    const response = await api.get("/api/health/ready", { headers: bearer(runtime().cronSecret) });
+    expect(response.status()).toBe(200);
+    const { data } = await body(response);
+    expect(data).toMatchObject({ status: "ok", checks: { database: "ok" } });
+  });
+
+  test("health endpoints accept only GET", async () => {
+    const api = await client();
+    expect((await api.post("/api/health", { data: {} })).status()).toBe(405);
+    expect((await api.delete("/api/health/ready")).status()).toBe(405);
+  });
+});
+
+test.describe("privacy API", () => {
+  test("export and delete need a valid session", async () => {
+    const api = await client();
+    expect((await api.get("/api/me/export")).status()).toBe(401);
+    expect(
+      (await api.get("/api/me/export", { headers: { authorization: "Bearer nope" } })).status(),
+    ).toBe(401);
+    expect((await json(api, "/api/me", { password: "x" }, "delete")).status()).toBe(401);
+  });
+
+  test("delete is same-site only and validates its body", async () => {
+    const foreign = await client({ origin: "https://evil.example" });
+    expect((await json(foreign, "/api/me", { password: "x" }, "delete")).status()).toBe(403);
+  });
+
+  test("a full lifecycle: export, wrong password, delete, then nothing works", async () => {
+    const api = await client();
+    const email = uniqueEmail("gone");
+    const registered = await json(api, "/api/auth/register", {
+      email,
+      password,
+      firstName: "G",
+      lastName: "O",
+      acceptsMarketing: false,
+    });
+    expect(registered.status()).toBe(201);
+    const { data } = await body(registered);
+    const auth = { authorization: `Bearer ${data.accessToken}` };
+
+    const exported = await api.get("/api/me/export", { headers: auth });
+    expect(exported.status()).toBe(200);
+    expect(exported.headers()["content-disposition"]).toContain("attachment");
+    expect((await body(exported)).data.account.email).toBe(email);
+
+    const wrong = await json(api, "/api/me", { password: "definitely wrong" }, "delete", auth);
+    expect(wrong.status()).toBe(403);
+    expect((await body(wrong)).error.code).toBe("invalid_password");
+    expect((await api.get("/api/me", { headers: auth })).status()).toBe(200);
+
+    expect((await json(api, "/api/me", { password }, "delete", auth)).status()).toBe(200);
+    expect((await api.get("/api/me", { headers: auth })).status()).toBe(401);
+    expect((await api.get("/api/me/export", { headers: auth })).status()).toBe(401);
+    expect((await json(api, "/api/auth/login", { email, password })).status()).toBe(401);
+  });
+});
+
+test.describe("notifications API", () => {
+  test("need a valid session", async () => {
+    const api = await client();
+    expect((await api.get("/api/notifications")).status()).toBe(401);
+    expect(
+      (await api.get("/api/notifications", { headers: { authorization: "Bearer nope" } })).status(),
+    ).toBe(401);
+    expect((await json(api, "/api/notifications/read", { all: true })).status()).toBe(401);
+  });
+
+  test("a new customer has no notifications, bad input is a 400, and foreign origins are refused", async () => {
+    const api = await client();
+    const registered = await json(api, "/api/auth/register", {
+      email: uniqueEmail("notif"),
+      password,
+      firstName: "N",
+      lastName: "T",
+      acceptsMarketing: false,
+    });
+    const auth = { authorization: `Bearer ${(await body(registered)).data.accessToken}` };
+
+    expect(await body(await api.get("/api/notifications", { headers: auth }))).toEqual({
+      data: { unreadCount: 0, items: [] },
+    });
+    expect((await api.get("/api/notifications?limit=999", { headers: auth })).status()).toBe(400);
+    expect(
+      (await json(api, "/api/notifications/read", { ids: ["nope"] }, "post", auth)).status(),
+    ).toBe(400);
+    expect((await json(api, "/api/notifications/read", { all: true }, "post", auth)).status()).toBe(
+      200,
+    );
+
+    const foreign = await client({ origin: "https://evil.example" });
+    expect(
+      (await json(foreign, "/api/notifications/read", { all: true }, "post", auth)).status(),
+    ).toBe(403);
+  });
+
+  test("only the documented methods work", async () => {
+    const api = await client();
+    expect((await api.post("/api/notifications", { data: {} })).status()).toBe(405);
+    expect((await api.get("/api/notifications/read")).status()).toBe(405);
   });
 });

@@ -19,6 +19,7 @@ const STATIC_PATHS = [
   "/gift-cards",
   "/careers",
   "/wholesale",
+  "/gardener-services",
   "/sustainability",
   "/press",
   "/accessibility",

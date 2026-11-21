@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 
 import FormAlert from "@/components/auth/FormAlert";
+import NotificationsPanel from "@/components/account/NotificationsPanel";
+import PrivacyPanel from "@/components/auth/PrivacyPanel";
 import TextField from "@/components/auth/TextField";
 import {
   fieldErrorsFromFailure,
@@ -199,6 +201,8 @@ export default function AccountPanel() {
         </div>
       </section>
 
+      <NotificationsPanel />
+
       <section className={card} aria-labelledby="security-heading">
         <h2 id="security-heading" className="font-display text-2xl font-medium text-forest">
           Sign out
@@ -225,6 +229,8 @@ export default function AccountPanel() {
           </Button>
         </div>
       </section>
+
+      <PrivacyPanel />
     </div>
   );
 }

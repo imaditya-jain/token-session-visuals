@@ -1,5 +1,6 @@
 import { fileURLToPath } from "node:url";
 
+import { withSentryConfig } from "@sentry/nextjs/config";
 import type { NextConfig } from "next";
 
 const isDev = process.env["NODE_ENV"] === "development";
@@ -44,6 +45,12 @@ const securityHeaders = [
 const config: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  // Self-contained server bundle for the Docker image (`NEXT_OUTPUT=standalone`). Off by default: Vercel and
+  // `next start` (used by the e2e suite) must keep the regular output.
+  ...(process.env["NEXT_OUTPUT"] === "standalone" ? { output: "standalone" as const } : {}),
+  // The site's CSS is ~12 KB gzipped. Inlining it into the HTML removes a render-blocking round trip on every
+  // first load (the dominant cost on slow mobile connections). Allowed by the CSP (`style-src 'unsafe-inline'`).
+  experimental: { inlineCss: true },
   // Pin the workspace root to this project; otherwise Next infers it from stray lockfiles in parent folders.
   turbopack: { root: fileURLToPath(new URL(".", import.meta.url)) },
   async headers() {
@@ -54,4 +61,23 @@ const config: NextConfig = {
   },
 };
 
-export default config;
+/**
+ * Browser error monitoring needs Sentry's build plugin (tunnel route, optional source-map upload). The plugin also
+ * injects code into every page, so it is applied only when a browser DSN is configured at build time. Server-side
+ * monitoring (`SENTRY_DSN`) does not need it, so builds without Sentry are byte-for-byte unaffected.
+ */
+const hasBrowserSentry = Boolean(process.env["NEXT_PUBLIC_SENTRY_DSN"]);
+
+export default hasBrowserSentry
+  ? withSentryConfig(config, {
+      ...(process.env["SENTRY_ORG"] ? { org: process.env["SENTRY_ORG"] } : {}),
+      ...(process.env["SENTRY_PROJECT"] ? { project: process.env["SENTRY_PROJECT"] } : {}),
+      ...(process.env["SENTRY_AUTH_TOKEN"] ? { authToken: process.env["SENTRY_AUTH_TOKEN"] } : {}),
+      silent: !process.env["CI"],
+      telemetry: false,
+      // Source maps are uploaded (and then removed from the public build) only when an auth token is present.
+      sourcemaps: { disable: !process.env["SENTRY_AUTH_TOKEN"] },
+      // Same-origin proxy: the browser SDK needs no extra `connect-src` in our CSP and ad blockers don't hit it.
+      tunnelRoute: "/monitoring",
+    })
+  : config;

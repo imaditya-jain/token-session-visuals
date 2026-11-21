@@ -72,22 +72,48 @@ export async function getCart(cartId: string | null): Promise<CartResult> {
   return cart ? { cart: mapCart(cart), cartId: cart.id } : { cart: null, cartId: null };
 }
 
+export type AddLineOptions = {
+  sellingPlanId?: string | undefined;
+  attributes?: { key: string; value: string }[] | undefined;
+  /** Pre-fills checkout (and ties the order to this customer). Only used for bookings, where the form asked. */
+  buyer?: { email: string; phone?: string | undefined } | undefined;
+};
+
 export async function addLine(
   cartId: string | null,
   variantId: string,
   quantity: number,
+  options: AddLineOptions = {},
 ): Promise<CartResult> {
-  const lines = [{ merchandiseId: variantId, quantity }];
+  const lines = [
+    {
+      merchandiseId: variantId,
+      quantity,
+      ...(options.sellingPlanId ? { sellingPlanId: options.sellingPlanId } : {}),
+      ...(options.attributes?.length ? { attributes: options.attributes } : {}),
+    },
+  ];
   if (cartId) {
     const existing = await getCart(cartId);
     if (existing.cart) {
       const alreadyThere = existing.cart.lines.length;
       if (alreadyThere >= MAX_CART_LINES) throw conflict("Your cart is full.", "cart_full");
       const { cartLinesAdd } = await run(cartLinesAddResponse, CART_LINES_ADD, { cartId, lines });
-      return unwrap(cartLinesAdd);
+      const added = unwrap(cartLinesAdd);
+      return options.buyer ? setBuyerEmail(added.cartId, options.buyer.email) : added;
     }
   }
-  const { cartCreate } = await run(cartCreateResponse, CART_CREATE, { lines });
+  const { cartCreate } = await run(cartCreateResponse, CART_CREATE, {
+    lines,
+    ...(options.buyer
+      ? {
+          buyerIdentity: {
+            email: options.buyer.email,
+            ...(options.buyer.phone ? { phone: options.buyer.phone } : {}),
+          },
+        }
+      : {}),
+  });
   return unwrap(cartCreate);
 }
 

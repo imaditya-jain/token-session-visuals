@@ -26,6 +26,11 @@ const CART_FIELDS = /* GraphQL */ `
             amount
           }
         }
+        sellingPlanAllocation {
+          sellingPlan {
+            name
+          }
+        }
         merchandise {
           ... on ProductVariant {
             title
@@ -64,8 +69,8 @@ export const CART_QUERY = /* GraphQL */ `
 
 export const CART_CREATE = /* GraphQL */ `
   ${CART_FIELDS}
-  mutation CartCreate($lines: [CartLineInput!]!) {
-    cartCreate(input: { lines: $lines }) {
+  mutation CartCreate($lines: [CartLineInput!]!, $buyerIdentity: CartBuyerIdentityInput) {
+    cartCreate(input: { lines: $lines, buyerIdentity: $buyerIdentity }) {
       cart {
         ...CartFields
       }

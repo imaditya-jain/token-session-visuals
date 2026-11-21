@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 
 import FormAlert from "@/components/auth/FormAlert";
@@ -11,6 +11,7 @@ import {
   fieldErrorsFromZod,
   type FieldErrors,
 } from "@/components/auth/useFormErrors";
+import { useQueryParam } from "@/lib/use-query-param";
 import { Button } from "@/components/ui/button";
 import { login } from "@/features/auth/authThunks";
 import type { ApiFailure } from "@/features/auth/types";
@@ -22,7 +23,8 @@ export default function LoginForm() {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const status = useAppSelector((state) => state.auth.status);
-  const next = safeRedirectPath(useSearchParams().get("next"));
+  const next = safeRedirectPath(useQueryParam("next"));
+  const accountDeleted = useQueryParam("deleted") === "1";
 
   const [values, setValues] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState<FieldErrors>({});
@@ -50,6 +52,14 @@ export default function LoginForm() {
 
   return (
     <form onSubmit={onSubmit} noValidate className="space-y-5" aria-busy={pending}>
+      {accountDeleted ? (
+        <p
+          role="status"
+          className="rounded-md border border-sage/50 bg-sage-light/50 px-4 py-3 text-sm text-forest"
+        >
+          Your account has been deleted. We&apos;ve emailed you a confirmation.
+        </p>
+      ) : null}
       <FormAlert failure={failure} />
       <TextField
         label="Email"

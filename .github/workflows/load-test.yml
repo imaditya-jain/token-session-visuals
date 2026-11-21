@@ -1,0 +1,30 @@
+name: Load test (staging)
+
+# Manual only. Runs the k6 scenarios in loadtest/ against a URL you give it.
+# NEVER run this against production: it registers accounts and generates sustained load.
+# Use a staging deployment that matches production (same hosting plan, a real database, real Shopify data).
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: Staging base URL, e.g. https://staging.example.com (not production)
+        required: true
+        type: string
+      scenario:
+        description: Which scenario to run
+        required: true
+        default: all
+        type: choice
+        options: [all, browse, api, storm]
+
+permissions:
+  contents: read
+
+jobs:
+  k6:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run k6
+        run: scripts/load-test.sh "${{ inputs.scenario }}" "${{ inputs.url }}"

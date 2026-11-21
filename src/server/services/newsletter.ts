@@ -8,6 +8,7 @@ import { User } from "@/server/db/models/user";
 import { enqueueEmail } from "@/server/email/outbox";
 import { badRequest } from "@/server/http/errors";
 import { logger } from "@/server/logger";
+import { enqueueMarketingSync } from "@/server/queue/producers";
 import { consumeAuthToken, issueAuthToken } from "@/server/services/auth-tokens";
 
 /**
@@ -40,6 +41,7 @@ export async function confirmSubscription(rawToken: string): Promise<void> {
     { _id: subscriberId },
     { $set: { status: "subscribed", confirmedAt: new Date() }, $unset: { unsubscribedAt: 1 } },
   );
+  await enqueueMarketingSync(String(subscriberId));
 }
 
 /** Idempotent. Also switches off the marketing preference on a matching account. */
@@ -47,11 +49,13 @@ export async function unsubscribe(rawToken: string): Promise<void> {
   const email = readUnsubscribeToken(rawToken);
   if (!email) throw badRequest("This unsubscribe link is invalid.", "invalid_token");
   await connectDb();
-  await Subscriber.updateOne(
+  const changed = await Subscriber.findOneAndUpdate(
     { email, status: { $ne: "unsubscribed" } },
     { $set: { status: "unsubscribed", unsubscribedAt: new Date() } },
-  );
+    { projection: { _id: 1 } },
+  ).lean();
   await User.updateOne({ email }, { $set: { acceptsMarketing: false } });
+  if (changed) await enqueueMarketingSync(String(changed._id));
 }
 
 /**
@@ -62,21 +66,24 @@ export async function syncMarketingConsent(email: string, accepts: boolean): Pro
   await connectDb();
   const now = new Date();
   if (accepts) {
-    await Subscriber.updateOne(
+    const subscriber = await Subscriber.findOneAndUpdate(
       { email },
       {
         $set: { status: "subscribed", confirmedAt: now },
         $setOnInsert: { source: "account", consentAt: now },
         $unset: { unsubscribedAt: 1 },
       },
-      { upsert: true },
-    );
+      { upsert: true, returnDocument: "after", projection: { _id: 1 } },
+    ).lean();
+    if (subscriber) await enqueueMarketingSync(String(subscriber._id));
     return;
   }
-  await Subscriber.updateOne(
+  const changed = await Subscriber.findOneAndUpdate(
     { email, status: { $ne: "unsubscribed" } },
     { $set: { status: "unsubscribed", unsubscribedAt: now } },
-  );
+    { projection: { _id: 1 } },
+  ).lean();
+  if (changed) await enqueueMarketingSync(String(changed._id));
 }
 
 export type CampaignInput = {

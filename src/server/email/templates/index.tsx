@@ -1,13 +1,17 @@
 import { z } from "zod";
 
 import { CONTACT_TOPICS } from "@/lib/contact-schemas";
+import { BUSINESS_TYPES } from "@/lib/wholesale-schemas";
 
+import AccountDeleted from "./AccountDeleted";
 import CampaignEmail from "./CampaignEmail";
 import ContactMessage from "./ContactMessage";
+import OrderUpdate from "./OrderUpdate";
 import NewsletterConfirm from "./NewsletterConfirm";
 import PasswordChanged from "./PasswordChanged";
 import ResetPassword from "./ResetPassword";
 import VerifyEmail from "./VerifyEmail";
+import WholesaleApplication, { type WholesaleApplicationData } from "./WholesaleApplication";
 
 const https = z
   .string()
@@ -47,6 +51,28 @@ export const templates = {
     schema: z.object({ firstName: z.string() }),
     element: (data: { firstName: string }) => <PasswordChanged {...data} />,
   },
+  "account-deleted": {
+    subject: "Your Fernwood account has been deleted",
+    schema: z.object({ firstName: z.string() }),
+    element: (data: { firstName: string }) => <AccountDeleted {...data} />,
+  },
+  "order-update": {
+    subject: (data: { headline: string }) => data.headline,
+    schema: z.object({
+      firstName: z.string(),
+      orderName: z.string().max(40),
+      headline: z.string().max(200),
+      message: z.string().max(500),
+      url: z.string().url(),
+    }),
+    element: (data: {
+      firstName: string;
+      orderName: string;
+      headline: string;
+      message: string;
+      url: string;
+    }) => <OrderUpdate {...data} />,
+  },
   "newsletter-confirm": {
     subject: "Confirm your Fernwood subscription",
     schema: z.object({ url: z.string().url() }),
@@ -65,6 +91,22 @@ export const templates = {
       <ContactMessage {...data} />
     ),
     /** Lets the team answer the visitor with a plain "Reply". */
+    replyTo: (data: { email: string }) => data.email,
+  },
+  "wholesale-application": {
+    subject: (data: { businessName: string }) => `Wholesale application: ${data.businessName}`,
+    schema: z.object({
+      businessName: z.string().min(1).max(120),
+      contactName: z.string().min(1).max(80),
+      email: z.string().email(),
+      phone: z.string().min(7).max(20),
+      businessType: z.enum(BUSINESS_TYPES),
+      location: z.string().min(1).max(120),
+      taxId: z.string().max(40),
+      message: z.string().min(1).max(3000),
+    }),
+    element: (data: WholesaleApplicationData) => <WholesaleApplication {...data} />,
+    /** Lets the team answer the applicant with a plain "Reply". */
     replyTo: (data: { email: string }) => data.email,
   },
   campaign: {

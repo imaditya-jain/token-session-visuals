@@ -72,3 +72,21 @@ test.describe("content pages", () => {
     await expect(page.getByRole("status")).toContainText("Message sent");
   });
 });
+
+test.describe("wholesale application", () => {
+  test("shows the form, validates it, and confirms a sent application", async ({ page }) => {
+    await page.goto("/wholesale");
+    await page.getByRole("button", { name: "Send application" }).click();
+    await expect(page.getByText("This field is required").first()).toBeVisible();
+
+    await page.getByLabel("Business name").fill("Green Corner Café");
+    await page.getByLabel("Your name").fill("Ada Lovelace");
+    await page.getByLabel("Email").fill(`ada+${Date.now()}@example.com`);
+    await page.getByLabel("Phone").fill("+91 98765 43210");
+    await page.getByLabel("Type of business").selectOption("Café or restaurant");
+    await page.getByLabel("City and country").fill("Pune, India");
+    await page.getByLabel("What are you looking for?").fill("Forty plants for a new café.");
+    await page.getByRole("button", { name: "Send application" }).click();
+    await expect(page.getByRole("status")).toContainText("Application received");
+  });
+});

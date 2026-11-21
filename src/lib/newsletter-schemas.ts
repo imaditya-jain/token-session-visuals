@@ -1,5 +1,9 @@
 import { z } from "zod";
 
+import { configureZodForBrowser } from "@/lib/zod-browser";
+
+configureZodForBrowser();
+
 export const subscribeSchema = z.object({
   email: z.string().trim().toLowerCase().pipe(z.email("Enter a valid email address").max(254)),
 });

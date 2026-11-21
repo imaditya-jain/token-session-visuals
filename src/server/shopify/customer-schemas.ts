@@ -16,3 +16,9 @@ export const customerCreateResponse = z.object({
 export const customerUpdateResponse = z.object({
   customerUpdate: z.object({ customer: customer.nullable(), userErrors }),
 });
+export const customerMarketingResponse = z.object({
+  customerEmailMarketingConsentUpdate: z.object({
+    customer: z.object({ id: z.string() }).nullable(),
+    userErrors,
+  }),
+});

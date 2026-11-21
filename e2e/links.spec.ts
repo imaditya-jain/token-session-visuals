@@ -19,6 +19,8 @@ const PAGES = [
   "/gift-cards",
   "/careers",
   "/wholesale",
+  "/gardener-services",
+  "/order-confirmed",
   "/sustainability",
   "/press",
   "/accessibility",
@@ -82,19 +84,14 @@ test.describe("every link goes somewhere real", () => {
       "href",
       "/collections",
     );
-    await expect(nav.getByRole("link", { name: "Our Story" })).toHaveAttribute(
-      "href",
-      "/about#our-story",
-    );
+    await expect(nav.getByRole("link", { name: "Our Story" })).toHaveCount(0);
     await expect(nav.getByRole("link", { name: "About us" })).toHaveAttribute("href", "/about");
 
     const footer = page.locator("footer");
     const expected: Record<string, string> = {
       "Gift Cards": "/gift-cards",
-      Careers: "/careers",
       Wholesale: "/wholesale",
-      Sustainability: "/sustainability",
-      Press: "/press",
+      "Gardener Services": "/gardener-services",
       "Shipping & Delivery": "/shipping-delivery",
       "Plant Guarantee": "/plant-guarantee",
       "Care Library": "/care-guide",
@@ -140,6 +137,7 @@ test.describe("new pages", () => {
     ["/gift-cards", "Gift cards"],
     ["/careers", "Careers"],
     ["/wholesale", "Wholesale"],
+    ["/gardener-services", "Gardener services"],
     ["/sustainability", "Sustainability"],
     ["/press", "Press"],
     ["/accessibility", "Accessibility"],
@@ -182,9 +180,9 @@ test.describe("new pages", () => {
   });
 
   test("links into the contact form preselect the topic", async ({ page }) => {
-    await page.goto("/wholesale");
-    await page.getByRole("link", { name: "Ask about wholesale" }).click();
-    await expect(page.getByLabel("Topic")).toHaveValue("Wholesale");
+    await page.goto("/careers");
+    await page.getByRole("link", { name: "Get in touch" }).click();
+    await expect(page.getByLabel("Topic")).toHaveValue("Careers");
     await page.goto("/contact?topic=Bogus%20Topic");
     await expect(page.getByLabel("Topic")).toHaveValue("Order or delivery");
   });

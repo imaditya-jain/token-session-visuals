@@ -21,6 +21,9 @@ export const mapCart = (node: CartNode): Cart => ({
     image: line.merchandise.image?.url ?? line.merchandise.product.featuredImage?.url ?? "",
     unitPrice: line.cost.amountPerQuantity.amount,
     lineTotal: line.cost.totalAmount.amount,
-    variantTitle: line.merchandise.title === "Default Title" ? "" : line.merchandise.title,
+    // A subscription line shows its plan ("Monthly garden visit") where a variant title would go.
+    variantTitle:
+      line.sellingPlanAllocation?.sellingPlan.name ??
+      (line.merchandise.title === "Default Title" ? "" : line.merchandise.title),
   })),
 });

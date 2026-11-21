@@ -86,6 +86,52 @@ jobs:
             test-results/
           retention-days: 7
 
+  lighthouse:
+    name: Performance budgets (Lighthouse)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/mongodb-binaries
+          key: mongodb-binaries-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+      - run: npx playwright install --with-deps chromium
+      - name: Lighthouse CI
+        run: |
+          export CHROME_PATH="$(node -e "console.log(require('playwright').chromium.executablePath())")"
+          npx lhci autorun --config=lighthouserc.cjs
+        env:
+          CI: "true"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lighthouse-reports
+          path: .lighthouseci/
+          # The folder name starts with a dot; upload-artifact skips hidden files unless told otherwise.
+          include-hidden-files: true
+          retention-days: 7
+
+  docker:
+    name: Docker image + Compose
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate the Compose file
+        run: docker compose config --quiet
+      - name: Build the image (BuildKit, with the optional build secret)
+        run: |
+          printf 'SITE_URL=http://localhost:3300\n' > "$RUNNER_TEMP/build.env"
+          DOCKER_BUILDKIT=1 docker build --secret id=build_env,src="$RUNNER_TEMP/build.env" -t fernwood:ci .
+      - name: Smoke test the running container
+        run: scripts/docker-smoke.sh fernwood:ci
+
   security:
     name: Dependency audit + secret scan
     runs-on: ubuntu-latest

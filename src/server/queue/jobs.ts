@@ -6,6 +6,7 @@ import type { Types } from "mongoose";
 import { connectDb } from "@/server/db/connection";
 import { Job } from "@/server/db/models/job";
 import { logger } from "@/server/logger";
+import { reportError } from "@/server/monitoring";
 
 import { jobHandlers, type JobType } from "./handlers";
 
@@ -90,6 +91,7 @@ export async function processJob(jobId: string | Types.ObjectId): Promise<JobOut
       "Job failed",
     );
     if (job.attempts >= MAX_ATTEMPTS) {
+      reportError(error, { jobType: job.type, jobId: String(job._id) });
       await Job.updateOne(
         { _id: job._id },
         {

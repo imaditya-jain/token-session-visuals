@@ -2,12 +2,13 @@ import "server-only";
 
 import { adminEnv } from "@/server/config/env";
 import { logger } from "@/server/logger";
+import { reportError } from "@/server/monitoring";
 
 import type { MirrorResource } from "@/lib/shopify-gid";
 
 import { enqueueJob } from "./jobs";
 
-const adminConfigured = (): boolean => {
+export const adminConfigured = (): boolean => {
   try {
     adminEnv();
     return true;
@@ -67,5 +68,38 @@ export async function enqueueMirrorBackfill(): Promise<void> {
         "Could not queue mirror backfill",
       );
     }
+  }
+}
+
+/**
+ * Queues Shopify's erasure of a deleted account's customer record. The account is already gone, so a queueing
+ * failure can't be retried by the user: it is logged AND reported to error monitoring so someone can act on it.
+ */
+export async function enqueueCustomerErasure(customerGid: string): Promise<void> {
+  if (!adminConfigured()) {
+    logger.warn({ customerGid }, "Shopify Admin not configured: customer erasure not requested");
+    return;
+  }
+  try {
+    await enqueueJob("shopify.customer.erase", { customerGid }, { key: `erase:${customerGid}` });
+  } catch (error) {
+    logger.error(
+      { err: error instanceof Error ? error : String(error), customerGid },
+      "Could not queue Shopify customer erasure",
+    );
+    reportError(error, { task: "customer-erasure", customerGid });
+  }
+}
+
+/** Queues a mirror of one mailing-list decision onto the Shopify customer. Never throws (the list is the record). */
+export async function enqueueMarketingSync(subscriberId: string): Promise<void> {
+  if (!adminConfigured()) return;
+  try {
+    await enqueueJob("shopify.customer.marketing", { subscriberId }, { key: subscriberId });
+  } catch (error) {
+    logger.error(
+      { err: error instanceof Error ? error : String(error), subscriberId },
+      "Could not queue marketing consent sync",
+    );
   }
 }

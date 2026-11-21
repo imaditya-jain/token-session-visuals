@@ -31,6 +31,22 @@ describe("email templates", () => {
     }
   });
 
+  it("wholesale-application renders the applicant details as escaped text", async () => {
+    const { subject, html } = await renderEmail("wholesale-application", {
+      businessName: "Green Corner <b>Café</b>",
+      contactName: "Ada",
+      email: "ada@example.com",
+      phone: "+91 98765 43210",
+      businessType: "Florist",
+      location: "Pune, India",
+      taxId: "",
+      message: "Forty plants, monthly.",
+    });
+    expect(subject).toContain("Wholesale application");
+    expect(html).not.toContain("<b>Café</b>");
+    expect(html).toContain("Forty plants, monthly.");
+  });
+
   it("rejects data that does not match the template schema", async () => {
     await expect(renderEmail("verify-email", { firstName: "Ada" })).rejects.toThrow();
   });

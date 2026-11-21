@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
 
 import AuthShell from "@/components/auth/AuthShell";
 import RegisterForm from "@/components/auth/RegisterForm";
@@ -18,9 +17,7 @@ export default function RegisterPage() {
       title="Create your account"
       description="Save your details for a faster checkout and easier plant care."
     >
-      <Suspense>
-        <RegisterForm />
-      </Suspense>
+      <RegisterForm />
     </AuthShell>
   );
 }
