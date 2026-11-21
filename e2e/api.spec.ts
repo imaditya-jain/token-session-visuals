@@ -889,3 +889,48 @@ test.describe("privacy API", () => {
     expect((await json(api, "/api/auth/login", { email, password })).status()).toBe(401);
   });
 });
+
+test.describe("notifications API", () => {
+  test("need a valid session", async () => {
+    const api = await client();
+    expect((await api.get("/api/notifications")).status()).toBe(401);
+    expect(
+      (await api.get("/api/notifications", { headers: { authorization: "Bearer nope" } })).status(),
+    ).toBe(401);
+    expect((await json(api, "/api/notifications/read", { all: true })).status()).toBe(401);
+  });
+
+  test("a new customer has no notifications, bad input is a 400, and foreign origins are refused", async () => {
+    const api = await client();
+    const registered = await json(api, "/api/auth/register", {
+      email: uniqueEmail("notif"),
+      password,
+      firstName: "N",
+      lastName: "T",
+      acceptsMarketing: false,
+    });
+    const auth = { authorization: `Bearer ${(await body(registered)).data.accessToken}` };
+
+    expect(await body(await api.get("/api/notifications", { headers: auth }))).toEqual({
+      data: { unreadCount: 0, items: [] },
+    });
+    expect((await api.get("/api/notifications?limit=999", { headers: auth })).status()).toBe(400);
+    expect(
+      (await json(api, "/api/notifications/read", { ids: ["nope"] }, "post", auth)).status(),
+    ).toBe(400);
+    expect((await json(api, "/api/notifications/read", { all: true }, "post", auth)).status()).toBe(
+      200,
+    );
+
+    const foreign = await client({ origin: "https://evil.example" });
+    expect(
+      (await json(foreign, "/api/notifications/read", { all: true }, "post", auth)).status(),
+    ).toBe(403);
+  });
+
+  test("only the documented methods work", async () => {
+    const api = await client();
+    expect((await api.post("/api/notifications", { data: {} })).status()).toBe(405);
+    expect((await api.get("/api/notifications/read")).status()).toBe(405);
+  });
+});

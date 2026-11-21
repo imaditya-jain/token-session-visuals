@@ -10,6 +10,8 @@ import { authEnv } from "@/server/config/env";
 import { connectDb } from "@/server/db/connection";
 import { ShopifyCollection, ShopifyOrder, ShopifyProduct } from "@/server/db/models/shopify-mirror";
 import { User } from "@/server/db/models/user";
+import { orderEvents } from "@/server/services/order-events";
+import { notifyOrderEvents } from "@/server/services/notifications";
 import { adminQuery } from "@/server/shopify/admin";
 import {
   MIRROR_COLLECTION_QUERY,
@@ -155,7 +157,22 @@ async function saveOrder(node: OrderNode): Promise<void> {
     ...(node.processedAt ? { processedAt: new Date(node.processedAt) } : {}),
     ...(node.cancelledAt ? { cancelledAt: new Date(node.cancelledAt) } : {}),
   };
-  await upsertNewest("order", node.id, new Date(node.updatedAt), fields);
+  const updatedAt = new Date(node.updatedAt);
+  const previous = await ShopifyOrder.findOne({ gid: node.id })
+    .select("financialStatus fulfillmentStatus cancelledAt shopifyUpdatedAt")
+    .lean();
+  await upsertNewest("order", node.id, updatedAt, fields);
+
+  // Tell the customer what changed, unless this read is older than what we already hold (out-of-order delivery).
+  const stale = previous !== null && previous.shopifyUpdatedAt.getTime() > updatedAt.getTime();
+  if (!userId || stale) return;
+  const events = orderEvents(previous, {
+    financialStatus: node.displayFinancialStatus ?? "UNKNOWN",
+    fulfillmentStatus: node.displayFulfillmentStatus,
+    cancelledAt: node.cancelledAt ? new Date(node.cancelledAt) : undefined,
+    processedAt: node.processedAt ? new Date(node.processedAt) : undefined,
+  });
+  await notifyOrderEvents({ gid: node.id, name: node.name, userId }, events);
 }
 
 /** Marks a record deleted in Shopify (kept, flagged). Does nothing if we never held it. */

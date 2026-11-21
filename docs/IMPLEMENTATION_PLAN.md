@@ -33,6 +33,7 @@ Rules: see `CLAUDE.md`. One task = one branch from `dev`. Every phase ends with 
 - [x] Docker: image (non-root, health check, standalone), Compose (mongo + app + scheduler), smoke script + CI job
 - [x] k6 load tests (browse / api / cache-miss storm) with thresholds, runner script and manual staging workflow; all pass locally with 0% errors
 - [x] Privacy: data export + account deletion (password re-check, ordered cleanup, Shopify erasure verified live, confirmation email, UI); 19 integration + 6 unit + 6 e2e tests
+- [x] Notifications: transition-based order events, in-app list with polling, opt-in branded order emails; 11 unit + 20 integration + 5 e2e tests
 - [ ] Next: register webhooks on the production URL, social profile URLs, order/mirror-backed history (optional)
 
 ## Blocking inputs from the user
