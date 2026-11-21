@@ -33,6 +33,16 @@ Written for the owner, who will take this from staging to production. Everything
 3. The Wholesale catalog (`scripts/seed-wholesale.ts`) prices every product at a percentage off retail (30% is a placeholder; change it under Catalogs) and is published to all products.
 4. Wholesale orders are placed through Shopify (B2B draft order or the company's own checkout), where the wholesale price and payment terms apply. **The headless storefront does not show wholesale prices**: its accounts are not Shopify customer accounts, so Shopify cannot tell the storefront who a company buyer is. Making that work means moving customer sign-in to Shopify's customer accounts, a separate project.
 
+## 2b. After payment: returning to the site
+
+Shopify's hosted checkout cannot be made to redirect to another website after payment (checkout extensions run in a sandbox with no redirect; the old "additional scripts" were retired). What is in place and what to finish:
+
+- **Done:** checkout, thank-you and order status pages use the Fernwood palette (`scripts/configure-checkout-branding.ts`), and `/order-confirmed` exists as the landing page on the site (static, noindex, links to the account's orders and the shop).
+- **For you before launch (the standard answer):**
+  1. Put checkout on your own domain: add `checkout.<your-domain>` as the Shopify primary domain, so customers never see a Shopify address.
+  2. Add a **Thank-you page extension** with a "Back to Fernwood" button linking to `https://<your-domain>/order-confirmed`. This needs a Shopify app with a Checkout UI extension, deployed with the Shopify CLI from your Partner account; I cannot deploy that from here, so it is not built.
+  3. In Shopify admin, add a URL redirect from `/` on the Shopify domain to your site, so "Continue shopping" on the thank-you page lands on your site.
+
 ## 3. Test data on the dev store
 
 - A sample company "Sample Wholesale Café" with one location and the Wholesale catalog (delete it before launch, or keep it as a reference).

@@ -20,6 +20,7 @@ const PAGES = [
   "/careers",
   "/wholesale",
   "/gardener-services",
+  "/order-confirmed",
   "/sustainability",
   "/press",
   "/accessibility",
