@@ -5,6 +5,7 @@ import { CONTACT_TOPICS } from "@/lib/contact-schemas";
 import AccountDeleted from "./AccountDeleted";
 import CampaignEmail from "./CampaignEmail";
 import ContactMessage from "./ContactMessage";
+import OrderUpdate from "./OrderUpdate";
 import NewsletterConfirm from "./NewsletterConfirm";
 import PasswordChanged from "./PasswordChanged";
 import ResetPassword from "./ResetPassword";
@@ -52,6 +53,23 @@ export const templates = {
     subject: "Your Fernwood account has been deleted",
     schema: z.object({ firstName: z.string() }),
     element: (data: { firstName: string }) => <AccountDeleted {...data} />,
+  },
+  "order-update": {
+    subject: (data: { headline: string }) => data.headline,
+    schema: z.object({
+      firstName: z.string(),
+      orderName: z.string().max(40),
+      headline: z.string().max(200),
+      message: z.string().max(500),
+      url: z.string().url(),
+    }),
+    element: (data: {
+      firstName: string;
+      orderName: string;
+      headline: string;
+      message: string;
+      url: string;
+    }) => <OrderUpdate {...data} />,
   },
   "newsletter-confirm": {
     subject: "Confirm your Fernwood subscription",

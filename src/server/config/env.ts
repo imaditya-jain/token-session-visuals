@@ -99,6 +99,11 @@ const emailSchema = z.object({
   SMTP_PORT: z.coerce.number().int().min(1).max(65535).default(465),
   SMTP_FROM_NAME: z.string().min(1).default("Fernwood"),
   /** Where contact-form messages are delivered. Defaults to the sending mailbox. */
+  /**
+   * Send our own branded order emails (received / shipped / cancelled). Off by default because Shopify sends its own
+   * order emails: enable only after turning those off in Shopify, or customers receive every message twice.
+   */
+  ORDER_EMAIL_NOTIFICATIONS: z.preprocess((v) => v === "true", z.boolean()),
   CONTACT_INBOX: z.preprocess((v) => (v === "" ? undefined : v), z.string().email().optional()),
 });
 

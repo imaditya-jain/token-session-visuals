@@ -2,6 +2,7 @@ import "server-only";
 
 import { AuthToken } from "@/server/db/models/auth-token";
 import { EmailJob } from "@/server/db/models/email-job";
+import { Notification } from "@/server/db/models/notification";
 import { Job } from "@/server/db/models/job";
 import { RateLimit } from "@/server/db/models/rate-limit";
 import { ShopifyCollection, ShopifyOrder, ShopifyProduct } from "@/server/db/models/shopify-mirror";
@@ -20,6 +21,7 @@ export async function ensureIndexes(): Promise<void> {
     AuthToken.createIndexes(),
     EmailJob.createIndexes(),
     Job.createIndexes(),
+    Notification.createIndexes(),
     Subscriber.createIndexes(),
     ShopifyProduct.createIndexes(),
     ShopifyCollection.createIndexes(),
