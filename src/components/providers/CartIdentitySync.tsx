@@ -16,6 +16,8 @@ export default function CartIdentitySync() {
   const cart = useAppSelector((state) => state.cart.cart);
   const linkedUserId = useAppSelector((state) => state.cart.linkedUserId);
   const busy = useAppSelector((state) => state.cart.busy);
+  // A booking sets the buyer email on purpose for a signed-out visitor; only an account link is undone on sign-out.
+  const guestIdentified = useAppSelector((state) => state.cart.guestIdentified);
   // One attempt per cart + account, so a failing request can't turn into a retry loop.
   const attempted = useRef<string | null>(null);
 
@@ -27,11 +29,11 @@ export default function CartIdentitySync() {
     if (status === "authenticated" && userId && (linkedUserId !== userId || !cart.identified)) {
       attempted.current = key;
       void dispatch(linkCartIdentity(userId));
-    } else if (status === "anonymous" && cart.identified) {
+    } else if (status === "anonymous" && cart.identified && !guestIdentified) {
       attempted.current = key;
       void dispatch(unlinkCartIdentity());
     }
-  }, [status, userId, cart, linkedUserId, busy, dispatch]);
+  }, [status, userId, cart, linkedUserId, busy, guestIdentified, dispatch]);
 
   return null;
 }

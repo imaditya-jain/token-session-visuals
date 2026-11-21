@@ -5,7 +5,14 @@ import { ApiError, apiFetch, publicJson } from "@/lib/api-client";
 import type { Cart } from "@/lib/cart";
 import type { Booking } from "@/lib/gardener-schemas";
 
-import { cartFailed, cartLinked, cartReceived, cartStarted, setCartOpen } from "./cartSlice";
+import {
+  cartFailed,
+  cartLinked,
+  cartReceived,
+  cartStarted,
+  guestIdentified,
+  setCartOpen,
+} from "./cartSlice";
 
 type CartResponse = { cart: Cart | null; linkedUserId?: string };
 
@@ -19,11 +26,17 @@ const failure = (error: unknown): ApiFailure =>
       };
 
 /** Runs a cart request, mirrors the outcome into the store, and reports success to the caller. */
-const cartThunk = <Arg>(type: string, request: (arg: Arg) => Promise<CartResponse>) =>
+const cartThunk = <Arg>(
+  type: string,
+  request: (arg: Arg) => Promise<CartResponse>,
+  /** True when the request hands the cart a buyer email the visitor chose (a booking). Set before the cart lands so the identity sync can't undo it. */
+  givesBuyerEmail: (arg: Arg) => boolean = () => false,
+) =>
   createAsyncThunk<boolean, Arg, { rejectValue: ApiFailure }>(type, async (arg, { dispatch }) => {
     dispatch(cartStarted());
     try {
       const result = await request(arg);
+      if (givesBuyerEmail(arg)) dispatch(guestIdentified());
       dispatch(cartReceived(result.cart));
       if (result.cart && result.linkedUserId) dispatch(cartLinked(result.linkedUserId));
       return true;
@@ -65,6 +78,7 @@ export const addToCart = cartThunk(
       ...(sellingPlanId ? { sellingPlanId } : {}),
       ...(booking ? { booking } : {}),
     }),
+  ({ booking }) => Boolean(booking),
 );
 
 export const updateCartLine = cartThunk(
