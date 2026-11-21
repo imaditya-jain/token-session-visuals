@@ -1,0 +1,157 @@
+{
+ "collection": {
+  "handle": "gifts",
+  "title": "Gifts",
+  "tagline": "Thoughtful plants and gift sets",
+  "position": 5,
+  "description": "Plants, planters and gift sets for every occasion, from a first houseplant to a thank-you for the gardener who has everything.",
+  "image": {
+   "src": "https://images.unsplash.com/photo-1614594975525-e45190c55d0b",
+   "page": "https://unsplash.com/photos/green-plant-on-white-ceramic-pot-bwsTJMnhcwE",
+   "photographer": "feey",
+   "alt": "green plant on white ceramic pot"
+  }
+ },
+ "products": [
+  {
+   "handle": "succulent-gift-planter",
+   "title": "Succulent Gift Planter",
+   "price": "49.00",
+   "light": "Bright light",
+   "size": "Gift planter",
+   "description": "A hand-arranged planter of hardy succulents, ready to give. Easy to care for and happy on a bright windowsill.",
+   "image": {
+    "src": "https://images.unsplash.com/photo-1579817193786-64c0fd7fbc16",
+    "page": "https://unsplash.com/photos/green-succulent-plant-on-brown-clay-pot-jX7L50Fi_GA",
+    "photographer": "Marisol Benitez",
+    "alt": "green succulent plant on brown clay pot"
+   }
+  },
+  {
+   "handle": "potted-orchid-gift",
+   "title": "Potted Orchid Gift",
+   "price": "58.00",
+   "light": "Bright, indirect light",
+   "size": "Medium",
+   "description": "A flowering orchid in a pot, a lasting gift for birthdays, thank-yous and new homes.",
+   "image": {
+    "src": "https://images.unsplash.com/photo-1744912684542-a9ac816f94a0",
+    "page": "https://unsplash.com/photos/beautiful-white-orchids-blooming-with-details-Lxc6mQZEy7M",
+    "photographer": "Trac Vu",
+    "alt": "Beautiful white orchids blooming with details"
+   }
+  },
+  {
+   "handle": "potted-flower-bouquet",
+   "title": "Potted Flower Bouquet",
+   "price": "45.00",
+   "light": "Bright light",
+   "size": "Medium",
+   "description": "Flowers that keep growing: a bouquet-style arrangement planted in a terracotta pot instead of cut stems.",
+   "image": {
+    "src": "https://images.unsplash.com/photo-1585533337541-1549f1274711",
+    "page": "https://unsplash.com/photos/purple-flowers-on-brown-clay-pot-YteizPtp-l8",
+    "photographer": "Jason Leung",
+    "alt": "purple flowers on brown clay pot"
+   }
+  },
+  {
+   "handle": "herb-grow-kit",
+   "title": "Herb Grow Kit",
+   "price": "28.00",
+   "light": "Sunny windowsill",
+   "size": "Starter kit",
+   "description": "A starter set for growing fresh herbs at home, a thoughtful gift for anyone who loves to cook.",
+   "image": {
+    "src": "https://images.unsplash.com/photo-1553275991-b6ba99f234e1",
+    "page": "https://unsplash.com/photos/three-green-leafed-plants-in-pot-ZchXTnNWCOM",
+    "photographer": "Sixteen Miles Out",
+    "alt": "three green-leafed plants in pot"
+   }
+  },
+  {
+   "handle": "bonsai-starter-kit",
+   "title": "Bonsai Starter Kit",
+   "price": "34.00",
+   "light": "Bright light",
+   "size": "Starter kit",
+   "description": "Everything to begin a first bonsai: a gift for the patient gardener.",
+   "image": {
+    "src": "https://images.unsplash.com/photo-1599598177991-ec67b5c37318",
+    "page": "https://unsplash.com/photos/green-plant-on-brown-clay-pot-PAEwrnasOvY",
+    "photographer": "Devin H",
+    "alt": "green plant on brown clay pot"
+   }
+  },
+  {
+   "handle": "plant-care-essentials-trio",
+   "title": "Plant Care Essentials Trio",
+   "price": "32.00",
+   "light": "Care kit",
+   "size": "Gift set",
+   "description": "A trio of care essentials for new plant owners and seasoned collectors alike.",
+   "image": {
+    "src": "https://images.unsplash.com/photo-1661880667340-625347ecf85b",
+    "page": "https://unsplash.com/photos/a-hand-holding-a-blue-plastic-cup-WrR6KiGA3bo",
+    "photographer": "Hitomi Bremmer",
+    "alt": "a hand holding a blue plastic cup"
+   }
+  },
+  {
+   "handle": "terracotta-gift-set",
+   "title": "Terracotta Gift Set",
+   "price": "42.00",
+   "light": "Gift set",
+   "size": "Set of pots",
+   "description": "Handmade terracotta pots planted up as a gift set, with a small plant ready to display.",
+   "image": {
+    "src": "https://images.unsplash.com/photo-1621512366232-0b7b78983782",
+    "page": "https://unsplash.com/photos/green-cactus-plant-on-brown-clay-pot-znakfs7IGQI",
+    "photographer": "Art and Soil Bangalore",
+    "alt": "green cactus plant on brown clay pot"
+   }
+  },
+  {
+   "handle": "air-plant-gift-box",
+   "title": "Air Plant Gift Box",
+   "price": "26.00",
+   "light": "Bright, indirect light",
+   "size": "Gift box",
+   "description": "Air plants in a glass terrarium, no soil needed, which makes them an easy gift.",
+   "image": {
+    "src": "https://images.unsplash.com/photo-1669655546865-7ca0c89f3c50",
+    "page": "https://unsplash.com/photos/a-glass-from-a-string-gRWjmdIoFLs",
+    "photographer": "Sabrina Rizzo",
+    "alt": "a glass from a string"
+   }
+  },
+  {
+   "handle": "gardeners-thank-you-hamper",
+   "title": "Gardener's Thank-You Hamper",
+   "price": "68.00",
+   "light": "Gift hamper",
+   "size": "Hamper",
+   "description": "A hamper for the gardener in your life: a thank-you that is generous and thoughtful.",
+   "image": {
+    "src": "https://images.unsplash.com/photo-1789333111301-ba17f21eb24c",
+    "page": "https://unsplash.com/photos/person-holding-basket-of-yellow-roses-2eUDmHxxsxc",
+    "photographer": "Roberto Renter\u00eda",
+    "alt": "A person in a white shirt holding a large woven basket of yellow roses"
+   }
+  },
+  {
+   "handle": "cactus-gift-pot",
+   "title": "Cactus Gift Pot",
+   "price": "30.00",
+   "light": "Full sun",
+   "size": "Small",
+   "description": "A small cactus in a terracotta pot, a low-fuss gift that thrives on neglect.",
+   "image": {
+    "src": "https://images.unsplash.com/photo-1528476513691-07e6f563d97f",
+    "page": "https://unsplash.com/photos/green-cactus-in-brown-pot-tBdqV1S2oXI",
+    "photographer": "charlesdeluvio",
+    "alt": "green cactus in brown pot"
+   }
+  }
+ ]
+}
