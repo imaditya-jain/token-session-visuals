@@ -3,6 +3,7 @@ import { createAsyncThunk } from "@reduxjs/toolkit";
 import type { ApiFailure } from "@/features/auth/types";
 import { ApiError, apiFetch, publicJson } from "@/lib/api-client";
 import type { Cart } from "@/lib/cart";
+import type { Booking } from "@/lib/gardener-schemas";
 
 import { cartFailed, cartLinked, cartReceived, cartStarted, setCartOpen } from "./cartSlice";
 
@@ -47,8 +48,23 @@ export const loadCart = createAsyncThunk("cart/load", async (_: void, { dispatch
 
 export const addToCart = cartThunk(
   "cart/add",
-  async ({ variantId, quantity = 1 }: { variantId: string; quantity?: number }) =>
-    publicJson<CartResponse>("/api/cart/lines", "POST", { variantId, quantity }),
+  async ({
+    variantId,
+    quantity = 1,
+    sellingPlanId,
+    booking,
+  }: {
+    variantId: string;
+    quantity?: number;
+    sellingPlanId?: string;
+    booking?: Booking;
+  }) =>
+    publicJson<CartResponse>("/api/cart/lines", "POST", {
+      variantId,
+      quantity,
+      ...(sellingPlanId ? { sellingPlanId } : {}),
+      ...(booking ? { booking } : {}),
+    }),
 );
 
 export const updateCartLine = cartThunk(

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { addLineSchema, removeLineSchema, updateLineSchema } from "@/lib/cart-schemas";
+import { bookingAttributes } from "@/lib/gardener-schemas";
 import { assertSameOrigin, clientIp, readJson, route } from "@/server/http/handler";
 import { readCartCookie, setCartCookie } from "@/server/cart/token";
 import { enforceRateLimit } from "@/server/ratelimit/enforce";
@@ -23,8 +24,14 @@ function respond({ cart, cartId }: CartResult, status = 200): NextResponse {
 
 export const POST = route(async ({ request }) => {
   const cartId = await guard(request);
-  const { variantId, quantity } = await readJson(request, addLineSchema);
-  return respond(await addLine(cartId, variantId, quantity), 201);
+  const { variantId, quantity, sellingPlanId, booking } = await readJson(request, addLineSchema);
+  return respond(
+    await addLine(cartId, variantId, quantity, {
+      sellingPlanId,
+      attributes: booking ? bookingAttributes(booking) : undefined,
+    }),
+    201,
+  );
 });
 
 export const PATCH = route(async ({ request }) => {

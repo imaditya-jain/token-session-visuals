@@ -20,6 +20,7 @@ const PAGES = [
   "/gift-cards",
   "/careers",
   "/wholesale",
+  "/gardener-services",
   "/press",
   "/sustainability",
   "/accessibility",

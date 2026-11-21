@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { MAX_LINE_QUANTITY } from "@/lib/cart";
+import { bookingSchema } from "@/lib/gardener-schemas";
 
 /** Request validation for the cart API (server side only; the browser never loads zod for the cart). */
 export const variantIdSchema = z
@@ -12,9 +13,17 @@ export const lineIdSchema = z
   .regex(/^gid:\/\/shopify\/CartLine\/[\w-]{1,100}(\?cart=[\w-]{1,100})?$/, "Invalid cart line");
 const quantity = z.number().int().min(1).max(MAX_LINE_QUANTITY);
 
+export const sellingPlanIdSchema = z
+  .string()
+  .regex(/^gid:\/\/shopify\/SellingPlan\/\d{1,20}$/, "Invalid subscription plan");
+
 export const addLineSchema = z.object({
   variantId: variantIdSchema,
   quantity: quantity.default(1),
+  /** A subscription plan (Seal) for this line. */
+  sellingPlanId: sellingPlanIdSchema.optional(),
+  /** Gardener booking details; becomes line attributes on the order. */
+  booking: bookingSchema.optional(),
 });
 export const updateLineSchema = z.object({
   lineId: lineIdSchema,

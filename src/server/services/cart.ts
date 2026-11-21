@@ -72,12 +72,25 @@ export async function getCart(cartId: string | null): Promise<CartResult> {
   return cart ? { cart: mapCart(cart), cartId: cart.id } : { cart: null, cartId: null };
 }
 
+export type AddLineOptions = {
+  sellingPlanId?: string | undefined;
+  attributes?: { key: string; value: string }[] | undefined;
+};
+
 export async function addLine(
   cartId: string | null,
   variantId: string,
   quantity: number,
+  options: AddLineOptions = {},
 ): Promise<CartResult> {
-  const lines = [{ merchandiseId: variantId, quantity }];
+  const lines = [
+    {
+      merchandiseId: variantId,
+      quantity,
+      ...(options.sellingPlanId ? { sellingPlanId: options.sellingPlanId } : {}),
+      ...(options.attributes?.length ? { attributes: options.attributes } : {}),
+    },
+  ];
   if (cartId) {
     const existing = await getCart(cartId);
     if (existing.cart) {

@@ -52,9 +52,13 @@ async function main() {
   );
   console.log(`Store: ${shop.name} (development: ${shop.plan.partnerDevelopment})`);
   if (apply && !shop.plan.partnerDevelopment && process.env["SHOPIFY_ALLOW_WRITE"] !== "1") {
-    throw new Error("Refusing to write to a non-development store (set SHOPIFY_ALLOW_WRITE=1 to override).");
+    throw new Error(
+      "Refusing to write to a non-development store (set SHOPIFY_ALLOW_WRITE=1 to override).",
+    );
   }
-  console.log(`${apply ? "[apply]" : "[dry-run]"} productSet ${SERVICE.handle} (DRAFT, $${SERVICE.price}, no shipping)`);
+  console.log(
+    `${apply ? "[apply]" : "[dry-run]"} productSet ${SERVICE.handle} (DRAFT, $${SERVICE.price}, no shipping)`,
+  );
   if (!apply) return;
 
   const result = await admin<{
