@@ -98,12 +98,24 @@ async function main() {
     );
   }
 
-  const { publications, locations } = await admin<{
-    publications: { nodes: { id: string }[] };
-    locations: { nodes: { id: string }[] };
-  }>(`{ publications(first: 20) { nodes { id } } locations(first: 1) { nodes { id } } }`);
-  const location = locations.nodes[0];
-  if (!location) throw new Error("The store has no inventory location");
+  const { publications } = await admin<{ publications: { nodes: { id: string }[] } }>(
+    `{ publications(first: 20) { nodes { id } } }`,
+  );
+  // Stock goes where the original catalog's stock lives (the location that fulfils online orders), not just the
+  // first location: a store can have several, and an item stocked elsewhere shows as unavailable at checkout.
+  const reference = await admin<{
+    productByHandle: {
+      variants: {
+        nodes: { inventoryItem: { inventoryLevels: { nodes: { location: { id: string } }[] } } }[];
+      };
+    } | null;
+  }>(
+    `query { productByHandle(handle: "monstera-deliciosa") { variants(first: 1) { nodes { inventoryItem { inventoryLevels(first: 5) { nodes { location { id } } } } } } } }`,
+  );
+  const location =
+    reference.productByHandle?.variants.nodes[0]?.inventoryItem.inventoryLevels.nodes[0]?.location;
+  if (!location)
+    throw new Error("Could not determine the stock location from the original catalog");
   const publicationInput = publications.nodes.map((publication) => ({
     publicationId: publication.id,
   }));
@@ -210,6 +222,32 @@ async function main() {
       },
     );
     assertNoErrors("inventorySetQuantities", stock.inventorySetQuantities.userErrors);
+
+    // Clear any stock a previous run put at another location, so totals and availability agree.
+    const levels = await admin<{
+      inventoryItem: { inventoryLevels: { nodes: { location: { id: string } }[] } };
+    }>(
+      `query($id: ID!) { inventoryItem(id: $id) { inventoryLevels(first: 10) { nodes { location { id } } } } }`,
+      { id: item },
+    );
+    for (const level of levels.inventoryItem.inventoryLevels.nodes) {
+      if (level.location.id === location.id) continue;
+      const cleared = await admin<{ inventorySetQuantities: { userErrors: UserError[] } }>(
+        `mutation($i: InventorySetQuantitiesInput!) { inventorySetQuantities(input: $i) { userErrors { message } } }`,
+        {
+          i: {
+            name: "available",
+            reason: "correction",
+            ignoreCompareQuantity: true,
+            quantities: [{ inventoryItemId: item, locationId: level.location.id, quantity: 0 }],
+          },
+        },
+      );
+      assertNoErrors(
+        "inventorySetQuantities (other location)",
+        cleared.inventorySetQuantities.userErrors,
+      );
+    }
 
     const published = await admin<{ publishablePublish: { userErrors: UserError[] } }>(
       `mutation($id: ID!, $in: [PublicationInput!]!) { publishablePublish(id: $id, input: $in) { userErrors { message } } }`,
