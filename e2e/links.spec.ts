@@ -82,19 +82,13 @@ test.describe("every link goes somewhere real", () => {
       "href",
       "/collections",
     );
-    await expect(nav.getByRole("link", { name: "Our Story" })).toHaveAttribute(
-      "href",
-      "/about#our-story",
-    );
+    await expect(nav.getByRole("link", { name: "Our Story" })).toHaveCount(0);
     await expect(nav.getByRole("link", { name: "About us" })).toHaveAttribute("href", "/about");
 
     const footer = page.locator("footer");
     const expected: Record<string, string> = {
       "Gift Cards": "/gift-cards",
-      Careers: "/careers",
       Wholesale: "/wholesale",
-      Sustainability: "/sustainability",
-      Press: "/press",
       "Shipping & Delivery": "/shipping-delivery",
       "Plant Guarantee": "/plant-guarantee",
       "Care Library": "/care-guide",
