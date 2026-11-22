@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { otpResendSchema } from "@/lib/admin-schemas";
+import { otpResendSchema } from "@/lib/auth-schemas";
 import { assertSameOrigin, clientIp, readJson, route } from "@/server/http/handler";
 import { enforceRateLimit } from "@/server/ratelimit/enforce";
 import { resendOtp } from "@/server/services/otp";

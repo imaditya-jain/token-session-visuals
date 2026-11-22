@@ -58,3 +58,16 @@ export const confirmTokenSchema = z.object({ token: oneTimeToken });
 
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
+
+const challengeHandle = z.string().min(16, "Invalid request").max(64, "Invalid request");
+
+/** One-time sign-in code (admin and customer): six digits, as emailed. */
+export const otpCodeSchema = z
+  .string()
+  .trim()
+  .regex(/^\d{6}$/, "Enter the 6-digit code");
+
+export const otpVerifySchema = z.object({ challenge: challengeHandle, code: otpCodeSchema });
+export const otpResendSchema = z.object({ challenge: challengeHandle });
+
+export type OtpChallenge = { ref: string; expiresIn: number; resendAfter: number };

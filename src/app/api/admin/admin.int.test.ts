@@ -14,7 +14,6 @@ import { Role } from "@/server/db/models/role";
 import { User } from "@/server/db/models/user";
 import { startTestDatabase } from "@/test/mongo";
 
-import { POST as customerOtpRequest } from "../auth/otp/request/route";
 import { POST as customerOtpVerify } from "../auth/otp/verify/route";
 import { POST as plainLogin } from "../auth/login/route";
 import { GET as audit } from "./audit/route";
@@ -257,8 +256,14 @@ describe("admin API authorization", () => {
       passwordHash: await hashPassword(PASSWORD),
       emailVerifiedAt: new Date(),
     });
-    const issued = await customerOtpRequest(
-      req("/api/auth/otp/request", "POST", { body: { email: "shopper@example.com" } }),
+    await User.updateOne(
+      { email: "shopper@example.com" },
+      { $set: { shopifyCustomerId: "gid://shopify/Customer/1" } },
+    );
+    const issued = await plainLogin(
+      req("/api/auth/login", "POST", {
+        body: { email: "shopper@example.com", password: PASSWORD },
+      }),
     );
     const { ref } = (await issued.json()).data;
     const verified = await customerOtpVerify(
@@ -392,44 +397,36 @@ describe("admin API authorization", () => {
   });
 });
 
-describe("customer one-time-code routes", () => {
-  it("never reveals whether an address has an account", async () => {
+describe("customer sign-in routes", () => {
+  it("login answers with a code handle, never a session, and verify opens the session", async () => {
     await User.create({
       email: "shopper@example.com",
       firstName: "S",
       lastName: "H",
       passwordHash: await hashPassword(PASSWORD),
+      shopifyCustomerId: "gid://shopify/Customer/1",
     });
-    const known = await customerOtpRequest(
-      req("/api/auth/otp/request", "POST", {
-        body: { email: "shopper@example.com" },
-        ip: "198.51.100.21",
+    const first = await plainLogin(
+      req("/api/auth/login", "POST", {
+        body: { email: "shopper@example.com", password: PASSWORD },
       }),
     );
-    const unknown = await customerOtpRequest(
-      req("/api/auth/otp/request", "POST", {
-        body: { email: "nobody@example.com" },
-        ip: "198.51.100.22",
-      }),
-    );
-    expect(known.status).toBe(unknown.status);
-    expect(Object.keys((await known.json()).data).sort()).toEqual(
-      Object.keys((await unknown.json()).data).sort(),
-    );
-  });
+    expect(first.status).toBe(200);
+    expect(first.headers.get("set-cookie")).toBeNull();
+    const data = (await first.json()).data;
+    expect(data.accessToken).toBeUndefined();
+    expect(data.ref).toBeTruthy();
 
-  it("rate limits requests per address", async () => {
-    let last = 0;
-    for (let i = 0; i < 6; i++) {
-      last = (
-        await customerOtpRequest(
-          req("/api/auth/otp/request", "POST", {
-            body: { email: "spam@example.com" },
-            ip: `198.51.100.${30 + i}`,
-          }),
-        )
-      ).status;
-    }
-    expect(last).toBe(429);
+    const wrong = await customerOtpVerify(
+      req("/api/auth/otp/verify", "POST", { body: { challenge: data.ref, code: "000000" } }),
+    );
+    expect(wrong.status).toBe(400);
+    const ok = await customerOtpVerify(
+      req("/api/auth/otp/verify", "POST", {
+        body: { challenge: data.ref, code: await latestCode() },
+      }),
+    );
+    expect(ok.status).toBe(200);
+    expect(ok.headers.get("set-cookie")).toMatch(/HttpOnly/i);
   });
 });

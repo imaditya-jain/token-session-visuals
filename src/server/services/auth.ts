@@ -16,7 +16,7 @@ import { connectDb } from "@/server/db/connection";
 import { type Role, User, type UserRecord } from "@/server/db/models/user";
 import { siteUrl } from "@/server/config/env";
 import { enqueueEmail } from "@/server/email/outbox";
-import { AppError, badRequest, conflict, forbidden, unauthorized } from "@/server/http/errors";
+import { AppError, badRequest, conflict, unauthorized } from "@/server/http/errors";
 import { logger } from "@/server/logger";
 import { enqueueCustomerSync } from "@/server/queue/producers";
 import { consumeAuthToken, issueAuthToken } from "@/server/services/auth-tokens";
@@ -189,15 +189,6 @@ export async function verifyCredentials(input: LoginInput): Promise<UserRecord> 
     );
   }
   return user;
-}
-
-export async function loginUser(input: LoginInput, meta: SessionMeta): Promise<AuthResult> {
-  const user = await verifyCredentials(input);
-  // Administrators must pass the one-time-code step, so the plain password endpoint never opens a session for them.
-  if (user.adminRole) {
-    throw forbidden("Administrators sign in through the admin portal.", "admin_login_required");
-  }
-  return startSession(user, meta);
 }
 
 type SessionLookup = { user: UserRecord; session: UserRecord["sessions"][number] } | null;

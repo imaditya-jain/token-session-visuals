@@ -2,6 +2,7 @@
 import type { MongoMemoryServer } from "mongodb-memory-server";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { loginWithCode } from "@/test/login";
 import { startTestDatabase } from "@/test/mongo";
 import { disconnectDb } from "@/server/db/connection";
 import { AuthToken } from "@/server/db/models/auth-token";
@@ -15,7 +16,6 @@ import {
   authenticate,
   confirmEmailVerification,
   getProfile,
-  loginUser,
   logoutAllSessions,
   logoutSession,
   refreshSession,
@@ -103,7 +103,7 @@ describe("login", () => {
   });
 
   it("signs in with correct credentials", async () => {
-    const result = await loginUser(
+    const result = await loginWithCode(
       { email: "ada@example.com", password: registration.password },
       meta,
     );
@@ -117,11 +117,11 @@ describe("login", () => {
   });
 
   it("gives the same generic error for a wrong password and an unknown email", async () => {
-    const wrong = await loginUser(
+    const wrong = await loginWithCode(
       { email: "ada@example.com", password: "nope-nope-nope" },
       meta,
     ).catch((e) => e);
-    const unknown = await loginUser(
+    const unknown = await loginWithCode(
       { email: "ghost@example.com", password: "nope-nope-nope" },
       meta,
     ).catch((e) => e);
@@ -136,30 +136,30 @@ describe("login", () => {
   it("locks the account after 5 failures, even for the right password, and recovers after the lock", async () => {
     for (let i = 0; i < 5; i++) {
       await expectCode(
-        loginUser({ email: "ada@example.com", password: "bad-bad-bad-bad" }, meta),
+        loginWithCode({ email: "ada@example.com", password: "bad-bad-bad-bad" }, meta),
         "invalid_credentials",
       );
     }
     await expectCode(
-      loginUser({ email: "ada@example.com", password: registration.password }, meta),
+      loginWithCode({ email: "ada@example.com", password: registration.password }, meta),
       "account_locked",
     );
 
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(Date.now() + 16 * 60 * 1000);
     await expect(
-      loginUser({ email: "ada@example.com", password: registration.password }, meta),
+      loginWithCode({ email: "ada@example.com", password: registration.password }, meta),
     ).resolves.toBeTruthy();
   });
 
   it("resets the failure counter after a successful login", async () => {
     for (let i = 0; i < 3; i++) {
       await expectCode(
-        loginUser({ email: "ada@example.com", password: "bad-bad-bad-bad" }, meta),
+        loginWithCode({ email: "ada@example.com", password: "bad-bad-bad-bad" }, meta),
         "invalid_credentials",
       );
     }
-    await loginUser({ email: "ada@example.com", password: registration.password }, meta);
+    await loginWithCode({ email: "ada@example.com", password: registration.password }, meta);
     const user = await User.findOne({ email: "ada@example.com" }).lean();
     expect(user?.failedLoginCount).toBe(0);
   });
@@ -290,7 +290,7 @@ describe("refresh token rotation", () => {
 describe("logout and session management", () => {
   it("logout revokes only that device and is idempotent", async () => {
     const phone = await registerUser(registration, meta);
-    const laptop = await loginUser(
+    const laptop = await loginWithCode(
       { email: registration.email, password: registration.password },
       meta,
     );
@@ -302,7 +302,10 @@ describe("logout and session management", () => {
 
   it("logout-all revokes every device", async () => {
     const a = await registerUser(registration, meta);
-    const b = await loginUser({ email: registration.email, password: registration.password }, meta);
+    const b = await loginWithCode(
+      { email: registration.email, password: registration.password },
+      meta,
+    );
     await logoutAllSessions(a.user.id);
     await expectCode(authenticate(`Bearer ${a.accessToken}`), "session_revoked");
     await expectCode(authenticate(`Bearer ${b.accessToken}`), "session_revoked");
@@ -311,7 +314,7 @@ describe("logout and session management", () => {
   it("keeps at most 10 sessions per user, dropping the oldest", async () => {
     const first = await registerUser(registration, meta);
     for (let i = 0; i < 11; i++)
-      await loginUser({ email: registration.email, password: registration.password }, meta);
+      await loginWithCode({ email: registration.email, password: registration.password }, meta);
     const user = await User.findById(first.user.id).select("+sessions").lean();
     expect(user?.sessions).toHaveLength(10);
     await expectCode(authenticate(`Bearer ${first.accessToken}`), "session_revoked");
@@ -430,17 +433,17 @@ describe("password reset", () => {
   });
 
   it("changes the password, signs out every device, clears the lockout and notifies the owner", async () => {
-    const second = await loginUser(
+    const second = await loginWithCode(
       { email: registration.email, password: registration.password },
       meta,
     );
     for (let i = 0; i < 5; i++) {
-      await loginUser({ email: registration.email, password: "wrong-wrong-wrong" }, meta).catch(
+      await loginWithCode({ email: registration.email, password: "wrong-wrong-wrong" }, meta).catch(
         () => undefined,
       );
     }
     await expectCode(
-      loginUser({ email: registration.email, password: registration.password }, meta),
+      loginWithCode({ email: registration.email, password: registration.password }, meta),
       "account_locked",
     );
 
@@ -450,10 +453,10 @@ describe("password reset", () => {
 
     await expectCode(authenticate(`Bearer ${second.accessToken}`), "session_revoked");
     await expectCode(
-      loginUser({ email: registration.email, password: registration.password }, meta),
+      loginWithCode({ email: registration.email, password: registration.password }, meta),
       "invalid_credentials",
     );
-    const fresh = await loginUser(
+    const fresh = await loginWithCode(
       { email: registration.email, password: "a-much-better-password" },
       meta,
     );

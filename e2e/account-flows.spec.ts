@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 
-import { latestEmailLink, toLocal } from "./helpers/mailbox";
+import { latestEmailLink, submitLoginAndEnterCode, toLocal } from "./helpers/mailbox";
 
 const password = "correct-horse-battery";
 const uniqueEmail = () =>
@@ -60,7 +60,7 @@ test.describe("password reset", () => {
     await expect(page.locator('form [role="alert"]')).toHaveText("Incorrect email or password.");
 
     await page.getByLabel("Password", { exact: true }).fill("a-brand-new-password");
-    await page.getByRole("button", { name: "Sign in" }).click();
+    await submitLoginAndEnterCode(page, email);
     await expect(page).toHaveURL(/\/account$/);
   });
 
