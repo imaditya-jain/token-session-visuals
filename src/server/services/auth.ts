@@ -82,7 +82,7 @@ const toPublicUser = (
   emailVerified: Boolean(user.emailVerifiedAt),
 });
 
-async function startSession(user: UserRecord, meta: SessionMeta): Promise<AuthResult> {
+export async function startSession(user: UserRecord, meta: SessionMeta): Promise<AuthResult> {
   const { REFRESH_TOKEN_EXPIRY, ACCESS_TOKEN_EXPIRY } = authEnv();
   const now = new Date();
   const refreshToken = generateRefreshToken();
@@ -149,7 +149,11 @@ export async function registerUser(input: RegisterInput, meta: SessionMeta): Pro
   }
 }
 
-export async function loginUser(input: LoginInput, meta: SessionMeta): Promise<AuthResult> {
+/**
+ * Checks email + password with lockout. Every failure (unknown email, wrong password, disabled account)
+ * answers the same generic error so the endpoint can't be used to discover accounts.
+ */
+export async function verifyCredentials(input: LoginInput): Promise<UserRecord> {
   await connectDb();
   const user = await User.findOne({ email: input.email }).select("+passwordHash").lean();
   const invalid = () => unauthorized("Incorrect email or password.", "invalid_credentials");
@@ -176,6 +180,7 @@ export async function loginUser(input: LoginInput, meta: SessionMeta): Promise<A
     );
     throw invalid();
   }
+  if (user.disabledAt) throw invalid();
 
   if (user.failedLoginCount > 0 || user.lockedUntil) {
     await User.updateOne(
@@ -183,7 +188,7 @@ export async function loginUser(input: LoginInput, meta: SessionMeta): Promise<A
       { $set: { failedLoginCount: 0 }, $unset: { lockedUntil: 1 } },
     );
   }
-  return startSession(user, meta);
+  return user;
 }
 
 type SessionLookup = { user: UserRecord; session: UserRecord["sessions"][number] } | null;
@@ -292,7 +297,7 @@ export async function logoutAllSessions(userId: string): Promise<void> {
   await User.updateOne({ _id: userId }, { $set: { sessions: [] } });
 }
 
-export type AuthContext = { userId: string; sid: string; role: Role };
+export type AuthContext = { userId: string; sid: string; role: Role; adminRole?: string };
 
 /** Verifies the Bearer access token AND that its session still exists (revocation is immediate). */
 export async function authenticate(authorization: string | null): Promise<AuthContext> {
@@ -317,12 +322,17 @@ export async function authenticate(authorization: string | null): Promise<AuthCo
     _id: claims.sub,
     sessions: { $elemMatch: { sid: claims.sid, expiresAt: { $gt: new Date() } } },
   })
-    .select("role")
+    .select("role adminRole")
     .lean();
   if (!user) throw unauthorized("Session is no longer valid", "session_revoked");
 
-  // Role comes from the database, never from the token, so demotions apply immediately.
-  return { userId: claims.sub, sid: claims.sid, role: user.role };
+  // Roles come from the database, never from the token, so demotions apply immediately.
+  return {
+    userId: claims.sub,
+    sid: claims.sid,
+    role: user.role,
+    ...(user.adminRole ? { adminRole: user.adminRole } : {}),
+  };
 }
 
 export async function getProfile(userId: string): Promise<PublicUser> {
@@ -391,7 +401,9 @@ export async function requestPasswordReset(email: string): Promise<void> {
   const user = await User.findOne({ email }).lean();
   if (!user) return;
   const token = await issueAuthToken(user._id, "reset_password");
-  const url = `${siteUrl()}/reset-password?token=${encodeURIComponent(token)}`;
+  // Administrators reset on the admin's own pages and are sent back to the admin sign-in.
+  const path = user.adminRole ? "/admin/reset-password" : "/reset-password";
+  const url = `${siteUrl()}${path}?token=${encodeURIComponent(token)}`;
   await enqueueEmail("reset-password", user.email, { firstName: user.firstName, url });
 }
 

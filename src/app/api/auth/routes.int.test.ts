@@ -12,6 +12,7 @@ import { startTestDatabase } from "@/test/mongo";
 
 import { POST as login } from "./login/route";
 import { POST as logout } from "./logout/route";
+import { POST as verifyCode } from "./otp/verify/route";
 import { POST as logoutAll } from "./logout-all/route";
 import { POST as refresh } from "./refresh/route";
 import { POST as register } from "./register/route";
@@ -83,6 +84,22 @@ const refreshCookieHeader = (response: Response) => {
   return raw;
 };
 const cookieValue = (setCookie: string) => setCookie.split(";")[0]!;
+
+/** The two-step sign-in a person performs: password, then the emailed code. Returns the verify response. */
+async function loginWithCode(email: string, password: string, ip = "198.51.100.1") {
+  await User.updateOne(
+    { email: email.trim().toLowerCase(), shopifyCustomerId: { $exists: false } },
+    { $set: { shopifyCustomerId: "gid://shopify/Customer/1" } },
+  );
+  const first = await login(request("/api/auth/login", "POST", { body: { email, password }, ip }));
+  if (first.status !== 200) return first;
+  const { ref } = (await first.json()).data;
+  const job = await EmailJob.findOne({ template: "otp-code" }).sort({ createdAt: -1 }).lean();
+  const code = (job?.data as { code: string }).code;
+  return verifyCode(
+    request("/api/auth/otp/verify", "POST", { body: { challenge: ref, code }, ip }),
+  );
+}
 
 async function signUp() {
   const response = await register(request("/api/auth/register", "POST", { body: credentials }));
@@ -194,11 +211,7 @@ describe("POST /api/auth/register", () => {
 describe("POST /api/auth/login", () => {
   it("signs in and sets a fresh cookie; wrong credentials are generic 401s with a WWW-Authenticate header", async () => {
     await signUp();
-    const ok = await login(
-      request("/api/auth/login", "POST", {
-        body: { email: "GRACE@example.com ", password: credentials.password },
-      }),
-    );
+    const ok = await loginWithCode("GRACE@example.com ", credentials.password);
     expect(ok.status).toBe(200);
     expect(refreshCookieHeader(ok)).toMatch(/HttpOnly/i);
 
@@ -277,11 +290,7 @@ describe("session lifecycle over HTTP", () => {
 
   it("logout-all needs a bearer token and revokes every device", async () => {
     const { body } = await signUp();
-    const second = await login(
-      request("/api/auth/login", "POST", {
-        body: { email: credentials.email, password: credentials.password },
-      }),
-    );
+    const second = await loginWithCode(credentials.email, credentials.password);
     const secondToken = (await second.json()).data.accessToken;
 
     expect(
@@ -432,11 +441,7 @@ describe("password reset over HTTP", () => {
       }),
     );
     expect(old.status).toBe(401);
-    const fresh = await login(
-      request("/api/auth/login", "POST", {
-        body: { email: credentials.email, password: "brand-new-password" },
-      }),
-    );
+    const fresh = await loginWithCode(credentials.email, "brand-new-password");
     expect(fresh.status).toBe(200);
   });
 });
@@ -522,6 +527,7 @@ describe("GET /api/cron/jobs", () => {
       attempted: 1,
       sent: 1,
       jobs: { attempted: 0, done: 0 },
+      postsPublished: 0,
     });
     expect(sendMail).toHaveBeenCalledTimes(1);
     setTransportForTests(undefined);

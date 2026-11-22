@@ -15,6 +15,10 @@ describe("email templates", () => {
     ["reset-password", { firstName: "Ada", url }],
     ["password-changed", { firstName: "Ada" }],
     ["newsletter-confirm", { url }],
+    ["otp-code", { firstName: "Ada", code: "042917", minutes: 10, audience: "admin" }],
+    ["admin-invite", { firstName: "Ada", roleName: "Editor", url }],
+    ["enquiry-received", { kind: "contact", name: "Ada", reference: "CT-250101-ABCD" }],
+    ["enquiry-received", { kind: "wholesale", name: "Ada", reference: "WS-250101-ABCD" }],
   ] as const;
 
   it.each(cases)("%s renders branded HTML with a plain-text twin", async (template, data) => {

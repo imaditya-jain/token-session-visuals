@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 
+import CodeStep from "@/components/auth/CodeStep";
 import FormAlert from "@/components/auth/FormAlert";
 import TextField from "@/components/auth/TextField";
 import {
@@ -13,9 +14,9 @@ import {
 } from "@/components/auth/useFormErrors";
 import { useQueryParam } from "@/lib/use-query-param";
 import { Button } from "@/components/ui/button";
-import { login } from "@/features/auth/authThunks";
+import { requestLoginCode, resendLoginCode, verifyLoginCode } from "@/features/auth/authThunks";
 import type { ApiFailure } from "@/features/auth/types";
-import { loginSchema } from "@/lib/auth-schemas";
+import { loginSchema, type OtpChallenge } from "@/lib/auth-schemas";
 import { safeRedirectPath } from "@/lib/redirect";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 
@@ -31,27 +32,77 @@ export default function LoginForm() {
   const [failure, setFailure] = useState<ApiFailure | null>(null);
   const [pending, setPending] = useState(false);
 
+  // Second step: set once the server accepted the password and emailed a code.
+  const [challenge, setChallenge] = useState<OtpChallenge | null>(null);
+
   useEffect(() => {
     if (status === "authenticated") router.replace(next);
   }, [status, next, router]);
 
-  const onSubmit = async (event: FormEvent) => {
+  const onSubmitCredentials = async (event: FormEvent) => {
     event.preventDefault();
     setFailure(null);
     const parsed = loginSchema.safeParse(values);
     if (!parsed.success) return setErrors(fieldErrorsFromZod(parsed.error));
     setErrors({});
     setPending(true);
-    const result = await dispatch(login(parsed.data));
+    const result = await dispatch(requestLoginCode(parsed.data));
     setPending(false);
-    if (login.rejected.match(result) && result.payload) {
-      setErrors(fieldErrorsFromFailure(result.payload));
-      setFailure(result.payload);
+    if (requestLoginCode.rejected.match(result)) {
+      if (result.payload) {
+        setErrors(fieldErrorsFromFailure(result.payload));
+        setFailure(result.payload);
+      }
+      return;
     }
+    // The password is no longer needed once the server accepted it.
+    setValues((v) => ({ ...v, password: "" }));
+    setChallenge(result.payload);
   };
 
+  const onVerify = async (code: string) => {
+    if (!challenge) return;
+    setFailure(null);
+    setPending(true);
+    const result = await dispatch(verifyLoginCode({ challenge: challenge.ref, code }));
+    setPending(false);
+    if (verifyLoginCode.rejected.match(result) && result.payload) setFailure(result.payload);
+  };
+
+  const onResend = async (): Promise<OtpChallenge | null> => {
+    if (!challenge) return null;
+    setFailure(null);
+    const result = await dispatch(resendLoginCode(challenge.ref));
+    if (resendLoginCode.rejected.match(result)) {
+      if (result.payload) setFailure(result.payload);
+      return null;
+    }
+    setChallenge(result.payload);
+    return result.payload;
+  };
+
+  const startOver = () => {
+    setChallenge(null);
+    setErrors({});
+    setFailure(null);
+  };
+
+  if (challenge) {
+    return (
+      <CodeStep
+        email={values.email}
+        challenge={challenge}
+        failure={failure}
+        pending={pending}
+        onVerify={onVerify}
+        onResend={onResend}
+        onBack={startOver}
+      />
+    );
+  }
+
   return (
-    <form onSubmit={onSubmit} noValidate className="space-y-5" aria-busy={pending}>
+    <form onSubmit={onSubmitCredentials} noValidate className="space-y-5" aria-busy={pending}>
       {accountDeleted ? (
         <p
           role="status"

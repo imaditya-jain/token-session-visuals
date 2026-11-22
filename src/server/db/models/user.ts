@@ -28,6 +28,10 @@ export type UserRecord = {
   lastName: string;
   phone?: string | undefined;
   role: Role;
+  /** Key of the admin role (system or custom). Absent for customers; its presence is what grants admin access. */
+  adminRole?: string | undefined;
+  /** Set when an admin disables the account: sign-in is refused and every session is revoked. */
+  disabledAt?: Date | undefined;
   acceptsMarketing: boolean;
   /** Set once the owner proves control of the mailbox (verification link or password-reset link). */
   emailVerifiedAt?: Date | undefined;
@@ -73,6 +77,8 @@ const userSchema = new Schema<UserRecord>(
       default: "customer",
       required: true,
     },
+    adminRole: { type: String, maxlength: 40 },
+    disabledAt: { type: Date },
     acceptsMarketing: { type: Boolean, default: false },
     emailVerifiedAt: { type: Date },
     shopifyCustomerId: { type: String },
@@ -83,6 +89,7 @@ const userSchema = new Schema<UserRecord>(
   { timestamps: true },
 );
 
+userSchema.index({ adminRole: 1 }, { sparse: true });
 userSchema.index({ "sessions.sid": 1 });
 userSchema.index({ "sessions.tokenHash": 1 });
 userSchema.index({ "sessions.prevTokenHash": 1 });

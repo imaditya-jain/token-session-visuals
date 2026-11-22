@@ -1,6 +1,6 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 
-import type { LoginInput, ProfileInput, RegisterInput } from "@/lib/auth-schemas";
+import type { LoginInput, OtpChallenge, ProfileInput, RegisterInput } from "@/lib/auth-schemas";
 import { ApiError, apiFetch, postJson, refreshAccessToken } from "@/lib/api-client";
 import type { ForgotPasswordInput, ResetPasswordInput } from "@/lib/auth-schemas";
 
@@ -33,11 +33,26 @@ const thunk = <Arg, Result>(
     },
   );
 
-export const login = thunk<LoginInput, AuthUser>("auth/login", async (input, dispatch) => {
-  const session = await postJson<Session>("/api/auth/login", input);
-  dispatch(sessionStarted(session));
-  return session.user;
-});
+/** Step 1: email + password. The server checks the account and emails a code; no session exists yet. */
+export const requestLoginCode = thunk<LoginInput, OtpChallenge>(
+  "auth/requestLoginCode",
+  async (input) => postJson<OtpChallenge>("/api/auth/login", input),
+);
+
+/** Step 2: the emailed code opens the session. */
+export const verifyLoginCode = thunk<{ challenge: string; code: string }, AuthUser>(
+  "auth/verifyLoginCode",
+  async (input, dispatch) => {
+    const session = await postJson<Session>("/api/auth/otp/verify", input);
+    dispatch(sessionStarted(session));
+    return session.user;
+  },
+);
+
+export const resendLoginCode = thunk<string, OtpChallenge>(
+  "auth/resendLoginCode",
+  async (challenge) => postJson<OtpChallenge>("/api/auth/otp/resend", { challenge }),
+);
 
 export const register = thunk<RegisterInput, AuthUser>("auth/register", async (input, dispatch) => {
   const session = await postJson<Session>("/api/auth/register", input);

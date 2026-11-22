@@ -19,7 +19,13 @@ import { useAppDispatch } from "@/store/hooks";
 
 const linkClass = "font-semibold text-forest underline-offset-4 hover:text-clay hover:underline";
 
-export default function ResetPasswordForm() {
+/** `portal` picks which sign-in the links lead back to: the shop's, or the admin's own. */
+export default function ResetPasswordForm({
+  portal = "customer",
+}: {
+  portal?: "customer" | "admin";
+}) {
+  const base = portal === "admin" ? "/admin" : "";
   const dispatch = useAppDispatch();
   const token = useSearchParams().get("token") ?? "";
   const [password, setPassword] = useState("");
@@ -35,7 +41,7 @@ export default function ResetPasswordForm() {
         <p className="text-sm text-muted-foreground">
           This reset link is missing its code. Request a new one to continue.
         </p>
-        <Link href="/forgot-password" className={linkClass}>
+        <Link href={`${base}/forgot-password`} className={linkClass}>
           Request a new link
         </Link>
       </div>
@@ -50,7 +56,7 @@ export default function ResetPasswordForm() {
           You&apos;ve been signed out everywhere. Sign in with your new password.
         </p>
         <Button asChild className="h-11 w-full text-sm font-semibold">
-          <Link href="/login">Sign in</Link>
+          <Link href={`${base}/login`}>Sign in</Link>
         </Button>
       </div>
     );
@@ -81,7 +87,7 @@ export default function ResetPasswordForm() {
       <FormAlert failure={failure} />
       {failure?.code === "invalid_token" ? (
         <p className="text-center text-sm">
-          <Link href="/forgot-password" className={linkClass}>
+          <Link href={`${base}/forgot-password`} className={linkClass}>
             Request a new link
           </Link>
         </p>
