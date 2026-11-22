@@ -4,9 +4,11 @@ import { CONTACT_TOPICS } from "@/lib/contact-schemas";
 import { BUSINESS_TYPES } from "@/lib/wholesale-schemas";
 
 import AccountDeleted from "./AccountDeleted";
+import AdminInvite from "./AdminInvite";
 import CampaignEmail from "./CampaignEmail";
 import ContactMessage from "./ContactMessage";
 import OrderUpdate from "./OrderUpdate";
+import OtpCode from "./OtpCode";
 import NewsletterConfirm from "./NewsletterConfirm";
 import PasswordChanged from "./PasswordChanged";
 import ResetPassword from "./ResetPassword";
@@ -50,6 +52,32 @@ export const templates = {
     subject: "Your Fernwood password was changed",
     schema: z.object({ firstName: z.string() }),
     element: (data: { firstName: string }) => <PasswordChanged {...data} />,
+  },
+  "otp-code": {
+    subject: (data: { code: string }) => `${data.code} is your Fernwood sign-in code`,
+    schema: z.object({
+      firstName: z.string(),
+      code: z.string().regex(/^\d{6}$/),
+      minutes: z.number().int().positive().max(60),
+      audience: z.enum(["admin", "customer"]),
+    }),
+    element: (data: {
+      firstName: string;
+      code: string;
+      minutes: number;
+      audience: "admin" | "customer";
+    }) => <OtpCode {...data} />,
+  },
+  "admin-invite": {
+    subject: "You're invited to the Fernwood admin",
+    schema: z.object({
+      firstName: z.string(),
+      roleName: z.string().max(60),
+      url: z.string().url(),
+    }),
+    element: (data: { firstName: string; roleName: string; url: string }) => (
+      <AdminInvite {...data} />
+    ),
   },
   "account-deleted": {
     subject: "Your Fernwood account has been deleted",

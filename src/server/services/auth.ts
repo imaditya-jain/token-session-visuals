@@ -16,7 +16,7 @@ import { connectDb } from "@/server/db/connection";
 import { type Role, User, type UserRecord } from "@/server/db/models/user";
 import { siteUrl } from "@/server/config/env";
 import { enqueueEmail } from "@/server/email/outbox";
-import { AppError, badRequest, conflict, unauthorized } from "@/server/http/errors";
+import { AppError, badRequest, conflict, forbidden, unauthorized } from "@/server/http/errors";
 import { logger } from "@/server/logger";
 import { enqueueCustomerSync } from "@/server/queue/producers";
 import { consumeAuthToken, issueAuthToken } from "@/server/services/auth-tokens";
@@ -82,7 +82,7 @@ const toPublicUser = (
   emailVerified: Boolean(user.emailVerifiedAt),
 });
 
-async function startSession(user: UserRecord, meta: SessionMeta): Promise<AuthResult> {
+export async function startSession(user: UserRecord, meta: SessionMeta): Promise<AuthResult> {
   const { REFRESH_TOKEN_EXPIRY, ACCESS_TOKEN_EXPIRY } = authEnv();
   const now = new Date();
   const refreshToken = generateRefreshToken();
@@ -149,7 +149,11 @@ export async function registerUser(input: RegisterInput, meta: SessionMeta): Pro
   }
 }
 
-export async function loginUser(input: LoginInput, meta: SessionMeta): Promise<AuthResult> {
+/**
+ * Checks email + password with lockout. Every failure (unknown email, wrong password, disabled account)
+ * answers the same generic error so the endpoint can't be used to discover accounts.
+ */
+export async function verifyCredentials(input: LoginInput): Promise<UserRecord> {
   await connectDb();
   const user = await User.findOne({ email: input.email }).select("+passwordHash").lean();
   const invalid = () => unauthorized("Incorrect email or password.", "invalid_credentials");
@@ -176,12 +180,22 @@ export async function loginUser(input: LoginInput, meta: SessionMeta): Promise<A
     );
     throw invalid();
   }
+  if (user.disabledAt) throw invalid();
 
   if (user.failedLoginCount > 0 || user.lockedUntil) {
     await User.updateOne(
       { _id: user._id },
       { $set: { failedLoginCount: 0 }, $unset: { lockedUntil: 1 } },
     );
+  }
+  return user;
+}
+
+export async function loginUser(input: LoginInput, meta: SessionMeta): Promise<AuthResult> {
+  const user = await verifyCredentials(input);
+  // Administrators must pass the one-time-code step, so the plain password endpoint never opens a session for them.
+  if (user.adminRole) {
+    throw forbidden("Administrators sign in through the admin portal.", "admin_login_required");
   }
   return startSession(user, meta);
 }
@@ -292,7 +306,7 @@ export async function logoutAllSessions(userId: string): Promise<void> {
   await User.updateOne({ _id: userId }, { $set: { sessions: [] } });
 }
 
-export type AuthContext = { userId: string; sid: string; role: Role };
+export type AuthContext = { userId: string; sid: string; role: Role; adminRole?: string };
 
 /** Verifies the Bearer access token AND that its session still exists (revocation is immediate). */
 export async function authenticate(authorization: string | null): Promise<AuthContext> {
@@ -317,12 +331,17 @@ export async function authenticate(authorization: string | null): Promise<AuthCo
     _id: claims.sub,
     sessions: { $elemMatch: { sid: claims.sid, expiresAt: { $gt: new Date() } } },
   })
-    .select("role")
+    .select("role adminRole")
     .lean();
   if (!user) throw unauthorized("Session is no longer valid", "session_revoked");
 
-  // Role comes from the database, never from the token, so demotions apply immediately.
-  return { userId: claims.sub, sid: claims.sid, role: user.role };
+  // Roles come from the database, never from the token, so demotions apply immediately.
+  return {
+    userId: claims.sub,
+    sid: claims.sid,
+    role: user.role,
+    ...(user.adminRole ? { adminRole: user.adminRole } : {}),
+  };
 }
 
 export async function getProfile(userId: string): Promise<PublicUser> {

@@ -15,6 +15,8 @@ describe("email templates", () => {
     ["reset-password", { firstName: "Ada", url }],
     ["password-changed", { firstName: "Ada" }],
     ["newsletter-confirm", { url }],
+    ["otp-code", { firstName: "Ada", code: "042917", minutes: 10, audience: "admin" }],
+    ["admin-invite", { firstName: "Ada", roleName: "Editor", url }],
   ] as const;
 
   it.each(cases)("%s renders branded HTML with a plain-text twin", async (template, data) => {
