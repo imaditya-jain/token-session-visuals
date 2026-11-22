@@ -16,30 +16,52 @@ import {
 import type { AdminAccess } from "@/features/admin/adminSlice";
 import { clearAdminAccess } from "@/features/admin/adminThunks";
 import { logout } from "@/features/auth/authThunks";
-import { isActiveNav, visibleNav } from "@/lib/admin-nav";
+import { isActiveNav, visibleNavGroups } from "@/lib/admin-nav";
 import { SYSTEM_ROLES, isSystemRole } from "@/lib/permissions";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 
 function NavLinks({ access, onNavigate }: { access: AdminAccess; onNavigate?: () => void }) {
   const pathname = usePathname();
   return (
-    <nav aria-label="Admin sections" className="space-y-1">
-      {visibleNav(access.permissions).map((item) => {
-        const active = isActiveNav(pathname, item.href);
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            {...(onNavigate ? { onClick: onNavigate } : {})}
-            aria-current={active ? "page" : undefined}
-            className={`flex min-h-11 items-center rounded-md px-3 text-sm font-medium transition-colors ${
-              active ? "bg-cream/15 text-cream" : "text-cream/75 hover:bg-cream/10 hover:text-cream"
-            }`}
-          >
-            {item.label}
-          </Link>
-        );
-      })}
+    <nav aria-label="Admin sections" className="space-y-5">
+      {visibleNavGroups(access.permissions).map((group) => (
+        <div
+          key={group.id}
+          {...(group.label ? { role: "group", "aria-labelledby": `nav-group-${group.id}` } : {})}
+        >
+          {group.label ? (
+            <p
+              id={`nav-group-${group.id}`}
+              className="mb-1 px-3 text-xs font-semibold uppercase tracking-[0.18em] text-cream/65"
+            >
+              {group.label}
+            </p>
+          ) : null}
+          <ul className="space-y-1">
+            {group.items.map((item) => {
+              const active = isActiveNav(pathname, item.href);
+              return (
+                <li key={item.href}>
+                  <Link
+                    href={item.href}
+                    {...(onNavigate ? { onClick: onNavigate } : {})}
+                    aria-current={active ? "page" : undefined}
+                    className={`flex min-h-11 items-center rounded-md px-3 text-sm font-medium transition-colors ${
+                      group.label ? "ml-2" : ""
+                    } ${
+                      active
+                        ? "bg-cream/15 text-cream"
+                        : "text-cream/75 hover:bg-cream/10 hover:text-cream"
+                    }`}
+                  >
+                    {item.label}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ))}
     </nav>
   );
 }

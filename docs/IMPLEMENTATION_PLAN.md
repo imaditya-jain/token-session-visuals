@@ -38,6 +38,7 @@ Rules: see `CLAUDE.md`. One task = one branch from `dev`. Every phase ends with 
 - [x] Customer sign-in = password, Shopify-link check, emailed code, code screen on `/login` (credentials screen unchanged): 514 unit+integration, 318 e2e (visual baselines unchanged), typecheck, lint green
 - [x] Admin console shell (`feat/admin-shell`): `/admin/login`, gated responsive shell, Dashboard, Team (invite/role/disable), Roles (custom roles), Activity (audit); shared `CodeStep`; noindex everywhere. 525 unit+integration, 331 e2e (13 new admin tests incl. axe desktop+mobile; baselines unchanged), typecheck, lint green
 - [x] Separate admin auth pages (`/admin/forgot-password`, `/admin/reset-password`, role-aware reset/invite links) and first Super Admin created on the real database. 527 unit+integration, 333 e2e, typecheck, lint green
+- [x] Blog CMS (`feat/blog-cms`): rich-text engine (62 unit tests incl. attack cases), posts/categories/tags/media models and services, admin API, Shopify Files media (verified live: permanent CDN URL, temp URL never stored), 5 public templates, ISR + SEO (JSON-LD, sitemap, RSS, redirects), grouped admin sidebar, posts list + editor + taxonomy + media UI. See CLAUDE.md "Blog CMS".
 - [ ] Admin program, next: phase 3 admin shell + `/admin/login` (brand tokens), then blog CMS (posts, WordPress-style hierarchical categories, tags, Shopify Files media, 5 selectable templates)
 - [ ] Next: register webhooks on the production URL, social profile URLs, order/mirror-backed history (optional)
 

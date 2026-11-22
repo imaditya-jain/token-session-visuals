@@ -8,33 +8,92 @@ export type AdminNavItem = {
   permission?: Permission;
 };
 
-/** Every page of the admin console. A section appears here only once its page exists. */
-export const ADMIN_NAV: readonly AdminNavItem[] = [
-  { href: "/admin", label: "Dashboard", description: "Your access and recent activity" },
+export type AdminNavGroup = {
+  id: string;
+  /** Heading shown above the group; absent for the top-level entry. */
+  label: string | null;
+  items: readonly AdminNavItem[];
+};
+
+/**
+ * Every page of the admin console, grouped under its main menu. A section appears here only once its page exists.
+ * Groups with nothing the person may open are hidden entirely.
+ */
+export const ADMIN_NAV_GROUPS: readonly AdminNavGroup[] = [
   {
-    href: "/admin/users",
-    label: "Team",
-    description: "Invite admins, change roles, disable accounts",
-    permission: "users:manage",
+    id: "overview",
+    label: null,
+    items: [{ href: "/admin", label: "Dashboard", description: "Your access and recent activity" }],
   },
   {
-    href: "/admin/roles",
-    label: "Roles",
-    description: "Decide what each role may do",
-    permission: "roles:manage",
+    id: "blog",
+    label: "Blog",
+    items: [
+      {
+        href: "/admin/posts",
+        label: "Posts",
+        description: "Write, schedule and publish journal posts",
+        permission: "blog:read",
+      },
+      {
+        href: "/admin/categories",
+        label: "Categories & tags",
+        description: "Organise posts into categories and tags",
+        permission: "categories:manage",
+      },
+      {
+        href: "/admin/media",
+        label: "Media",
+        description: "The image library for your posts",
+        permission: "media:manage",
+      },
+    ],
   },
   {
-    href: "/admin/activity",
-    label: "Activity",
-    description: "Who did what, and when",
-    permission: "audit:read",
+    id: "administration",
+    label: "Administration",
+    items: [
+      {
+        href: "/admin/users",
+        label: "Team",
+        description: "Invite admins, change roles, disable accounts",
+        permission: "users:manage",
+      },
+      {
+        href: "/admin/roles",
+        label: "Roles",
+        description: "Decide what each role may do",
+        permission: "roles:manage",
+      },
+      {
+        href: "/admin/activity",
+        label: "Activity",
+        description: "Who did what, and when",
+        permission: "audit:read",
+      },
+    ],
   },
 ];
 
-/** Navigation entries the given permissions allow. Hiding is a convenience; the API is the boundary. */
+/** Flat list of all entries (the dashboard's "where to go" cards use it). */
+export const ADMIN_NAV: readonly AdminNavItem[] = ADMIN_NAV_GROUPS.flatMap((group) => group.items);
+
+const allowed = (item: AdminNavItem, granted: ReadonlySet<Permission>): boolean =>
+  !item.permission || hasPermission(granted, item.permission);
+
+/** Entries the given permissions allow. Hiding is a convenience; the API is the boundary. */
 export function visibleNav(permissions: readonly Permission[]): AdminNavItem[] {
   const granted = new Set(permissions);
-  return ADMIN_NAV.filter((item) => !item.permission || hasPermission(granted, item.permission));
+  return ADMIN_NAV.filter((item) => allowed(item, granted));
+}
+
+/** The sidebar: groups with only the entries the person may open; empty groups disappear. */
+export function visibleNavGroups(permissions: readonly Permission[]): AdminNavGroup[] {
+  const granted = new Set(permissions);
+  return ADMIN_NAV_GROUPS.map((group) => ({
+    ...group,
+    items: group.items.filter((item) => allowed(item, granted)),
+  })).filter((group) => group.items.length > 0);
 }
 
 export function isActiveNav(pathname: string, href: string): boolean {

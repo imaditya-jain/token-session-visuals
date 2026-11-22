@@ -175,6 +175,16 @@ test.describe("methods", () => {
     ["PUT", "/api/admin/users"],
     ["DELETE", "/api/admin/roles"],
     ["POST", "/api/admin/audit"],
+    ["DELETE", "/api/admin/posts"],
+    ["GET", "/api/admin/posts/bulk"],
+    ["POST", "/api/admin/posts/64b7f0c2a1b2c3d4e5f60718"],
+    ["PUT", "/api/admin/categories"],
+    ["GET", "/api/admin/categories/64b7f0c2a1b2c3d4e5f60718"],
+    ["POST", "/api/admin/tags"],
+    ["GET", "/api/admin/tags/64b7f0c2a1b2c3d4e5f60718"],
+    ["PUT", "/api/admin/media"],
+    ["GET", "/api/admin/media/64b7f0c2a1b2c3d4e5f60718"],
+    ["POST", "/blog/feed.xml"],
     ["GET", "/api/auth/refresh"],
     ["GET", "/api/auth/logout"],
     ["GET", "/api/auth/forgot-password"],
@@ -520,6 +530,22 @@ test.describe("two-step sign-in and the admin boundary over HTTP", () => {
     ["PATCH", "/api/admin/roles/editor"],
     ["DELETE", "/api/admin/roles/editor"],
     ["GET", "/api/admin/audit"],
+    ["GET", "/api/admin/posts"],
+    ["POST", "/api/admin/posts"],
+    ["GET", "/api/admin/posts/64b7f0c2a1b2c3d4e5f60718"],
+    ["PUT", "/api/admin/posts/64b7f0c2a1b2c3d4e5f60718"],
+    ["POST", "/api/admin/posts/bulk"],
+    ["GET", "/api/admin/categories"],
+    ["POST", "/api/admin/categories"],
+    ["PATCH", "/api/admin/categories/64b7f0c2a1b2c3d4e5f60718"],
+    ["DELETE", "/api/admin/categories/64b7f0c2a1b2c3d4e5f60718"],
+    ["GET", "/api/admin/tags"],
+    ["PATCH", "/api/admin/tags/64b7f0c2a1b2c3d4e5f60718"],
+    ["DELETE", "/api/admin/tags/64b7f0c2a1b2c3d4e5f60718"],
+    ["GET", "/api/admin/media"],
+    ["POST", "/api/admin/media"],
+    ["PATCH", "/api/admin/media/64b7f0c2a1b2c3d4e5f60718"],
+    ["DELETE", "/api/admin/media/64b7f0c2a1b2c3d4e5f60718"],
   ];
 
   for (const [method, path] of adminCalls) {
@@ -739,6 +765,8 @@ test.describe("operational endpoints", () => {
     expect(data).toEqual({
       attempted: expect.any(Number),
       sent: 0,
+      // Scheduled blog posts that came due in this pass (none exist here).
+      postsPublished: 0,
       jobs: { attempted: 0, done: 0 },
     });
   });

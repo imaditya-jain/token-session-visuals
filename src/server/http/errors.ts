@@ -18,6 +18,8 @@ export const unauthorized = (message = "Authentication required", code = "unauth
   new AppError(401, code, message, { "WWW-Authenticate": 'Bearer realm="fernwood"' });
 export const forbidden = (message = "Forbidden", code = "forbidden") =>
   new AppError(403, code, message);
+export const notFound = (message = "Not found", code = "not_found") =>
+  new AppError(404, code, message);
 export const conflict = (message: string, code = "conflict") => new AppError(409, code, message);
 export const tooManyRequests = (retryAfterSeconds: number) =>
   new AppError(429, "rate_limited", "Too many requests. Please try again later.", {

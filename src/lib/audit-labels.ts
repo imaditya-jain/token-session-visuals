@@ -9,6 +9,21 @@ const LABELS: Record<string, string> = {
   "role.created": "Created a role",
   "role.updated": "Edited a role",
   "role.deleted": "Deleted a role",
+  "post.created": "Created a post",
+  "post.updated": "Edited a post",
+  "post.status_changed": "Changed a post's status",
+  "post.bulk_trash": "Moved posts to the trash",
+  "post.bulk_restore": "Restored posts from the trash",
+  "post.bulk_delete": "Permanently deleted posts",
+  "post.bulk_publish": "Published posts",
+  "post.bulk_draft": "Unpublished posts",
+  "category.created": "Created a category",
+  "category.updated": "Edited a category",
+  "category.deleted": "Deleted a category",
+  "tag.updated": "Edited a tag",
+  "tag.deleted": "Deleted a tag",
+  "media.uploaded": "Uploaded an image",
+  "media.deleted": "Deleted an image",
 };
 
 /** Plain-language name for an audit action; unknown actions fall back to the raw verb. */

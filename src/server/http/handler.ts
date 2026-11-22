@@ -91,19 +91,21 @@ export function route(fn: RouteFn): (request: NextRequest) => Promise<NextRespon
   };
 }
 
-/** Parses and validates a small JSON body. */
+/** Parses and validates a JSON body (small by default; callers that legitimately need more say so). */
 export async function readJson<S extends z.ZodType>(
   request: NextRequest,
   schema: S,
+  options: { maxBytes?: number } = {},
 ): Promise<z.infer<S>> {
+  const maxBytes = options.maxBytes ?? MAX_BODY_BYTES;
   if (!request.headers.get("content-type")?.toLowerCase().startsWith("application/json")) {
     throw badRequest("Content-Type must be application/json", "unsupported_media_type");
   }
-  if (Number(request.headers.get("content-length") ?? 0) > MAX_BODY_BYTES) {
+  if (Number(request.headers.get("content-length") ?? 0) > maxBytes) {
     throw new AppError(413, "payload_too_large", "Request body too large");
   }
   const text = await request.text();
-  if (text.length > MAX_BODY_BYTES)
+  if (text.length > maxBytes)
     throw new AppError(413, "payload_too_large", "Request body too large");
   let json: unknown;
   try {

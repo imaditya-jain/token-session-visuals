@@ -1,5 +1,6 @@
 import "server-only";
 
+import { Category, MediaAsset, Post, Tag } from "@/server/db/models/blog";
 import { AuditLog } from "@/server/db/models/audit-log";
 import { AuthToken } from "@/server/db/models/auth-token";
 import { EmailJob } from "@/server/db/models/email-job";
@@ -32,5 +33,9 @@ export async function ensureIndexes(): Promise<void> {
     OtpChallenge.createIndexes(),
     Role.createIndexes(),
     AuditLog.createIndexes(),
+    Category.createIndexes(),
+    Tag.createIndexes(),
+    Post.createIndexes(),
+    MediaAsset.createIndexes(),
   ]);
 }
