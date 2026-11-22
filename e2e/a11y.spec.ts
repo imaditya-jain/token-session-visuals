@@ -131,6 +131,29 @@ test.describe("accessibility (axe, WCAG 2.2 AA)", () => {
     expect(await audit(page), "faq open").toEqual([]);
   });
 
+  test("the sign-in code screen has no violations", async ({ page, request, baseURL }) => {
+    const email = `a11y+${Date.now()}@example.com`;
+    const password = "a11y-test-password-1";
+    const ip = randomIp();
+    const created = await request.post("/api/auth/register", {
+      data: { email, password, firstName: "Ada", lastName: "Lovelace" },
+      headers: { origin: baseURL ?? "", "x-forwarded-for": ip },
+    });
+    expect(created.status()).toBe(201);
+
+    await page.setExtraHTTPHeaders({ "x-forwarded-for": ip });
+    await page.goto("/login");
+    await page.getByLabel("Email").fill(email);
+    await page.getByLabel("Password", { exact: true }).fill(password);
+    await page.getByRole("button", { name: "Sign in", exact: true }).click();
+    await expect(page.getByLabel("Verification code")).toBeVisible();
+    expect(await audit(page), "code screen").toEqual([]);
+
+    await page.getByRole("button", { name: "Verify and sign in" }).click();
+    await expect(page.getByText("Enter the 6-digit code")).toBeVisible();
+    expect(await audit(page), "code screen with error").toEqual([]);
+  });
+
   test("keyboard users can reach the main content landmark exactly once per page", async ({
     page,
   }) => {

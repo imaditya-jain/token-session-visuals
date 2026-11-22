@@ -1,7 +1,17 @@
 // @vitest-environment node
 import { NextRequest } from "next/server";
 import type { MongoMemoryServer } from "mongodb-memory-server";
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  type MockInstance,
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 
 import { hashPassword } from "@/server/auth/password";
 import { requireAdmin } from "@/server/auth/guards";
@@ -13,16 +23,20 @@ import { OtpChallenge } from "@/server/db/models/otp-challenge";
 import { RateLimit } from "@/server/db/models/rate-limit";
 import { Role } from "@/server/db/models/role";
 import { User } from "@/server/db/models/user";
+import { resetEnvCache } from "@/server/config/env";
 import { startTestDatabase } from "@/test/mongo";
+import * as customerSync from "@/server/services/customer-sync";
 
 import {
   completeAdminLogin,
   completeCustomerOtp,
   startAdminLogin,
-  startCustomerOtp,
+  startCustomerLogin,
 } from "./admin-auth";
 import { inviteAdmin, listAdminUsers, updateAdminUser } from "./admin-users";
-import { authenticate, loginUser, registerUser } from "./auth";
+import { loginWithCode } from "@/test/login";
+
+import { authenticate, registerUser } from "./auth";
 import { listAudit } from "./audit";
 import { issueOtp, resendOtp, verifyOtp } from "./otp";
 import { createRole, deleteRole, resolvePermissions, updateRole } from "./rbac";
@@ -231,7 +245,7 @@ describe("admin sign-in", () => {
   it("closes the password-only backdoor: the normal login endpoint never opens a session for an admin", async () => {
     await makeUser("boss@example.com", "super_admin");
     await expect(
-      loginUser({ email: "boss@example.com", password: PASSWORD }, meta),
+      loginWithCode({ email: "boss@example.com", password: PASSWORD }, meta),
     ).rejects.toMatchObject({ code: "admin_login_required", status: 403 });
   });
 
@@ -270,31 +284,126 @@ describe("admin sign-in", () => {
   });
 });
 
-describe("customer one-time-code sign-in", () => {
-  it("signs a verified-by-code customer in and marks the mailbox verified", async () => {
-    await registerUser(
-      {
-        email: "c@example.com",
-        password: PASSWORD,
-        firstName: "C",
-        lastName: "D",
-        acceptsMarketing: false,
-      },
-      meta,
-    );
-    const issued = await startCustomerOtp("c@example.com");
+describe("customer sign-in (password, then code)", () => {
+  const customer = {
+    email: "c@example.com",
+    password: PASSWORD,
+    firstName: "C",
+    lastName: "D",
+    acceptsMarketing: false,
+  };
+
+  // No test here may reach the real Shopify: the link repair is replaced by a recorded stub.
+  let syncSpy: MockInstance<typeof customerSync.syncCustomer>;
+  beforeEach(() => {
+    syncSpy = vi
+      .spyOn(customerSync, "syncCustomer")
+      .mockResolvedValue({ marketingSubscriberId: null });
+  });
+  afterEach(() => syncSpy.mockRestore());
+
+  it("emails a code only after the password is right, and a session only after the code", async () => {
+    await registerUser(customer, meta);
+    await EmailJob.deleteMany({ template: "otp-code" });
+
+    await expect(
+      startCustomerLogin({ email: customer.email, password: "wrong wrong wrong" }),
+    ).rejects.toMatchObject({ code: "invalid_credentials" });
+    expect(await EmailJob.countDocuments({ template: "otp-code" })).toBe(0);
+
+    const issued = await startCustomerLogin({ email: customer.email, password: PASSWORD });
+    expect(await EmailJob.countDocuments({ template: "otp-code", to: customer.email })).toBe(1);
     const result = await completeCustomerOtp(issued.ref, await latestCode(), meta);
     expect(result.user.emailVerified).toBe(true);
   });
 
-  it("gives a decoy handle for unknown and admin addresses and sends nothing", async () => {
+  it("sends nothing for unknown emails, disabled accounts and administrators", async () => {
     await makeUser("boss@example.com", "super_admin");
-    const unknown = await startCustomerOtp("ghost@example.com");
-    const admin = await startCustomerOtp("boss@example.com");
-    expect(Object.keys(unknown).sort()).toEqual(Object.keys(admin).sort());
+    await makeUser("off@example.com");
+    await User.updateOne({ email: "off@example.com" }, { $set: { disabledAt: new Date() } });
+
+    await expect(
+      startCustomerLogin({ email: "ghost@example.com", password: PASSWORD }),
+    ).rejects.toMatchObject({ code: "invalid_credentials" });
+    await expect(
+      startCustomerLogin({ email: "off@example.com", password: PASSWORD }),
+    ).rejects.toMatchObject({ code: "invalid_credentials" });
+    await expect(
+      startCustomerLogin({ email: "boss@example.com", password: PASSWORD }),
+    ).rejects.toMatchObject({ code: "admin_login_required", status: 403 });
     expect(await EmailJob.countDocuments({ template: "otp-code" })).toBe(0);
-    await expect(completeCustomerOtp(unknown.ref, "123456", meta)).rejects.toMatchObject({
+  });
+
+  it("a customer code can't open an admin session or be used for another purpose", async () => {
+    await registerUser(customer, meta);
+    const issued = await startCustomerLogin({ email: customer.email, password: PASSWORD });
+    await expect(completeAdminLogin(issued.ref, await latestCode(), meta)).rejects.toMatchObject({
       code: "invalid_code",
+    });
+  });
+
+  describe("Shopify link (GID)", () => {
+    afterEach(() => {
+      vi.stubEnv("SHOPIFY_ADMIN_API_ACCESS_TOKEN", "shpat_admin_token_for_tests");
+      resetEnvCache();
+    });
+
+    it("is not required where Shopify Admin isn't configured", async () => {
+      vi.stubEnv("SHOPIFY_ADMIN_API_ACCESS_TOKEN", "");
+      resetEnvCache();
+      await registerUser(customer, meta);
+      await expect(
+        startCustomerLogin({ email: customer.email, password: PASSWORD }),
+      ).resolves.toMatchObject({ ref: expect.any(String) });
+    });
+
+    it("lets a linked account straight through without calling Shopify", async () => {
+      await registerUser(customer, meta);
+      await User.updateOne(
+        { email: customer.email },
+        { $set: { shopifyCustomerId: "gid://shopify/Customer/1" } },
+      );
+      await startCustomerLogin({ email: customer.email, password: PASSWORD });
+      expect(syncSpy).not.toHaveBeenCalled();
+    });
+
+    it("repairs a missing link on the spot, then sends the code", async () => {
+      await registerUser(customer, meta);
+      await User.updateOne({ email: customer.email }, { $set: { emailVerifiedAt: new Date() } });
+      syncSpy.mockImplementation(async (userId) => {
+        await User.updateOne(
+          { _id: userId },
+          { $set: { shopifyCustomerId: "gid://shopify/Customer/9" } },
+        );
+        return { marketingSubscriberId: null };
+      });
+      await expect(
+        startCustomerLogin({ email: customer.email, password: PASSWORD }),
+      ).resolves.toBeTruthy();
+      expect(syncSpy).toHaveBeenCalledOnce();
+    });
+
+    it("waits (503, no code) when a verified account can't be linked or Shopify is down", async () => {
+      await registerUser(customer, meta);
+      await User.updateOne({ email: customer.email }, { $set: { emailVerifiedAt: new Date() } });
+      await EmailJob.deleteMany({ template: "otp-code" });
+
+      syncSpy.mockRejectedValue(new Error("shopify down"));
+      await expect(
+        startCustomerLogin({ email: customer.email, password: PASSWORD }),
+      ).rejects.toMatchObject({ code: "account_setup_pending", status: 503 });
+      syncSpy.mockResolvedValue({ marketingSubscriberId: null });
+      await expect(
+        startCustomerLogin({ email: customer.email, password: PASSWORD }),
+      ).rejects.toMatchObject({ code: "account_setup_pending" });
+      expect(await EmailJob.countDocuments({ template: "otp-code" })).toBe(0);
+    });
+
+    it("lets an unproven mailbox continue: the code proves it, then the link is made", async () => {
+      await registerUser(customer, meta);
+      await expect(
+        startCustomerLogin({ email: customer.email, password: PASSWORD }),
+      ).resolves.toBeTruthy();
     });
   });
 });
@@ -460,7 +569,7 @@ describe("administrator management", () => {
       meta.ip,
     );
     await expect(
-      loginUser({ email: "squatter@example.com", password: PASSWORD }, meta),
+      loginWithCode({ email: "squatter@example.com", password: PASSWORD }, meta),
     ).rejects.toMatchObject({ code: "invalid_credentials" });
     const row = await User.findOne({ email: "squatter@example.com" }).select("+sessions").lean();
     expect(row?.sessions).toHaveLength(0);

@@ -1,5 +1,5 @@
-// Signed-in customers hitting the authenticated API. Each virtual user logs in ONCE (login is rate limited and
-// deliberately slow: argon2) and then reuses its access token, as the browser does.
+// Signed-in customers hitting the authenticated API. Each virtual user adopts the session made at setup (sign-in needs an
+// emailed code a load test cannot read; the argon2 password step is still timed) and reuses its token, as the browser does.
 //   k6 run -e BASE_URL=https://staging.example.com loadtest/api.js
 import { check, sleep } from "k6";
 import http from "k6/http";
@@ -37,6 +37,17 @@ export const options = {
 
 const PASSWORD = "correct-horse-battery";
 
+let token = null;
+
+// The refresh cookie is `Secure`, and k6's cookie jar (correctly) will not send a Secure cookie over plain http, so
+// the scenario carries it by hand and keeps it in step with rotation, exactly as a browser would.
+let refreshCookie = null;
+const readRefreshCookie = (res) => {
+  const name = Object.keys(res.cookies).find((key) => key.endsWith("fw_rt"));
+  const cookie = name && res.cookies[name][0];
+  return cookie ? `${name}=${cookie.value}` : null;
+};
+
 export function setup() {
   const stamp = Date.now();
   const users = [];
@@ -55,28 +66,26 @@ export function setup() {
     );
     if (res.status !== 201)
       throw new Error(`setup: could not register ${address}: ${res.status} ${res.body}`);
-    users.push(address);
+    // Sign-in needs a code that only reaches a real inbox, which a load test can't read. Registration opens a
+    // genuine session, so each virtual user adopts the one made here; its refresh cookie rotates as in a browser.
+    users.push({
+      email: address,
+      accessToken: res.json("data.accessToken"),
+      refreshCookie: readRefreshCookie(res),
+    });
   }
   return { users };
 }
-
-let token = null;
-// The refresh cookie is `Secure`, and k6's cookie jar (correctly) will not send a Secure cookie over plain http, so
-// the scenario carries it by hand and keeps it in step with rotation, exactly as a browser would.
-let refreshCookie = null;
-const readRefreshCookie = (res) => {
-  const name = Object.keys(res.cookies).find((key) => key.endsWith("fw_rt"));
-  const cookie = name && res.cookies[name][0];
-  return cookie ? `${name}=${cookie.value}` : null;
-};
 
 export default function customer(data) {
   const headers = { "X-Forwarded-For": ipFor(__VU) };
 
   if (!token) {
+    const me = data.users[(__VU - 1) % data.users.length];
+    // Step 1 of sign-in (email + password: the argon2 cost) is still measured; it must answer 200 with a code handle.
     const res = http.post(
       `${BASE}/api/auth/login`,
-      JSON.stringify({ email: data.users[(__VU - 1) % data.users.length], password: PASSWORD }),
+      JSON.stringify({ email: me.email, password: PASSWORD }),
       {
         headers: json(headers),
         tags: { endpoint: "login" },
@@ -84,9 +93,9 @@ export default function customer(data) {
       },
     );
     loginTime.add(res.timings.duration);
-    check(res, { "login is 200": (r) => r.status === 200 });
-    token = res.status === 200 ? res.json("data.accessToken") : null;
-    refreshCookie = readRefreshCookie(res);
+    check(res, { "login step 1 is 200": (r) => r.status === 200 });
+    token = me.accessToken;
+    refreshCookie = me.refreshCookie;
     if (!token) {
       sleep(2);
       return;

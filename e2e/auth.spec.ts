@@ -1,5 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
+import { latestOtpCode, submitLoginAndEnterCode } from "./helpers/mailbox";
+
 const password = "correct-horse-battery";
 const uniqueEmail = () =>
   `shopper+${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.com`;
@@ -80,7 +82,7 @@ test.describe("authentication", () => {
     await expect(page).toHaveURL(/\/login\?next=(%2F|\/)account$/);
     await page.getByLabel("Email").fill(email);
     await page.getByLabel("Password", { exact: true }).fill(password);
-    await page.getByRole("button", { name: "Sign in" }).click();
+    await submitLoginAndEnterCode(page, email);
     await expect(page).toHaveURL(/\/account$/);
   });
 
@@ -92,7 +94,7 @@ test.describe("authentication", () => {
     await page.goto("/login?next=https%3A%2F%2Fevil.example%2Fsteal");
     await page.getByLabel("Email").fill(email);
     await page.getByLabel("Password", { exact: true }).fill(password);
-    await page.getByRole("button", { name: "Sign in" }).click();
+    await submitLoginAndEnterCode(page, email);
     await expect(page).toHaveURL(/\/account$/);
   });
 
@@ -123,6 +125,52 @@ test.describe("authentication", () => {
     await page.getByRole("button", { name: "Sign in" }).click();
     await expect(page.locator('form [role="alert"]')).toHaveText("Incorrect email or password.");
     await expect(page).toHaveURL(/\/login$/);
+  });
+
+  test("after the password, a code screen appears; a wrong code is refused, the right one signs in", async ({
+    page,
+  }) => {
+    const email = await register(page);
+    await signOut(page);
+    await page.goto("/login");
+    await page.getByLabel("Email").fill(email);
+    await page.getByLabel("Password", { exact: true }).fill(password);
+    const since = new Date(Date.now() - 1000);
+    await page.getByRole("button", { name: "Sign in", exact: true }).click();
+
+    await expect(page.getByRole("status")).toContainText(email.toLowerCase());
+    await expect(page.getByRole("status")).toContainText("expires in 10 minutes");
+    await expect(page.getByLabel("Verification code")).toBeFocused();
+    await expect(page.getByLabel("Password", { exact: true })).toHaveCount(0);
+    await expect(page).toHaveURL(/\/login$/);
+
+    const code = await latestOtpCode(email, since);
+    await page.getByLabel("Verification code").fill(code === "000000" ? "111111" : "000000");
+    await page.getByRole("button", { name: "Verify and sign in" }).click();
+    await expect(page.locator('form [role="alert"]')).toHaveText(
+      "That code is incorrect or has expired.",
+    );
+
+    await page.getByLabel("Verification code").fill(code);
+    await page.getByRole("button", { name: "Verify and sign in" }).click();
+    await expect(page).toHaveURL(/\/account$/);
+  });
+
+  test("the code screen validates its input and can start over", async ({ page }) => {
+    const email = await register(page);
+    await signOut(page);
+    await page.goto("/login");
+    await page.getByLabel("Email").fill(email);
+    await page.getByLabel("Password", { exact: true }).fill(password);
+    await page.getByRole("button", { name: "Sign in", exact: true }).click();
+
+    await page.getByRole("button", { name: "Verify and sign in" }).click();
+    await expect(page.getByText("Enter the 6-digit code")).toBeVisible();
+    await expect(page.getByRole("button", { name: /Resend code in \d+s/ })).toBeDisabled();
+
+    await page.getByRole("button", { name: "Use a different account" }).click();
+    await expect(page.getByLabel("Password", { exact: true })).toHaveValue("");
+    await expect(page.getByLabel("Email")).toHaveValue(email);
   });
 
   test("password visibility can be toggled", async ({ page }) => {
@@ -163,7 +211,7 @@ test.describe("authentication", () => {
     await other.goto("/login");
     await other.getByLabel("Email").fill(email);
     await other.getByLabel("Password", { exact: true }).fill(password);
-    await other.getByRole("button", { name: "Sign in" }).click();
+    await submitLoginAndEnterCode(other, email);
     await expect(other).toHaveURL(/\/account$/);
 
     await page.getByRole("button", { name: "Sign out of all devices" }).click();

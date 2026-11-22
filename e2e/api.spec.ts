@@ -8,7 +8,7 @@ import {
   type APIResponse,
 } from "@playwright/test";
 
-import { latestEmailLink, runtime } from "./helpers/mailbox";
+import { latestEmailLink, latestOtpCode, runtime } from "./helpers/mailbox";
 
 /**
  * Black-box contract tests for every HTTP endpoint, against the real running server (production build,
@@ -166,6 +166,15 @@ test.describe("methods", () => {
   const cases: [string, string][] = [
     ["GET", "/api/auth/register"],
     ["GET", "/api/auth/login"],
+    ["GET", "/api/auth/otp/verify"],
+    ["GET", "/api/auth/otp/resend"],
+    ["GET", "/api/admin/auth/login"],
+    ["GET", "/api/admin/auth/verify"],
+    ["GET", "/api/admin/auth/resend"],
+    ["POST", "/api/admin/me"],
+    ["PUT", "/api/admin/users"],
+    ["DELETE", "/api/admin/roles"],
+    ["POST", "/api/admin/audit"],
     ["GET", "/api/auth/refresh"],
     ["GET", "/api/auth/logout"],
     ["GET", "/api/auth/forgot-password"],
@@ -195,6 +204,11 @@ test.describe("hostile input never causes a server error", () => {
   const postRoutes = [
     "/api/auth/register",
     "/api/auth/login",
+    "/api/auth/otp/verify",
+    "/api/auth/otp/resend",
+    "/api/admin/auth/login",
+    "/api/admin/auth/verify",
+    "/api/admin/auth/resend",
     "/api/auth/forgot-password",
     "/api/auth/reset-password",
     "/api/auth/verify-email/confirm",
@@ -269,6 +283,11 @@ test.describe("CSRF: state-changing browser endpoints reject foreign origins", (
   const routes: [string, unknown][] = [
     ["/api/auth/register", { email: "a@b.co", password, firstName: "A", lastName: "B" }],
     ["/api/auth/login", { email: "a@b.co", password }],
+    ["/api/auth/otp/verify", { challenge: "x".repeat(22), code: "123456" }],
+    ["/api/auth/otp/resend", { challenge: "x".repeat(22) }],
+    ["/api/admin/auth/login", { email: "a@b.co", password }],
+    ["/api/admin/auth/verify", { challenge: "x".repeat(22), code: "123456" }],
+    ["/api/admin/auth/resend", { challenge: "x".repeat(22) }],
     ["/api/auth/refresh", undefined],
     ["/api/auth/logout", undefined],
     ["/api/auth/forgot-password", { email: "a@b.co" }],
@@ -419,6 +438,126 @@ test.describe("full account lifecycle over HTTP", () => {
     expect(last?.status()).toBe(429);
     expect(last?.headers()["retry-after"]).toBeTruthy();
     expect((await body(last!)).error.code).toBe("rate_limited");
+  });
+});
+
+test.describe("two-step sign-in and the admin boundary over HTTP", () => {
+  const forgedHandle = "A".repeat(22);
+
+  test("password login opens no session; only the emailed code does, and it works once", async () => {
+    const ip = randomIp();
+    const { email } = await signUp(await client({ ip }));
+    const api = await client({ ip });
+    const since = new Date(Date.now() - 1000);
+
+    const first = await json(api, "/api/auth/login", { email, password });
+    expect(first.status()).toBe(200);
+    expect(first.headers()["set-cookie"]).toBeUndefined();
+    const { data } = await body(first);
+    expect(data.accessToken).toBeUndefined();
+    expect(data.ref).toBeTruthy();
+
+    const wrong = await json(api, "/api/auth/otp/verify", { challenge: data.ref, code: "000000" });
+    expect(wrong.status()).toBe(400);
+    expect((await body(wrong)).error.code).toBe("invalid_code");
+
+    const code = await latestOtpCode(email, since);
+    const ok = await json(api, "/api/auth/otp/verify", { challenge: data.ref, code });
+    expect(ok.status()).toBe(200);
+    expect(ok.headers()["set-cookie"]).toMatch(/HttpOnly/i);
+    const token = (await body(ok)).data.accessToken as string;
+    expect((await api.get("/api/me", { headers: bearer(token) })).status()).toBe(200);
+
+    const replay = await json(api, "/api/auth/otp/verify", { challenge: data.ref, code });
+    expect(replay.status()).toBe(400);
+  });
+
+  test("the code is locked after 5 wrong guesses, even for the right code", async () => {
+    const ip = randomIp();
+    const { email } = await signUp(await client({ ip }));
+    const api = await client({ ip });
+    const since = new Date(Date.now() - 1000);
+    const { data } = await body(await json(api, "/api/auth/login", { email, password }));
+    const code = await latestOtpCode(email, since);
+    const wrongCode = code === "000000" ? "111111" : "000000";
+    for (let i = 0; i < 5; i++)
+      await json(api, "/api/auth/otp/verify", { challenge: data.ref, code: wrongCode });
+    const late = await json(api, "/api/auth/otp/verify", { challenge: data.ref, code });
+    expect(late.status()).toBe(400);
+  });
+
+  test("a wrong password never produces a code", async () => {
+    const { email } = await signUp(await client());
+    const since = new Date();
+    const response = await json(await client(), "/api/auth/login", {
+      email,
+      password: "not-the-password",
+    });
+    expect(response.status()).toBe(401);
+    await expect(latestOtpCode(email, since)).rejects.toThrow("No sign-in code");
+  });
+
+  test("a forged or unknown code handle is rejected without detail", async () => {
+    const api = await client();
+    const verify = await json(api, "/api/auth/otp/verify", {
+      challenge: forgedHandle,
+      code: "123456",
+    });
+    expect(verify.status()).toBe(400);
+    expect((await body(verify)).error.code).toBe("invalid_code");
+    expect((await json(api, "/api/auth/otp/resend", { challenge: forgedHandle })).status()).toBe(
+      400,
+    );
+  });
+
+  const adminCalls: [string, string][] = [
+    ["GET", "/api/admin/me"],
+    ["GET", "/api/admin/users"],
+    ["POST", "/api/admin/users"],
+    ["PATCH", "/api/admin/users/64b7f0c2a1b2c3d4e5f60718"],
+    ["GET", "/api/admin/roles"],
+    ["POST", "/api/admin/roles"],
+    ["PATCH", "/api/admin/roles/editor"],
+    ["DELETE", "/api/admin/roles/editor"],
+    ["GET", "/api/admin/audit"],
+  ];
+
+  for (const [method, path] of adminCalls) {
+    test(`${method} ${path} → 401 anonymous, 403 for a signed-in customer`, async () => {
+      const anonymous = await (
+        await client()
+      ).fetch(path, {
+        method,
+        headers: { "content-type": "application/json" },
+        ...(method === "GET" ? {} : { data: "{}" }),
+      });
+      expect(anonymous.status()).toBe(401);
+
+      const api = await client();
+      const { token } = await signUp(api);
+      const customer = await api.fetch(path, {
+        method,
+        headers: { "content-type": "application/json", ...bearer(token) },
+        ...(method === "GET" ? {} : { data: "{}" }),
+      });
+      expect(customer.status()).toBe(403);
+      expect((await body(customer)).error.code).toBe("admin_required");
+    });
+  }
+
+  test("the admin login answers wrong password, unknown and non-admin identically", async () => {
+    const { email } = await signUp(await client());
+    const responses = [];
+    for (const attempt of [
+      { email, password },
+      { email: "ghost@example.com", password },
+      { email, password: "not-the-password" },
+    ]) {
+      const response = await json(await client(), "/api/admin/auth/login", attempt);
+      responses.push([response.status(), (await body(response)).error.code]);
+    }
+    expect(new Set(responses.map((r) => r.join(":"))).size).toBe(1);
+    expect(responses[0]).toEqual([401, "invalid_credentials"]);
   });
 });
 
