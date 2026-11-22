@@ -194,6 +194,8 @@ test.describe("permissions in the console", () => {
       "Header & announcement",
       "Footer",
       "Social links",
+      "Contact messages",
+      "Wholesale applications",
       "Posts",
       "Categories & tags",
       "Media",
@@ -297,6 +299,40 @@ test.describe("team, roles and activity", () => {
       .filter({ has: page.getByRole("heading", { name: "Editor" }) });
     await expect(builtIn.getByText("Built in")).toBeVisible();
     await expect(builtIn.getByRole("button")).toHaveCount(0);
+  });
+});
+
+test.describe("the sidebar", () => {
+  test("keeps the logo and sign-out in place while only the menu scrolls", async ({
+    page,
+    request,
+    baseURL,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 420 });
+    const email = await createAccount(request, baseURL ?? "", "boss", "super_admin");
+    await signInAdmin(page, email);
+    await page.goto("/admin/site/footer");
+    await expect(page.getByRole("heading", { level: 1, name: "Footer" })).toBeVisible();
+
+    const logo = page.getByRole("link", { name: /^Fernwood\s*Admin$/ }).first();
+    const signOut = page.getByRole("button", { name: "Sign out" });
+    await expect(logo).toBeInViewport();
+    await expect(signOut).toBeInViewport();
+
+    // The page scrolls a long way; the sidebar's logo and sign-out stay exactly where they were.
+    const before = await signOut.boundingBox();
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    await expect(signOut).toBeInViewport();
+    expect(await signOut.boundingBox()).toEqual(before);
+    await expect(logo).toBeInViewport();
+
+    // On a short screen the menu itself is a scrollable region, so the last entry is still reachable.
+    const menu = nav(page).locator("xpath=..");
+    expect(await menu.evaluate((el) => el.scrollHeight > el.clientHeight)).toBe(true);
+    const last = nav(page).getByRole("link", { name: "Activity" });
+    await last.scrollIntoViewIfNeeded();
+    await expect(last).toBeInViewport();
+    await expect(signOut).toBeInViewport();
   });
 });
 

@@ -50,6 +50,24 @@ export const ADMIN_NAV_GROUPS: readonly AdminNavGroup[] = [
     ],
   },
   {
+    id: "enquiries",
+    label: "Enquiries",
+    items: [
+      {
+        href: "/admin/enquiries/contact",
+        label: "Contact messages",
+        description: "Messages from the website's contact form",
+        permission: "enquiries:read",
+      },
+      {
+        href: "/admin/enquiries/wholesale",
+        label: "Wholesale applications",
+        description: "Trade applications: review, assign and approve",
+        permission: "enquiries:read",
+      },
+    ],
+  },
+  {
     id: "blog",
     label: "Blog",
     items: [

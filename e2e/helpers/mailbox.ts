@@ -168,3 +168,19 @@ export async function seedMedia(
     await client.close();
   }
 }
+
+/** The queued emails of one template for an address (payloads are kept because e2e can't deliver mail). */
+export async function queuedEmails(
+  template: string,
+  to: string,
+): Promise<Record<string, unknown>[]> {
+  const { mongoUri, dbName } = runtime();
+  const client = new MongoClient(mongoUri);
+  try {
+    await client.connect();
+    const jobs = await client.db(dbName).collection("emailjobs").find({ template, to }).toArray();
+    return jobs.map((job) => (job["data"] ?? {}) as Record<string, unknown>);
+  } finally {
+    await client.close();
+  }
+}

@@ -13,6 +13,8 @@ export type WholesaleApplicationData = {
   location: string;
   taxId: string;
   message: string;
+  /** The enquiry reference shown in the admin, so the team can find it. */
+  reference?: string | undefined;
 };
 
 /** Internal notification for the shop team. Applicant text is rendered as escaped text, never HTML. */
@@ -20,6 +22,7 @@ export default function WholesaleApplication(data: WholesaleApplicationData) {
   return (
     <Layout preview={`Wholesale application: ${data.businessName}`}>
       <Title>New wholesale application</Title>
+      {data.reference ? <Muted>Reference {data.reference}</Muted> : null}
       <Paragraph>
         <strong>{data.businessName}</strong> ({data.businessType}, {data.location})
       </Paragraph>

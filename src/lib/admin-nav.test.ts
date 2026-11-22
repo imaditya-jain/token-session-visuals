@@ -11,6 +11,7 @@ describe("admin navigation groups", () => {
     expect(shape(SYSTEM_ROLES.super_admin.permissions)).toEqual([
       [null, ["Dashboard"]],
       ["Website", ["Header & announcement", "Footer", "Social links"]],
+      ["Enquiries", ["Contact messages", "Wholesale applications"]],
       ["Blog", ["Posts", "Categories & tags", "Media"]],
       ["Administration", ["Team", "Roles", "Activity"]],
     ]);
@@ -52,6 +53,8 @@ describe("admin navigation", () => {
       "Header & announcement",
       "Footer",
       "Social links",
+      "Contact messages",
+      "Wholesale applications",
       "Posts",
       "Categories & tags",
       "Media",

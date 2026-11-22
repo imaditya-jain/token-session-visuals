@@ -128,8 +128,8 @@ export async function publicJson<T>(path: string, method: string, json?: unknown
   return parse<T>(response);
 }
 
-/** Authenticated call with automatic refresh-and-retry. */
-export async function apiFetch<T>(path: string, options: RequestOptions = {}): Promise<T> {
+/** Authenticated request with automatic refresh-and-retry. Returns the raw response (JSON parsing is the caller's job). */
+async function authedFetch(path: string, options: RequestOptions = {}): Promise<Response> {
   const { json, form, headers, ...init } = options;
   const { getState } = requireStore();
 
@@ -163,5 +163,19 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
       response = await send();
     }
   }
-  return parse<T>(response);
+  return response;
+}
+
+/** Authenticated call with automatic refresh-and-retry. */
+export async function apiFetch<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  return parse<T>(await authedFetch(path, options));
+}
+
+/** Authenticated file download (for example a CSV export). Failures surface as `ApiError` like any other call. */
+export async function apiDownload(path: string): Promise<{ blob: Blob; filename: string }> {
+  const response = await authedFetch(path);
+  if (!response.ok) return parse<never>(response);
+  const disposition = response.headers.get("content-disposition") ?? "";
+  const filename = /filename="([^"]+)"/.exec(disposition)?.[1] ?? "download";
+  return { blob: await response.blob(), filename };
 }

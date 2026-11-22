@@ -19,7 +19,7 @@ in MongoDB except read-only mirrors that already exist).
 | 1 | CMS pages and sections | [ ] | Needs each storefront page's content moved into data with identical defaults |
 | 2 | Header, announcement, footer, social links | [x] | Built and verified on `feat/site-chrome`; **41 screenshot baselines await owner approval** (the new "Journal" link) |
 | 3 | Blog completion + storefront nav | [x] | Blog pages use the common header/footer; "Journal" is in the header menu and footer; remaining blog gaps (revisions, autosave) are listed in CLAUDE.md |
-| 4 | Wholesale + contact management | [ ] | Adds Mongo storage + customer acknowledgement emails (currently never emailed, by design) |
+| 4 | Wholesale + contact management | [x] | Saved in MongoDB, team + sender emails, admin lists/detail/notes/assign/archive/delete/export; sender acknowledgement is limited to one per address per day |
 | 5 | Shopify products, variants, inventory | [ ] | Admin token scopes `read/write_products`, `read/write_inventory` are already granted |
 | 6 | Order management | [ ] | `read_orders` granted; refunds/cancel need `write_orders` (granted) |
 | 7 | Gardening subscriptions | [ ] | **Dependency:** Seal Subscriptions API key (the provider); without it only Shopify-side data can be shown |
