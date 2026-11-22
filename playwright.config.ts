@@ -12,7 +12,16 @@ export default defineConfig({
   reporter: isCI ? [["github"], ["html", { open: "never" }]] : "list",
   use: { baseURL: externalBaseUrl ?? `http://localhost:${port}`, trace: "retain-on-failure" },
   expect: { toHaveScreenshot: { maxDiffPixelRatio: 0.001, animations: "disabled" } },
-  projects: [{ name: "chromium", use: { browserName: "chromium" } }],
+  projects: [
+    { name: "chromium", use: { browserName: "chromium" }, testIgnore: /site-mutation\.spec\.ts/ },
+    // Publishes new header/footer content for the WHOLE storefront, so it runs last, after every other test.
+    {
+      name: "site-mutation",
+      use: { browserName: "chromium" },
+      testMatch: /site-mutation\.spec\.ts/,
+      dependencies: ["chromium"],
+    },
+  ],
   // Against a deployed/preview URL (BASE_URL) no local server is started.
   ...(externalBaseUrl
     ? {}

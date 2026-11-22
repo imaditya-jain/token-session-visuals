@@ -12,6 +12,8 @@ export const PERMISSIONS = {
   "blog:delete": "Move blog posts to trash and delete them permanently",
   "categories:manage": "Manage blog categories and tags",
   "media:manage": "Upload and manage media",
+  "site:write": "Edit the header, footer, social links and website pages (drafts)",
+  "site:publish": "Publish changes to the header, footer, social links and website pages",
   "users:manage": "Invite, change and disable admin users",
   "roles:manage": "Create and edit roles",
   "audit:read": "View the audit log",

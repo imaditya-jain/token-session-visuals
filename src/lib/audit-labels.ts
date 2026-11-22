@@ -22,6 +22,9 @@ const LABELS: Record<string, string> = {
   "category.deleted": "Deleted a category",
   "tag.updated": "Edited a tag",
   "tag.deleted": "Deleted a tag",
+  "site.chrome_draft_saved": "Saved header/footer changes (draft)",
+  "site.chrome_draft_discarded": "Discarded header/footer draft",
+  "site.chrome_published": "Published header, footer and social links",
   "media.uploaded": "Uploaded an image",
   "media.deleted": "Deleted an image",
 };

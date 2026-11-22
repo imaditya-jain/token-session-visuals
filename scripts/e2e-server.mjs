@@ -51,6 +51,9 @@ writeFileSync(
 const next = ["node_modules/next/dist/bin/next"];
 
 if (!process.env.SKIP_BUILD) {
+  // Next's data cache is kept on disk between builds. A previous run's cached content (for example a published
+  // header) would leak into this run's fresh database, so every hermetic run starts from an empty cache.
+  rmSync(".next/cache", { recursive: true, force: true });
   // Asynchronous on purpose: the build now reads the database, and the in-memory MongoDB's log pipe is drained by
   // THIS process. A blocking spawnSync would starve it, fill the pipe and stall mongod (and so the build).
   const status = await new Promise((resolve) => {

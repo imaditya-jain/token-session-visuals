@@ -4,24 +4,15 @@ import { ArrowRight } from "lucide-react";
 
 import { getBestSellers, getCollections } from "@/data/catalog";
 import { testimonials } from "@/data/site";
-import { store } from "@/data/store-info";
 import CollectionCard from "@/components/storefront/CollectionCard";
 import ProductCard from "@/components/storefront/ProductCard";
+import SocialIcon from "@/components/storefront/SocialIcon";
+import { phoneHref, SOCIAL_PLATFORMS } from "@/lib/site-chrome";
+import { getSiteChrome } from "@/server/services/site-chrome-public";
 const promoImage = "/images/promo-repotting.jpg";
 const seasonalImage = "/images/seasonal-greenhouse.jpg";
 const storyImage = "/images/story-nursery.jpg";
-import {
-  Truck,
-  Leaf,
-  HeartHandshake,
-  Sprout,
-  Star,
-  Quote,
-  Instagram,
-  Facebook,
-  Twitter,
-  Youtube,
-} from "lucide-react";
+import { Truck, Leaf, HeartHandshake, Sprout, Star, Quote } from "lucide-react";
 
 function SectionHeading({
   eyebrow,
@@ -310,88 +301,61 @@ export function Testimonials() {
   );
 }
 
-type FooterLink = { label: string; href: string };
-
-const footerColumns: { heading: string; links: FooterLink[] }[] = [
-  {
-    heading: "Shop",
-    links: [
-      { label: "House Plants", href: "/collections/house-plants" },
-      { label: "Succulents & Cacti", href: "/collections/succulents-cacti" },
-      { label: "Pots & Planters", href: "/collections/pots-planters" },
-      { label: "Seeds & Tools", href: "/collections/seeds-tools" },
-      { label: "Gift Cards", href: "/gift-cards" },
-    ],
-  },
-  {
-    heading: "Company",
-    links: [
-      { label: "Our Story", href: "/about" },
-      { label: "Wholesale", href: "/wholesale" },
-      { label: "Gardener Services", href: "/gardener-services" },
-    ],
-  },
-  {
-    heading: "Help",
-    links: [
-      { label: "Shipping & Delivery", href: "/shipping-delivery" },
-      { label: "Plant Guarantee", href: "/plant-guarantee" },
-      { label: "Care Library", href: "/care-guide" },
-      { label: "FAQs", href: "/faq" },
-      { label: "Contact Us", href: "/contact" },
-    ],
-  },
-];
-
-const legalLinks: FooterLink[] = [
-  { label: "Privacy Policy", href: "/policies/privacy-policy" },
-  { label: "Terms of Service", href: "/policies/terms-of-service" },
-  { label: "Accessibility", href: "/accessibility" },
-];
-
-export function Footer() {
+export async function Footer() {
+  const { footer, social } = await getSiteChrome();
+  const { contact } = footer;
+  const links = social.filter((entry) => entry.enabled);
   return (
     <footer id="footer" className="bg-forest-deep text-cream">
       <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
         <div className="grid gap-10 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
           <div>
             <p className="font-display text-3xl font-medium">Fernwood</p>
-            <p className="mt-4 max-w-xs text-sm leading-relaxed text-cream/75">
-              Premium nursery-grown plants, handmade pots and honest advice — helping homes go green
-              since 1962.
-            </p>
-            <div className="mt-6 flex gap-3">
-              {[
-                { icon: Instagram, label: "Instagram" },
-                { icon: Facebook, label: "Facebook" },
-                { icon: Twitter, label: "Twitter" },
-                { icon: Youtube, label: "YouTube" },
-              ].map((s) => (
-                <a
-                  key={s.label}
-                  href="#footer"
-                  aria-label={s.label}
-                  className="rounded-full border border-cream/25 p-2 text-cream/80 transition-colors hover:border-sage hover:text-sage"
-                >
-                  <s.icon className="size-4" aria-hidden />
-                </a>
-              ))}
-            </div>
+            <p className="mt-4 max-w-xs text-sm leading-relaxed text-cream/75">{footer.about}</p>
+            {links.length > 0 ? (
+              <div className="mt-6 flex gap-3">
+                {links.map((s) => (
+                  <a
+                    key={s.id}
+                    href={s.url}
+                    aria-label={SOCIAL_PLATFORMS[s.platform]}
+                    {...(s.url.startsWith("https://")
+                      ? { target: "_blank", rel: "noopener noreferrer" }
+                      : {})}
+                    className="rounded-full border border-cream/25 p-2 text-cream/80 transition-colors hover:border-sage hover:text-sage"
+                  >
+                    <SocialIcon platform={s.platform} />
+                  </a>
+                ))}
+              </div>
+            ) : null}
             <div className="mt-6 space-y-1 text-sm text-cream/75">
-              <p>1234 Greenhouse Lane, Portland, OR 97210</p>
-              <p>
-                <a href={`mailto:${store.email}`} className="transition-colors hover:text-cream">
-                  {store.email}
-                </a>{" "}
-                ·{" "}
-                <a href={store.phoneHref} className="transition-colors hover:text-cream">
-                  {store.phone}
-                </a>
-              </p>
-              <p>Mon–Sat, 9am–6pm PST</p>
+              {contact.address ? <p>{contact.address}</p> : null}
+              {contact.email || contact.phone ? (
+                <p>
+                  {contact.email ? (
+                    <a
+                      href={`mailto:${contact.email}`}
+                      className="transition-colors hover:text-cream"
+                    >
+                      {contact.email}
+                    </a>
+                  ) : null}
+                  {contact.email && contact.phone ? " · " : null}
+                  {contact.phone ? (
+                    <a
+                      href={phoneHref(contact.phone, contact.phoneDial)}
+                      className="transition-colors hover:text-cream"
+                    >
+                      {contact.phone}
+                    </a>
+                  ) : null}
+                </p>
+              ) : null}
+              {contact.hours ? <p>{contact.hours}</p> : null}
             </div>
           </div>
-          {footerColumns.map((col) => (
+          {footer.columns.map((col) => (
             <nav key={col.heading} aria-label={col.heading}>
               <p className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-sage">
                 {col.heading}
@@ -412,9 +376,11 @@ export function Footer() {
           ))}
         </div>
         <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-cream/15 pt-6 text-xs text-cream/60 sm:flex-row">
-          <p>© {new Date().getFullYear()} Fernwood Nursery Co. All rights reserved.</p>
+          <p>
+            © {new Date().getFullYear()} {footer.copyright}
+          </p>
           <div className="flex gap-6">
-            {legalLinks.map((link) => (
+            {footer.legal.map((link) => (
               <Link
                 key={link.label}
                 href={link.href}
