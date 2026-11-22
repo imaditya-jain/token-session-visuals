@@ -25,6 +25,10 @@ const LABELS: Record<string, string> = {
   "site.chrome_draft_saved": "Saved header/footer changes (draft)",
   "site.chrome_draft_discarded": "Discarded header/footer draft",
   "site.chrome_published": "Published header, footer and social links",
+  "enquiry.updated": "Updated an enquiry",
+  "enquiry.note_added": "Added a note to an enquiry",
+  "enquiry.deleted": "Deleted an enquiry",
+  "enquiry.exported": "Exported enquiries to CSV",
   "media.uploaded": "Uploaded an image",
   "media.deleted": "Deleted an image",
 };

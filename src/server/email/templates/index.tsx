@@ -7,6 +7,7 @@ import AccountDeleted from "./AccountDeleted";
 import AdminInvite from "./AdminInvite";
 import CampaignEmail from "./CampaignEmail";
 import ContactMessage from "./ContactMessage";
+import EnquiryReceived from "./EnquiryReceived";
 import OrderUpdate from "./OrderUpdate";
 import OtpCode from "./OtpCode";
 import NewsletterConfirm from "./NewsletterConfirm";
@@ -114,10 +115,15 @@ export const templates = {
       email: z.string().email(),
       topic: z.enum(CONTACT_TOPICS),
       message: z.string().min(1).max(3000),
+      reference: z.string().max(30).optional(),
     }),
-    element: (data: { name: string; email: string; topic: string; message: string }) => (
-      <ContactMessage {...data} />
-    ),
+    element: (data: {
+      name: string;
+      email: string;
+      topic: string;
+      message: string;
+      reference?: string | undefined;
+    }) => <ContactMessage {...data} />,
     /** Lets the team answer the visitor with a plain "Reply". */
     replyTo: (data: { email: string }) => data.email,
   },
@@ -132,10 +138,23 @@ export const templates = {
       location: z.string().min(1).max(120),
       taxId: z.string().max(40),
       message: z.string().min(1).max(3000),
+      reference: z.string().max(30).optional(),
     }),
     element: (data: WholesaleApplicationData) => <WholesaleApplication {...data} />,
     /** Lets the team answer the applicant with a plain "Reply". */
     replyTo: (data: { email: string }) => data.email,
+  },
+  "enquiry-received": {
+    subject: (data: { kind: "contact" | "wholesale"; reference: string }) =>
+      `Fernwood: we've received your ${data.kind === "wholesale" ? "application" : "message"} (${data.reference})`,
+    schema: z.object({
+      kind: z.enum(["contact", "wholesale"]),
+      name: z.string().min(1).max(120),
+      reference: z.string().max(30),
+    }),
+    element: (data: { kind: "contact" | "wholesale"; name: string; reference: string }) => (
+      <EnquiryReceived {...data} />
+    ),
   },
   campaign: {
     subject: (data: { subject: string }) => data.subject,

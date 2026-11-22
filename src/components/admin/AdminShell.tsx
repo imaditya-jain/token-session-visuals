@@ -111,15 +111,18 @@ export default function AdminShell({
 
   return (
     <div className="min-h-screen bg-background text-foreground lg:grid lg:grid-cols-[16rem_1fr]">
-      <aside className="hidden bg-forest-deep px-4 py-6 lg:flex lg:flex-col lg:gap-8">
-        <Link href="/admin" className="px-3 font-display text-2xl text-cream">
+      {/* Fixed to the viewport: the logo and the account block never move; only the menu between them scrolls. */}
+      <aside className="hidden h-screen flex-col self-start bg-forest-deep lg:sticky lg:top-0 lg:flex">
+        <Link href="/admin" className="shrink-0 px-7 pb-4 pt-6 font-display text-2xl text-cream">
           Fernwood
           <span className="block text-xs font-sans uppercase tracking-[0.2em] text-cream/60">
             Admin
           </span>
         </Link>
-        <NavLinks access={access} />
-        <div className="mt-auto space-y-3">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-2">
+          <NavLinks access={access} />
+        </div>
+        <div className="shrink-0 space-y-3 border-t border-cream/15 px-4 py-4">
           <div className="px-3">
             <Identity access={access} />
           </div>
@@ -128,7 +131,7 @@ export default function AdminShell({
       </aside>
 
       <div className="min-w-0">
-        <header className="flex items-center justify-between bg-forest-deep px-4 py-3 text-cream lg:hidden">
+        <header className="sticky top-0 z-30 flex items-center justify-between bg-forest-deep px-4 py-3 text-cream lg:hidden">
           <Link href="/admin" className="font-display text-xl">
             Fernwood <span className="font-sans text-xs uppercase tracking-[0.2em]">Admin</span>
           </Link>
@@ -143,17 +146,19 @@ export default function AdminShell({
                 <span className="sr-only">Open admin menu</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="bg-forest-deep text-cream">
-              <SheetTitle className="font-display text-2xl text-cream">Fernwood Admin</SheetTitle>
-              <SheetDescription className="sr-only">Admin sections</SheetDescription>
-              <div className="mt-6 space-y-6">
+            <SheetContent side="left" className="flex flex-col gap-0 bg-forest-deep p-0 text-cream">
+              <div className="shrink-0 px-6 pb-4 pt-6">
+                <SheetTitle className="font-display text-2xl text-cream">Fernwood Admin</SheetTitle>
+                <SheetDescription className="sr-only">Admin sections</SheetDescription>
+              </div>
+              <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-2">
                 <NavLinks access={access} onNavigate={() => setMenuOpen(false)} />
-                <div className="space-y-3 border-t border-cream/15 pt-4">
-                  <div className="px-3">
-                    <Identity access={access} />
-                  </div>
-                  {signOutButton}
+              </div>
+              <div className="shrink-0 space-y-3 border-t border-cream/15 px-4 py-4">
+                <div className="px-3">
+                  <Identity access={access} />
                 </div>
+                {signOutButton}
               </div>
             </SheetContent>
           </Sheet>

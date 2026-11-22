@@ -4,13 +4,27 @@ import { brand } from "./brand";
 import Layout from "./Layout";
 import { Muted, Paragraph, Title } from "./parts";
 
-export type ContactMessageData = { name: string; email: string; topic: string; message: string };
+export type ContactMessageData = {
+  name: string;
+  email: string;
+  topic: string;
+  message: string;
+  /** The enquiry reference shown in the admin, so the team can find it. */
+  reference?: string | undefined;
+};
 
 /** Internal notification for the shop team. Message text is rendered as escaped text, never HTML. */
-export default function ContactMessage({ name, email, topic, message }: ContactMessageData) {
+export default function ContactMessage({
+  name,
+  email,
+  topic,
+  message,
+  reference,
+}: ContactMessageData) {
   return (
     <Layout preview={`${topic} — message from ${name}`}>
       <Title>New message from the website</Title>
+      {reference ? <Muted>Reference {reference}</Muted> : null}
       <Paragraph>
         <strong>{name}</strong> ({email})
       </Paragraph>

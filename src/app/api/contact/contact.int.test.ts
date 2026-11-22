@@ -5,9 +5,11 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vites
 
 import { disconnectDb } from "@/server/db/connection";
 import { EmailJob } from "@/server/db/models/email-job";
+import { Enquiry } from "@/server/db/models/enquiry";
 import { RateLimit } from "@/server/db/models/rate-limit";
 import { setTransportForTests } from "@/server/email/mailer";
 import { processEmailJob } from "@/server/email/outbox";
+import { resetEnvCache } from "@/server/config/env";
 import { startTestDatabase } from "@/test/mongo";
 
 import { POST } from "./route";
@@ -27,7 +29,7 @@ afterAll(async () => {
 beforeEach(async () => {
   const { connectDb } = await import("@/server/db/connection");
   await connectDb();
-  await Promise.all([EmailJob.deleteMany({}), RateLimit.deleteMany({})]);
+  await Promise.all([EmailJob.deleteMany({}), RateLimit.deleteMany({}), Enquiry.deleteMany({})]);
 });
 
 const message = {
@@ -49,12 +51,18 @@ const post = (body: unknown, { ip = "198.51.100.20", origin = ORIGIN as string |
   });
 
 describe("POST /api/contact", () => {
-  it("queues one email to the shop inbox with the visitor as reply-to", async () => {
+  it("saves the submission, then queues a notification to the shop inbox with the sender as reply-to", async () => {
     const response = await POST(post(message));
     expect(response.status).toBe(202);
-    const jobs = await EmailJob.find({}).lean();
+
+    const saved = await Enquiry.find({}).lean();
+    expect(saved).toHaveLength(1);
+    expect(saved[0]).toMatchObject({ kind: "contact", status: "new", email: "ada@example.com" });
+    expect(saved[0]?.reference).toMatch(/^CT-\d{6}-[A-Z0-9]{4}$/);
+
+    const jobs = await EmailJob.find({ template: "contact-message" }).lean();
     expect(jobs).toHaveLength(1);
-    expect(jobs[0]).toMatchObject({ template: "contact-message", to: "shop@example.com" });
+    expect(jobs[0]).toMatchObject({ to: "shop@example.com" });
 
     const sendMail = vi.fn().mockResolvedValue({});
     setTransportForTests({ sendMail });
@@ -64,18 +72,49 @@ describe("POST /api/contact", () => {
       replyTo: "ada@example.com",
       subject: "Website message: Order or delivery (Ada Lovelace)",
     });
-    expect(sendMail.mock.calls[0]?.[0].html).toContain("Where is my order?");
+    expect(sendMail.mock.calls[0]?.[0].html).toContain(saved[0]?.reference);
   });
 
-  it("never emails the visitor (no reflection or mail-bombing)", async () => {
-    await POST(post(message));
-    const recipients = (await EmailJob.find({}).lean()).map((job) => job.to);
-    expect(recipients).not.toContain("ada@example.com");
+  it("thanks the sender once, with only their name and the reference (nothing they typed is reflected)", async () => {
+    await POST(
+      post({
+        ...message,
+        message: "Click http://evil.example to claim a prize, urgent action needed",
+      }),
+    );
+    const [ack] = await EmailJob.find({ template: "enquiry-received" }).lean();
+    expect(ack).toMatchObject({ to: "ada@example.com" });
+    const sendMail = vi.fn().mockResolvedValue({});
+    setTransportForTests({ sendMail });
+    expect(await processEmailJob(ack!._id)).toBe("sent");
+    const mail = sendMail.mock.calls[0]?.[0];
+    expect(mail.to).toBe("ada@example.com");
+    expect(mail.html).toContain("Ada");
+    expect(mail.html).not.toContain("evil.example");
+    expect(mail.html).not.toContain("urgent action");
+  });
+
+  it("sends at most one thank-you per address per day, while every submission still reaches the team", async () => {
+    await POST(post(message, { ip: "203.0.113.1" }));
+    await POST(post(message, { ip: "203.0.113.2" }));
+    expect(await Enquiry.countDocuments()).toBe(2);
+    expect(await EmailJob.countDocuments({ template: "contact-message" })).toBe(2);
+    expect(await EmailJob.countDocuments({ template: "enquiry-received" })).toBe(1);
+  });
+
+  it("still keeps the message when email is down for the notification", async () => {
+    vi.stubEnv("SMTP_EMAIL", "");
+    resetEnvCache();
+    const response = await POST(post(message));
+    expect(response.status).toBe(202);
+    expect(await Enquiry.countDocuments()).toBe(1);
+    vi.stubEnv("SMTP_EMAIL", "shop@example.com");
+    resetEnvCache();
   });
 
   it("escapes HTML in the message", async () => {
     await POST(post({ ...message, message: "<img src=x onerror=alert(1)> hello there" }));
-    const [job] = await EmailJob.find({}).lean();
+    const [job] = await EmailJob.find({ template: "contact-message" }).lean();
     const sendMail = vi.fn().mockResolvedValue({});
     setTransportForTests({ sendMail });
     await processEmailJob(job!._id);
@@ -86,6 +125,7 @@ describe("POST /api/contact", () => {
     const response = await POST(post({ ...message, website: "https://spam.example" }));
     expect(response.status).toBe(202);
     expect(await EmailJob.countDocuments()).toBe(0);
+    expect(await Enquiry.countDocuments()).toBe(0);
   });
 
   it.each([
