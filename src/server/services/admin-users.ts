@@ -2,6 +2,7 @@ import "server-only";
 
 import { randomBytes } from "node:crypto";
 
+import type { AdminUserView } from "@/lib/admin-types";
 import { hashPassword } from "@/server/auth/password";
 import type { AdminContext } from "@/server/auth/guards";
 import { siteUrl } from "@/server/config/env";
@@ -13,16 +14,7 @@ import { recordAudit } from "@/server/services/audit";
 import { issueAuthToken } from "@/server/services/auth-tokens";
 import { assertCanGrant, listRoles, resolvePermissions, roleExists } from "@/server/services/rbac";
 
-export type AdminUserView = {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  roleKey: string;
-  disabled: boolean;
-  emailVerified: boolean;
-  createdAt: string;
-};
+export type { AdminUserView };
 
 const systemRoleField = (roleKey: string): Role => (roleKey === "super_admin" ? "admin" : "staff");
 

@@ -120,3 +120,25 @@ export async function apiLogin(
     headers: { origin, ...headers },
   });
 }
+
+/**
+ * Makes an existing account an administrator. Real admins are created by the bootstrap script or an invitation;
+ * the e2e server has no mailbox, so tests promote a registered account directly in its throwaway database.
+ */
+export async function promoteToAdmin(email: string, adminRole: string): Promise<void> {
+  const { mongoUri, dbName } = runtime();
+  const client = new MongoClient(mongoUri);
+  try {
+    await client.connect();
+    const result = await client
+      .db(dbName)
+      .collection("users")
+      .updateOne(
+        { email },
+        { $set: { adminRole, role: adminRole === "super_admin" ? "admin" : "staff" } },
+      );
+    if (result.matchedCount !== 1) throw new Error(`No account for ${email}`);
+  } finally {
+    await client.close();
+  }
+}

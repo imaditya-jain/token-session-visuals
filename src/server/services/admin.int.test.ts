@@ -669,6 +669,10 @@ describe("administrator management", () => {
     const page = await listAudit({ limit: 1 });
     expect(page.entries).toHaveLength(1);
     expect(page.nextCursor).toBeTruthy();
+    expect(page.entries[0]).toMatchObject({
+      actorEmail: "boss@example.com",
+      actorName: "Ada Lovelace",
+    });
     const rest = await listAudit({ limit: 50, before: new Date(page.nextCursor ?? "") });
     expect(rest.entries.length).toBeGreaterThan(0);
   });

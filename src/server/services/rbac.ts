@@ -1,5 +1,6 @@
 import "server-only";
 
+import type { RoleView } from "@/lib/admin-types";
 import {
   isSystemRole,
   PERMISSION_KEYS,
@@ -12,14 +13,7 @@ import { Role } from "@/server/db/models/role";
 import { User } from "@/server/db/models/user";
 import { badRequest, conflict, forbidden } from "@/server/http/errors";
 
-export type RoleView = {
-  key: string;
-  name: string;
-  description: string;
-  permissions: Permission[];
-  system: boolean;
-  userCount: number;
-};
+export type { RoleView };
 
 const known = new Set<string>(PERMISSION_KEYS);
 const onlyKnown = (values: readonly string[]): Permission[] =>
