@@ -12,7 +12,13 @@ import type { ApiFailure } from "@/features/auth/types";
 import { forgotPasswordSchema } from "@/lib/auth-schemas";
 import { useAppDispatch } from "@/store/hooks";
 
-export default function ForgotPasswordForm() {
+/** `portal` picks which sign-in the links lead back to: the shop's, or the admin's own. */
+export default function ForgotPasswordForm({
+  portal = "customer",
+}: {
+  portal?: "customer" | "admin";
+}) {
+  const base = portal === "admin" ? "/admin" : "";
   const dispatch = useAppDispatch();
   const [email, setEmail] = useState("");
   const [errors, setErrors] = useState<FieldErrors>({});
@@ -75,7 +81,7 @@ export default function ForgotPasswordForm() {
       <p className="text-center text-sm text-muted-foreground">
         Remembered it?{" "}
         <Link
-          href="/login"
+          href={`${base}/login`}
           className="font-semibold text-forest underline-offset-4 hover:text-clay hover:underline"
         >
           Back to sign in

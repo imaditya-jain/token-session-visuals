@@ -36,7 +36,7 @@ import {
 import { inviteAdmin, listAdminUsers, updateAdminUser } from "./admin-users";
 import { loginWithCode } from "@/test/login";
 
-import { authenticate, registerUser } from "./auth";
+import { authenticate, registerUser, requestPasswordReset } from "./auth";
 import { listAudit } from "./audit";
 import { issueOtp, resendOtp, verifyOtp } from "./otp";
 import { createRole, deleteRole, resolvePermissions, updateRole } from "./rbac";
@@ -405,6 +405,41 @@ describe("customer sign-in (password, then code)", () => {
         startCustomerLogin({ email: customer.email, password: PASSWORD }),
       ).resolves.toBeTruthy();
     });
+  });
+});
+
+describe("password reset links", () => {
+  const resetUrl = async (email: string) => {
+    const job = await EmailJob.findOne({ template: "reset-password", to: email })
+      .sort({ createdAt: -1 })
+      .lean();
+    return (job?.data as { url: string }).url;
+  };
+
+  it("sends administrators to the admin's own reset page and customers to the shop's", async () => {
+    await makeUser("boss@example.com", "super_admin");
+    await makeUser("shopper@example.com");
+    await requestPasswordReset("boss@example.com");
+    await requestPasswordReset("shopper@example.com");
+    expect(await resetUrl("boss@example.com")).toMatch(
+      /^https:\/\/fernwood\.test\/admin\/reset-password\?token=/,
+    );
+    expect(await resetUrl("shopper@example.com")).toMatch(
+      /^https:\/\/fernwood\.test\/reset-password\?token=/,
+    );
+  });
+
+  it("invitations also use the admin's reset page", async () => {
+    await makeUser("boss@example.com", "super_admin");
+    const { accessToken } = await signIn("boss@example.com");
+    const ctx = await requireAdmin(requestWith(accessToken));
+    await inviteAdmin(
+      ctx,
+      { email: "new@example.com", firstName: "N", lastName: "E", roleKey: "editor" },
+      meta.ip,
+    );
+    const job = await EmailJob.findOne({ template: "admin-invite" }).lean();
+    expect((job?.data as { url: string }).url).toContain("/admin/reset-password?token=");
   });
 });
 

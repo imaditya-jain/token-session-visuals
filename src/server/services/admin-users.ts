@@ -80,7 +80,7 @@ export async function inviteAdmin(
   await enqueueEmail("admin-invite", user.email, {
     firstName: user.firstName,
     roleName,
-    url: `${siteUrl()}/reset-password?token=${encodeURIComponent(token)}`,
+    url: `${siteUrl()}/admin/reset-password?token=${encodeURIComponent(token)}`,
   });
   await recordAudit({
     action: "user.admin_invited",

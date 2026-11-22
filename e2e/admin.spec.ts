@@ -138,6 +138,63 @@ test.describe("admin access", () => {
   });
 });
 
+test.describe("admin has its own auth pages", () => {
+  test("forgot and reset password stay inside the admin, then lead to the admin sign-in", async ({
+    page,
+    request,
+    baseURL,
+  }) => {
+    const email = await createAccount(request, baseURL ?? "", "boss", "super_admin");
+    await page.setExtraHTTPHeaders({ "x-forwarded-for": randomIp() });
+    await page.goto("/admin/login");
+    await page.getByRole("link", { name: "Forgot password?" }).click();
+    await expect(page).toHaveURL(/\/admin\/forgot-password$/);
+    // No storefront chrome on the admin's pages.
+    await expect(page.getByRole("link", { name: "Sign in", exact: true })).toHaveCount(0);
+    await expect(page.getByRole("contentinfo")).toHaveCount(0);
+
+    await page.getByLabel("Email").fill(email);
+    await page.getByRole("button", { name: "Send reset link" }).click();
+    await expect(page.getByRole("heading", { name: "Check your inbox" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Back to sign in" })).toHaveCount(0);
+
+    const link = await latestEmailLink("reset-password", email);
+    expect(new URL(link).pathname).toBe("/admin/reset-password");
+    await page.goto(`${new URL(link).pathname}${new URL(link).search}`);
+    await page.getByLabel("New password", { exact: true }).fill("a-brand-new-admin-password");
+    await page.getByLabel("Confirm new password").fill("a-brand-new-admin-password");
+    await page.getByRole("button", { name: "Update password" }).click();
+    await expect(page.getByRole("heading", { name: "Password updated" })).toBeVisible();
+    await page.getByRole("link", { name: "Sign in" }).click();
+    await expect(page).toHaveURL(/\/admin\/login$/);
+
+    const since = new Date(Date.now() - 1000);
+    await page.getByLabel("Email").fill(email);
+    await page.getByLabel("Password", { exact: true }).fill("a-brand-new-admin-password");
+    await page.getByRole("button", { name: "Continue" }).click();
+    await page.getByLabel("Verification code").fill(await latestOtpCode(email, since));
+    await page.getByRole("button", { name: "Verify and sign in" }).click();
+    await expect(page).toHaveURL(/\/admin$/);
+  });
+
+  test("the customer's pages are unchanged and an admin can't sign in there", async ({
+    page,
+    request,
+    baseURL,
+  }) => {
+    const email = await createAccount(request, baseURL ?? "", "boss", "super_admin");
+    await page.setExtraHTTPHeaders({ "x-forwarded-for": randomIp() });
+    await page.goto("/login");
+    await expect(page.getByRole("link", { name: "Create an account" })).toBeVisible();
+    await page.getByLabel("Email").fill(email);
+    await page.getByLabel("Password", { exact: true }).fill(PASSWORD);
+    await page.getByRole("button", { name: "Sign in", exact: true }).click();
+    await expect(page.locator('form [role="alert"]')).toHaveText(
+      "Administrators sign in at /admin/login.",
+    );
+  });
+});
+
 test.describe("permissions in the console", () => {
   test("an editor sees only the dashboard and is refused the Team page", async ({
     page,
@@ -288,6 +345,12 @@ test.describe("accessibility", () => {
       await page.setExtraHTTPHeaders({ "x-forwarded-for": randomIp() });
       await page.goto("/admin/login");
       expect(await audit(page), "admin login").toEqual([]);
+      await page.goto("/admin/forgot-password");
+      expect(await audit(page), "admin forgot password").toEqual([]);
+      await page.goto("/admin/reset-password?token=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+      await expect(page.getByLabel("New password", { exact: true })).toBeVisible();
+      expect(await audit(page), "admin reset password").toEqual([]);
+      await page.goto("/admin/login");
 
       const email = await createAccount(request, baseURL ?? "", "boss", "super_admin");
       await page.getByLabel("Email").fill(email);
