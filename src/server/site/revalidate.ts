@@ -21,3 +21,18 @@ export function revalidateSiteChrome(): void {
     );
   }
 }
+
+/**
+ * After a product, variant, image or stock change: drop the cached catalog so shop pages show it at once. (The
+ * Shopify webhook does the same for changes made in Shopify itself.) Never throws.
+ */
+export function revalidateCatalog(): void {
+  try {
+    revalidateTag("catalog", { expire: 0 });
+  } catch (error) {
+    logger.warn(
+      { err: error instanceof Error ? error.message : String(error) },
+      "Catalog revalidation skipped",
+    );
+  }
+}

@@ -3,6 +3,7 @@ import "server-only";
 import { Category, MediaAsset, Post, Tag } from "@/server/db/models/blog";
 import { AuditLog } from "@/server/db/models/audit-log";
 import { AuthToken } from "@/server/db/models/auth-token";
+import { InventoryAdjustment } from "@/server/db/models/inventory-adjustment";
 import { Enquiry } from "@/server/db/models/enquiry";
 import { EmailJob } from "@/server/db/models/email-job";
 import { Notification } from "@/server/db/models/notification";
@@ -41,5 +42,6 @@ export async function ensureIndexes(): Promise<void> {
     MediaAsset.createIndexes(),
     SiteSetting.createIndexes(),
     Enquiry.createIndexes(),
+    InventoryAdjustment.createIndexes(),
   ]);
 }
