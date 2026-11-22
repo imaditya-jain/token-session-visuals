@@ -10,6 +10,7 @@ describe("admin navigation groups", () => {
   it("groups a super admin's menu under Blog and Administration below the dashboard", () => {
     expect(shape(SYSTEM_ROLES.super_admin.permissions)).toEqual([
       [null, ["Dashboard"]],
+      ["Website", ["Header & announcement", "Footer", "Social links"]],
       ["Blog", ["Posts", "Categories & tags", "Media"]],
       ["Administration", ["Team", "Roles", "Activity"]],
     ]);
@@ -48,6 +49,9 @@ describe("admin navigation", () => {
   it("shows a super admin everything", () => {
     expect(visibleNav(SYSTEM_ROLES.super_admin.permissions).map((item) => item.label)).toEqual([
       "Dashboard",
+      "Header & announcement",
+      "Footer",
+      "Social links",
       "Posts",
       "Categories & tags",
       "Media",

@@ -3,13 +3,15 @@
 import { useState, type FormEvent } from "react";
 
 import { ApiError, postJson } from "@/lib/api-client";
+import type { SiteChrome } from "@/lib/site-chrome";
 
 type State =
   | { phase: "idle" | "sending" }
   | { phase: "sent"; email: string }
   | { phase: "error"; message: string };
 
-export default function Newsletter() {
+/** The signup block. Its wording comes from the admin (footer page), via the page that shows it. */
+export default function Newsletter({ content }: { content: SiteChrome["newsletter"] }) {
   const [state, setState] = useState<State>({ phase: "idle" });
   const [email, setEmail] = useState("");
 
@@ -43,15 +45,12 @@ export default function Newsletter() {
     <section className="mx-auto max-w-7xl px-4 pb-20 sm:px-6 lg:px-8 lg:pb-28">
       <div className="overflow-hidden rounded-3xl bg-forest px-6 py-14 text-center text-cream sm:px-12 lg:py-16">
         <p className="mb-3 text-xs font-semibold uppercase tracking-[0.25em] text-sage">
-          Join the greenhouse club
+          {content.eyebrow}
         </p>
         <h2 className="mx-auto max-w-xl font-display text-3xl font-medium sm:text-4xl">
-          Get 10% off your first order
+          {content.heading}
         </h2>
-        <p className="mx-auto mt-4 max-w-lg text-sm text-cream/85">
-          Seasonal care tips, early access to rare drops and members-only savings — one thoughtful
-          email a month, never spam.
-        </p>
+        <p className="mx-auto mt-4 max-w-lg text-sm text-cream/85">{content.text}</p>
         {state.phase === "sent" ? (
           <p
             role="status"
@@ -86,7 +85,7 @@ export default function Newsletter() {
               disabled={sending}
               className="rounded-md bg-cream px-6 py-3 text-sm font-semibold text-forest-deep transition-colors hover:bg-cream/90 disabled:opacity-70"
             >
-              {sending ? "Sending…" : "Subscribe"}
+              {sending ? "Sending…" : content.buttonLabel}
             </button>
           </form>
         )}
@@ -99,7 +98,7 @@ export default function Newsletter() {
             {state.message}
           </p>
         ) : null}
-        <p className="mt-4 text-xs text-cream/60">Unsubscribe anytime. No green thumb required.</p>
+        {content.footnote ? <p className="mt-4 text-xs text-cream/60">{content.footnote}</p> : null}
       </div>
     </section>
   );

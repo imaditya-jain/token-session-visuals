@@ -26,6 +26,30 @@ export const ADMIN_NAV_GROUPS: readonly AdminNavGroup[] = [
     items: [{ href: "/admin", label: "Dashboard", description: "Your access and recent activity" }],
   },
   {
+    id: "website",
+    label: "Website",
+    items: [
+      {
+        href: "/admin/site/header",
+        label: "Header & announcement",
+        description: "The menu and the announcement bar on every page",
+        permission: "site:write",
+      },
+      {
+        href: "/admin/site/footer",
+        label: "Footer",
+        description: "Footer links, contact details and the newsletter block",
+        permission: "site:write",
+      },
+      {
+        href: "/admin/site/social",
+        label: "Social links",
+        description: "The social icons in the footer",
+        permission: "site:write",
+      },
+    ],
+  },
+  {
     id: "blog",
     label: "Blog",
     items: [

@@ -10,6 +10,7 @@ import { OtpChallenge } from "@/server/db/models/otp-challenge";
 import { RateLimit } from "@/server/db/models/rate-limit";
 import { ShopifyCollection, ShopifyOrder, ShopifyProduct } from "@/server/db/models/shopify-mirror";
 import { Role } from "@/server/db/models/role";
+import { SiteSetting } from "@/server/db/models/site-setting";
 import { Subscriber } from "@/server/db/models/subscriber";
 import { User } from "@/server/db/models/user";
 
@@ -37,5 +38,6 @@ export async function ensureIndexes(): Promise<void> {
     Tag.createIndexes(),
     Post.createIndexes(),
     MediaAsset.createIndexes(),
+    SiteSetting.createIndexes(),
   ]);
 }

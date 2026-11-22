@@ -11,8 +11,10 @@ import {
   WhyUs,
 } from "@/components/storefront/sections";
 import Newsletter from "@/components/storefront/Newsletter";
+import { getSiteChrome } from "@/server/services/site-chrome-public";
 
-export default function HomePage() {
+export default async function HomePage() {
+  const { newsletter } = await getSiteChrome();
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Header />
@@ -25,7 +27,7 @@ export default function HomePage() {
         <WhyUs />
         <StoryTestimonial />
         <Testimonials />
-        <Newsletter />
+        <Newsletter content={newsletter} />
       </main>
       <Footer />
     </div>
