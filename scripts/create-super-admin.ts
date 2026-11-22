@@ -5,8 +5,9 @@
  *   node --env-file=.env scripts/create-super-admin.ts --email you@example.com --first Ada --last Lovelace          # dry run
  *   node --env-file=.env scripts/create-super-admin.ts --email you@example.com --first Ada --last Lovelace --apply  # create
  *
- * No password is ever chosen here. The script prints a one-time link (valid 1 hour) to set the password; every
- * sign-in then also needs a code emailed to that address. It refuses to run when an active Super Admin already
+ * By default no password is chosen here: the script prints a one-time link (valid 1 hour) to set it. To set one
+ * directly, pass it in the ADMIN_INITIAL_PASSWORD environment variable (never as an argument, which lands in shell
+ * history); then no link is printed. Either way every sign-in also needs a code emailed to that address. It refuses to run when an active Super Admin already
  * exists (use the admin's invite flow instead) unless --allow-additional is given.
  */
 import { createHmac, randomBytes } from "node:crypto";
@@ -72,13 +73,13 @@ async function main(): Promise<void> {
     }
 
     const now = new Date();
-    // Unusable random password: the owner sets a real one through the emailed/printed link.
-    const passwordHash = await hash(randomBytes(32).toString("base64url"), {
-      memoryCost: 19_456,
-      timeCost: 2,
-      parallelism: 1,
-      algorithm: 2,
-    });
+    const argon = { memoryCost: 19_456, timeCost: 2, parallelism: 1, algorithm: 2 } as const;
+    const chosen = process.env["ADMIN_INITIAL_PASSWORD"];
+    if (chosen !== undefined && (chosen.length < 10 || chosen.length > 128)) {
+      fail("ADMIN_INITIAL_PASSWORD must be 10 to 128 characters");
+    }
+    // Without a chosen password the hash is of a random, unusable one: the owner sets a real one via the link.
+    const passwordHash = await hash(chosen ?? randomBytes(32).toString("base64url"), argon);
     const fields = {
       adminRole: "super_admin",
       role: "admin",
@@ -108,13 +109,15 @@ async function main(): Promise<void> {
       { userId, type: "reset_password", usedAt: { $exists: false } },
       { $set: { usedAt: now } },
     );
-    await tokens.insertOne({
-      userId,
-      type: "reset_password",
-      tokenHash: hashEmailTokenWith(secret, token),
-      expiresAt: new Date(now.getTime() + 3600_000),
-      createdAt: now,
-    });
+    if (chosen === undefined) {
+      await tokens.insertOne({
+        userId,
+        type: "reset_password",
+        tokenHash: hashEmailTokenWith(secret, token),
+        expiresAt: new Date(now.getTime() + 3600_000),
+        createdAt: now,
+      });
+    }
     await db.collection("auditlogs").insertOne({
       action: "user.super_admin_bootstrapped",
       targetType: "user",
@@ -122,9 +125,16 @@ async function main(): Promise<void> {
       createdAt: now,
     });
 
-    console.log("\nSuper Admin ready. Open this link within 1 hour to set the password:\n");
-    console.log(`  ${origin}/reset-password?token=${encodeURIComponent(token)}\n`);
-    console.log("Treat the link like a password. It works once.");
+    if (chosen === undefined) {
+      console.log("\nSuper Admin ready. Open this link within 1 hour to set the password:\n");
+      console.log(`  ${origin}/admin/reset-password?token=${encodeURIComponent(token)}\n`);
+      console.log("Treat the link like a password. It works once.");
+    } else {
+      console.log(`\nSuper Admin ready. Sign in at ${origin}/admin/login with that password;`);
+      console.log(
+        "a code is emailed to the address each time. Change the password after first use.",
+      );
+    }
   } finally {
     await client.close();
   }

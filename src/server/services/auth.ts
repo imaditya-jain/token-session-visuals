@@ -401,7 +401,9 @@ export async function requestPasswordReset(email: string): Promise<void> {
   const user = await User.findOne({ email }).lean();
   if (!user) return;
   const token = await issueAuthToken(user._id, "reset_password");
-  const url = `${siteUrl()}/reset-password?token=${encodeURIComponent(token)}`;
+  // Administrators reset on the admin's own pages and are sent back to the admin sign-in.
+  const path = user.adminRole ? "/admin/reset-password" : "/reset-password";
+  const url = `${siteUrl()}${path}?token=${encodeURIComponent(token)}`;
   await enqueueEmail("reset-password", user.email, { firstName: user.firstName, url });
 }
 

@@ -124,7 +124,7 @@ export default function AdminLoginForm() {
       />
       <div className="-mt-2 text-right">
         <Link
-          href="/forgot-password"
+          href="/admin/forgot-password"
           className="text-sm font-medium text-forest underline-offset-4 hover:text-clay hover:underline"
         >
           Forgot password?

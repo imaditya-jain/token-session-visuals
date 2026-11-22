@@ -81,7 +81,7 @@ export async function startCustomerLogin(input: LoginInput): Promise<OtpIssued> 
   const user = await verifyCredentials(input);
   // Administrators have their own portal with its own code step; the storefront never signs them in.
   if (user.adminRole) {
-    throw forbidden("Administrators sign in through the admin portal.", "admin_login_required");
+    throw forbidden("Administrators sign in at /admin/login.", "admin_login_required");
   }
   await assertShopifyLinked(user);
   return issueOtp(user, "customer_login");
