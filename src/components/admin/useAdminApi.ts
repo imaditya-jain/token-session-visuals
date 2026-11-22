@@ -13,11 +13,14 @@ export function useAdminMutation() {
   const [error, setError] = useState<string | null>(null);
 
   const run = useCallback(
-    async <T>(path: string, method: string, json?: unknown): Promise<T | null> => {
+    async <T>(path: string, method: string, body?: unknown): Promise<T | null> => {
       setPending(true);
       setError(null);
       try {
-        return await apiFetch<T>(path, { method, ...(json !== undefined ? { json } : {}) });
+        return await apiFetch<T>(path, {
+          method,
+          ...(body instanceof FormData ? { form: body } : body !== undefined ? { json: body } : {}),
+        });
       } catch (caught) {
         setError(
           caught instanceof ApiError

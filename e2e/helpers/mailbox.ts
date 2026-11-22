@@ -142,3 +142,29 @@ export async function promoteToAdmin(email: string, adminRole: string): Promise<
     await client.close();
   }
 }
+
+/** Puts an image in the media library as the upload flow would (Shopify is disabled in e2e, so uploads can't run). */
+export async function seedMedia(
+  url: string,
+  fields: { filename: string; alt: string; width?: number; height?: number },
+): Promise<void> {
+  const { mongoUri, dbName } = runtime();
+  const client = new MongoClient(mongoUri);
+  try {
+    await client.connect();
+    await client
+      .db(dbName)
+      .collection("mediaassets")
+      .insertOne({
+        gid: `gid://shopify/MediaImage/${Date.now()}${Math.floor(Math.random() * 1000)}`,
+        url,
+        mimeType: "image/png",
+        bytes: 1234,
+        createdBy: (await client.db(dbName).collection("users").findOne({}))?.["_id"],
+        createdAt: new Date(),
+        ...fields,
+      });
+  } finally {
+    await client.close();
+  }
+}

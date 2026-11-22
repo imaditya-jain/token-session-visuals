@@ -5,7 +5,7 @@
  *   node scripts/e2e-server.mjs            # build + serve on $PORT (default 3100)
  *   SKIP_BUILD=1 node scripts/e2e-server.mjs
  */
-import { spawn, spawnSync } from "node:child_process";
+import { spawn } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import { existsSync, rmSync, writeFileSync } from "node:fs";
 
@@ -51,10 +51,15 @@ writeFileSync(
 const next = ["node_modules/next/dist/bin/next"];
 
 if (!process.env.SKIP_BUILD) {
-  const build = spawnSync(process.execPath, [...next, "build"], { env, stdio: "inherit" });
-  if (build.status !== 0) {
+  // Asynchronous on purpose: the build now reads the database, and the in-memory MongoDB's log pipe is drained by
+  // THIS process. A blocking spawnSync would starve it, fill the pipe and stall mongod (and so the build).
+  const status = await new Promise((resolve) => {
+    const build = spawn(process.execPath, [...next, "build"], { env, stdio: "inherit" });
+    build.on("exit", (code) => resolve(code ?? 1));
+  });
+  if (status !== 0) {
     await mongo.stop();
-    process.exit(build.status ?? 1);
+    process.exit(status);
   }
 }
 

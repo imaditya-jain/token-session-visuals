@@ -7,7 +7,7 @@ export default function PageHeader({
   action,
 }: {
   title: string;
-  lead?: string;
+  lead?: string | undefined;
   action?: ReactNode;
 }) {
   return (

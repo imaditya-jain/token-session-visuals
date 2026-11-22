@@ -527,6 +527,7 @@ describe("GET /api/cron/jobs", () => {
       attempted: 1,
       sent: 1,
       jobs: { attempted: 0, done: 0 },
+      postsPublished: 0,
     });
     expect(sendMail).toHaveBeenCalledTimes(1);
     setTransportForTests(undefined);
