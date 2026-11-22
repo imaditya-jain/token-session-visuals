@@ -54,7 +54,11 @@ const config: NextConfig = {
   // Pin the workspace root to this project; otherwise Next infers it from stray lockfiles in parent folders.
   turbopack: { root: fileURLToPath(new URL(".", import.meta.url)) },
   async headers() {
-    return [{ source: "/:path*", headers: securityHeaders }];
+    return [
+      { source: "/:path*", headers: securityHeaders },
+      // Belt and braces next to the page metadata and robots.txt: the console is never indexed.
+      { source: "/admin/:path*", headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }] },
+    ];
   },
   images: {
     remotePatterns: [{ protocol: "https", hostname: "cdn.shopify.com", pathname: "/s/files/**" }],
