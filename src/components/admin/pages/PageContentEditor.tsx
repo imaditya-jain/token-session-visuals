@@ -639,6 +639,7 @@ function Editor({ pageId, initial }: { pageId: string; initial: AdminPage }) {
           </p>
           <Link
             href={page.path}
+            prefetch={false}
             target="_blank"
             rel="noopener noreferrer"
             className="block text-sm underline"
