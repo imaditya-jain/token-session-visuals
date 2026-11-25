@@ -44,6 +44,12 @@ export const collectionProductsResponse = z.object({
 export const productResponse = z.object({ product: productNodeSchema.nullable() });
 export const productsResponse = z.object({ products: page(productNodeSchema) });
 
+const idNode = z.object({ id: z.string() });
+export const productSalesOrderResponse = z.object({ products: page(idNode) });
+export const collectionSalesOrderResponse = z.object({
+  collection: z.object({ products: page(idNode) }).nullable(),
+});
+
 export type ProductNode = z.infer<typeof productNodeSchema>;
 export type CollectionNode = z.infer<typeof collectionNodeSchema>;
 export { page };

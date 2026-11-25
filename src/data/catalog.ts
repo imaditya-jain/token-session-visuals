@@ -80,6 +80,31 @@ export async function getShopPage(query: ShopQuery): Promise<ProductPage> {
     : paginateFallback(fallbackProducts, query);
 }
 
+/** Every product of one collection, in the collection's own order; `undefined` when the collection is unknown. */
+export async function getCollectionAll(handle: string): Promise<Product[] | undefined> {
+  if (await isLive()) {
+    const collection = await shopify.getCollection(handle);
+    return collection ? shopify.getCollectionProducts(handle) : undefined;
+  }
+  if (!fallbackCollections.some((collection) => collection.slug === handle)) return undefined;
+  return fallbackProducts.filter((product) => product.collectionSlugs.includes(handle));
+}
+
+/**
+ * Product ids in best-selling order for the whole shop (or one collection). The browser sorts the listing it receives
+ * by this. The offline catalog has no sales, so its Bestseller-badged items come first.
+ */
+export async function getSalesOrder(handle?: string): Promise<string[]> {
+  if (await isLive()) return shopify.getSalesOrder(handle);
+  const pool =
+    handle === undefined
+      ? fallbackProducts
+      : fallbackProducts.filter((product) => product.collectionSlugs.includes(handle));
+  return [...pool]
+    .sort((a, b) => Number(b.badge === "Bestseller") - Number(a.badge === "Bestseller"))
+    .map((product) => product.id);
+}
+
 /** Product types available as shop filters. */
 export async function getProductTypes(): Promise<string[]> {
   return (await isLive()) ? shopify.getProductTypes() : fallbackProductTypes(fallbackProducts);

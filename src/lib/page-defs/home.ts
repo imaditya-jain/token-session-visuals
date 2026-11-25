@@ -49,6 +49,32 @@ export const HOME: PageDef = {
       },
     },
     {
+      id: "finder",
+      label: "Plant Finder teaser",
+      fields: {
+        eyebrow: text("Small line above the heading", "New: Plant Finder", 60, true),
+        title: text("Heading", "Not sure which plant? Swipe your way to it", 100),
+        text: area(
+          "Text",
+          "Answer a few quick questions about your space, then swipe through plants like the ones you love. In about a minute we'll show the plants that suit you best.",
+          400,
+        ),
+        cta: link("Button", { label: "Find my plant", href: "/plant-finder" }),
+        cardOne: image("Back card picture", {
+          src: "/images/product-fiddle-fig.jpg",
+          alt: "A fiddle-leaf fig in a pot",
+        }),
+        cardTwo: image("Middle card picture", {
+          src: "/images/product-bird-of-paradise.jpg",
+          alt: "A bird of paradise plant",
+        }),
+        cardThree: image("Front card picture", {
+          src: "/images/product-monstera.jpg",
+          alt: "A monstera with large split leaves",
+        }),
+      },
+    },
+    {
       id: "bestSellers",
       label: "Best sellers",
       fields: {

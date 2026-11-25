@@ -201,3 +201,34 @@ export const COLLECTION_PAGE_QUERY = /* GraphQL */ `
     }
   }
 `;
+
+/** Product ids only, in the shop's real best-selling order (the client sorts the list it was given by this). */
+export const PRODUCT_SALES_ORDER_QUERY = /* GraphQL */ `
+  query ProductSalesOrder($first: Int!, $after: String) {
+    products(first: $first, after: $after, sortKey: BEST_SELLING) {
+      nodes {
+        id
+      }
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
+    }
+  }
+`;
+
+export const COLLECTION_SALES_ORDER_QUERY = /* GraphQL */ `
+  query CollectionSalesOrder($handle: String!, $first: Int!, $after: String) {
+    collection(handle: $handle) {
+      products(first: $first, after: $after, sortKey: BEST_SELLING) {
+        nodes {
+          id
+        }
+        pageInfo {
+          hasNextPage
+          endCursor
+        }
+      }
+    }
+  }
+`;
