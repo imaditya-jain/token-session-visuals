@@ -6,6 +6,24 @@ import type { NextConfig } from "next";
 const isDev = process.env["NODE_ENV"] === "development";
 
 /**
+ * URL parameters that change what a product listing shows (see `parseShopQuery` in src/lib/shop.ts; a unit test keeps
+ * this list in step). A shop or collection address without any of them is the default view, which is built ahead of
+ * time; tracking parameters such as utm_source or fbclid don't change it, so they don't force a per-request render.
+ */
+const LISTING_PARAMS = [
+  "q",
+  "sort",
+  "stock",
+  "min",
+  "max",
+  "type",
+  "after",
+  "before",
+  "page",
+] as const;
+const noListingParams = LISTING_PARAMS.map((key) => ({ type: "query" as const, key }));
+
+/**
  * Content-Security-Policy. Decision (owner-approved): keep home, product and policy pages statically cached,
  * so scripts cannot be nonce-protected (a nonce needs per-request rendering and Next's inline bootstrap
  * scripts would otherwise be blocked; verified in a browser). Everything else is locked down: same-origin
@@ -53,6 +71,27 @@ const config: NextConfig = {
   experimental: { inlineCss: true },
   // Pin the workspace root to this project; otherwise Next infers it from stray lockfiles in parent folders.
   turbopack: { root: fileURLToPath(new URL(".", import.meta.url)) },
+  async rewrites() {
+    return {
+      // Routing rules, not code: no server wakes up for the default views, they come straight from the cache.
+      beforeFiles: [
+        { source: "/shop", missing: noListingParams, destination: "/listing/shop" },
+        {
+          source: "/collections/:slug",
+          missing: noListingParams,
+          destination: "/listing/collections/:slug",
+        },
+      ],
+      afterFiles: [],
+      fallback: [],
+    };
+  },
+  async redirects() {
+    return [
+      { source: "/listing/shop", destination: "/shop", permanent: false },
+      { source: "/listing/collections/:slug", destination: "/collections/:slug", permanent: false },
+    ];
+  },
   async headers() {
     return [
       { source: "/:path*", headers: securityHeaders },
