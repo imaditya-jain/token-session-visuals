@@ -9,13 +9,10 @@ import ListingPagination from "@/components/storefront/ListingPagination";
 import ListingToolbar from "@/components/storefront/ListingToolbar";
 import { Button } from "@/components/ui/button";
 import { getProductTypes, getShopPage } from "@/data/catalog";
+import { getPageContent } from "@/server/services/page-content-public";
 import { listingSummary, parseShopQuery, SHOP_PATH } from "@/lib/shop";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
-
-const TITLE = "Shop all plants — Fernwood";
-const DESCRIPTION =
-  "Browse every plant, pot and garden tool from all Fernwood collections. Filter by availability, price and type.";
 
 /**
  * SSR: results depend on URL filters and opaque cursors, so the page renders per request. Shopify reads
@@ -29,6 +26,9 @@ export async function generateMetadata({
   searchParams: SearchParams;
 }): Promise<Metadata> {
   const hasParams = Object.keys(await searchParams).length > 0;
+  const c = await getPageContent("shop");
+  const TITLE = c.text("seo", "metaTitle");
+  const DESCRIPTION = c.text("seo", "metaDescription");
   return {
     title: TITLE,
     description: DESCRIPTION,
@@ -42,9 +42,10 @@ export async function generateMetadata({
 
 export default async function ShopPage({ searchParams }: { searchParams: SearchParams }) {
   const query = parseShopQuery(await searchParams);
-  const [{ products, pageInfo }, types] = await Promise.all([
+  const [{ products, pageInfo }, types, c] = await Promise.all([
     getShopPage(query),
     getProductTypes(),
+    getPageContent("shop"),
   ]);
 
   const paginated = pageInfo.hasNextPage || pageInfo.hasPreviousPage;
@@ -55,8 +56,8 @@ export default async function ShopPage({ searchParams }: { searchParams: SearchP
       <main>
         <CollectionBanner
           image="/images/seasonal-greenhouse.jpg"
-          title="Shop all"
-          tagline="Every plant, pot and tool in the greenhouse"
+          title={c.text("header", "title")}
+          tagline={c.text("header", "eyebrow")}
         />
 
         <section className="mx-auto max-w-7xl px-4 pt-16 sm:px-6 sm:pt-20 lg:px-8">
@@ -79,10 +80,8 @@ export default async function ShopPage({ searchParams }: { searchParams: SearchP
             </div>
           ) : (
             <div className="flex flex-col items-center gap-3 py-16 text-center">
-              <p className="font-display text-xl text-foreground">No products match your filters</p>
-              <p className="text-sm text-muted-foreground">
-                Try widening the price range or clearing availability.
-              </p>
+              <p className="font-display text-xl text-foreground">{c.text("empty", "title")}</p>
+              <p className="text-sm text-muted-foreground">{c.text("empty", "text")}</p>
               <Button variant="outline" asChild className="mt-2">
                 <Link href={SHOP_PATH}>Clear all filters</Link>
               </Button>

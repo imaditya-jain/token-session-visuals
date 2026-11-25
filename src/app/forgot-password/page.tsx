@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import AuthShell from "@/components/auth/AuthShell";
+import { getPageContent } from "@/server/services/page-content-public";
 import ForgotPasswordForm from "@/components/auth/ForgotPasswordForm";
 
 export const metadata: Metadata = {
@@ -9,12 +10,15 @@ export const metadata: Metadata = {
   alternates: { canonical: "/forgot-password" },
 };
 
-export default function ForgotPasswordPage() {
+export const revalidate = 3600;
+
+export default async function ForgotPasswordPage() {
+  const c = await getPageContent("forgot-password");
   return (
     <AuthShell
-      eyebrow="Your account"
-      title="Forgot your password?"
-      description="Enter your email and we'll send you a link to choose a new one."
+      eyebrow={c.text("header", "eyebrow")}
+      title={c.text("header", "title")}
+      description={c.text("intro", "description")}
     >
       <ForgotPasswordForm />
     </AuthShell>

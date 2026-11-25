@@ -1,20 +1,19 @@
-import type { Metadata } from "next";
-
 import AuthShell from "@/components/auth/AuthShell";
 import ContactForm from "@/components/contact/ContactForm";
+import { getPageContent } from "@/server/services/page-content-public";
+import { pageMetadata } from "@/server/services/page-meta";
 
-export const metadata: Metadata = {
-  title: "Contact us — Fernwood",
-  description: "Questions about an order, a plant or wholesale? Send us a message.",
-  alternates: { canonical: "/contact" },
-};
+export const revalidate = 3600;
 
-export default function ContactPage() {
+export const generateMetadata = () => pageMetadata("contact", "/contact");
+
+export default async function ContactPage() {
+  const c = await getPageContent("contact");
   return (
     <AuthShell
-      eyebrow="Help"
-      title="Contact us"
-      description="Questions about an order, a plant that needs rescuing, or wholesale? We reply within one business day."
+      eyebrow={c.text("header", "eyebrow")}
+      title={c.text("header", "title")}
+      description={c.text("intro", "description")}
     >
       <ContactForm />
     </AuthShell>

@@ -1,19 +1,17 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 
 import ContactCta from "@/components/content/ContactCta";
 import ContentShell from "@/components/content/ContentShell";
+import RichBody from "@/components/content/RichBody";
 import { proseClass } from "@/components/content/prose";
 import { money, store } from "@/data/store-info";
+import { getPageContent } from "@/server/services/page-content-public";
+import { pageMetadata } from "@/server/services/page-meta";
 import { getPolicy } from "@/server/services/policies";
 
 export const revalidate = 3600;
 
-export const metadata: Metadata = {
-  title: "Shipping & delivery — Fernwood",
-  description: `Shipping rates, free shipping over ${money(store.shipping.freeThreshold)}, and how your plants are packed and delivered.`,
-  alternates: { canonical: "/shipping-delivery" },
-};
+export const generateMetadata = () => pageMetadata("shipping-delivery", "/shipping-delivery");
 
 const { shipping } = store;
 
@@ -32,13 +30,16 @@ const rates = [
 ];
 
 export default async function ShippingDeliveryPage() {
-  const policy = await getPolicy("shipping-policy");
+  const [c, policy] = await Promise.all([
+    getPageContent("shipping-delivery"),
+    getPolicy("shipping-policy"),
+  ]);
 
   return (
     <ContentShell
-      eyebrow="Help"
-      title="Shipping & delivery"
-      intro="Every plant leaves our greenhouse in protective, plant-friendly packaging. Here is what shipping costs and how it works."
+      eyebrow={c.text("header", "eyebrow")}
+      title={c.text("header", "title")}
+      intro={c.text("header", "intro")}
     >
       <h2 className="mb-4 font-display text-2xl font-medium text-forest">Shipping rates</h2>
       <div className="overflow-hidden rounded-2xl bg-card shadow-sm ring-1 ring-border/60">
@@ -78,40 +79,19 @@ export default async function ShippingDeliveryPage() {
         pay.
       </p>
 
-      <div className={`${proseClass} mt-10`}>
-        <h2>How we pack</h2>
-        <p>
-          Plants are packed with protective, recycled packaging so they arrive ready to thrive.
-          Every order includes a detailed care card for the plants inside.
+      <RichBody doc={c.doc("body", "content")} className="mt-10" />
+      {policy ? (
+        <p className={`${proseClass} -mt-2`}>
+          For the complete terms, read our{" "}
+          <Link href="/policies/shipping-policy">full shipping policy</Link>.
         </p>
+      ) : null}
 
-        <h2>Where we ship</h2>
-        <p>
-          We ship to {shipping.countries} countries. If yours is on the list, checkout will offer it
-          once you enter your address. Duties and taxes for international orders are shown at
-          checkout where they apply.
-        </p>
-
-        <h2>Tracking your order</h2>
-        <p>
-          Sign in and open <Link href="/account/orders">My orders</Link> to see the status of every
-          order. Confirm your email address first so your order history is available.
-        </p>
-
-        <h2>If something goes wrong</h2>
-        <p>
-          If a plant arrives damaged or unhappy, our{" "}
-          <Link href="/plant-guarantee">plant guarantee</Link> has you covered.
-        </p>
-        {policy ? (
-          <p>
-            For the complete terms, read our{" "}
-            <Link href="/policies/shipping-policy">full shipping policy</Link>.
-          </p>
-        ) : null}
-      </div>
-
-      <ContactCta title="Questions about a delivery?" topic="Order or delivery" />
+      <ContactCta
+        title={c.text("cta", "title")}
+        topic="Order or delivery"
+        label={c.text("cta", "label")}
+      />
     </ContentShell>
   );
 }

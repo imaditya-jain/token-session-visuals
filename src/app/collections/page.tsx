@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 
 import CollectionBanner from "@/components/storefront/CollectionBanner";
@@ -7,19 +6,17 @@ import Header from "@/components/storefront/Header";
 import { Footer } from "@/components/storefront/sections";
 import { Button } from "@/components/ui/button";
 import { getCollections } from "@/data/catalog";
+import { getPageContent } from "@/server/services/page-content-public";
+import { pageMetadata } from "@/server/services/page-meta";
 
 /** ISR like the other catalog pages: tagged Shopify reads plus hourly refresh. */
 export const revalidate = 3600;
 
-export const metadata: Metadata = {
-  title: "All collections — Fernwood",
-  description:
-    "Browse every Fernwood collection: house plants, succulents, pots and planters, seeds and tools.",
-  alternates: { canonical: "/collections" },
-};
+export const generateMetadata = () => pageMetadata("collections", "/collections");
 
 export default async function CollectionsPage() {
-  const collections = await getCollections();
+  const [collections, c] = await Promise.all([getCollections(), getPageContent("collections")]);
+  const empty = c.link("empty", "button");
 
   return (
     <div className="min-h-screen bg-background">
@@ -27,8 +24,8 @@ export default async function CollectionsPage() {
       <main>
         <CollectionBanner
           image="/images/seasonal-greenhouse.jpg"
-          title="Collections"
-          tagline="Curated for every corner of your home"
+          title={c.text("header", "title")}
+          tagline={c.text("header", "eyebrow")}
         />
         <section className="mx-auto max-w-7xl px-4 pt-16 pb-20 sm:px-6 sm:pt-20 lg:px-8 lg:pb-28">
           <h2 className="sr-only">All collections</h2>
@@ -40,9 +37,9 @@ export default async function CollectionsPage() {
             </div>
           ) : (
             <div className="flex flex-col items-center gap-3 py-16 text-center">
-              <p className="font-display text-xl text-foreground">Collections are on their way</p>
+              <p className="font-display text-xl text-foreground">{c.text("empty", "title")}</p>
               <Button variant="outline" asChild className="mt-2">
-                <Link href="/shop">Shop all plants</Link>
+                <Link href={empty.href}>{empty.label}</Link>
               </Button>
             </div>
           )}

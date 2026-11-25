@@ -235,3 +235,38 @@ test.describe("page content", () => {
     await expect(page.getByText("Use a web address, a path like /shop")).toBeVisible();
   });
 });
+
+test.describe("other pages' content", () => {
+  test("editing a content page's heading and FAQ answer reaches the storefront once published", async ({
+    page,
+    request,
+    baseURL,
+  }) => {
+    const email = await createAccount(request, baseURL ?? "", "boss", "super_admin");
+    await signInAdmin(page, email);
+
+    await page.goto("/admin/site/pages");
+    await expect(page.getByRole("link", { name: /Press/ })).toBeVisible();
+    await page.goto("/admin/site/pages/press");
+    await page.getByLabel("Title", { exact: true }).first().fill("In the news");
+    await page.getByRole("button", { name: "Publish to website" }).click();
+    await expect(page.getByRole("status").filter({ hasText: "Published." })).toBeVisible();
+    await expect
+      .poll(async () => (await (await request.get("/press")).text()).includes("In the news"))
+      .toBe(true);
+
+    await page.goto("/admin/site/pages/faq");
+    await page.getByRole("button", { name: "Questions and answers" }).click();
+    await page.getByLabel("Answer 1.2").fill("Yes, to [many countries](/shipping-delivery).");
+    await page.getByRole("button", { name: "Publish to website" }).click();
+    await expect(page.getByRole("status").filter({ hasText: "Published." })).toBeVisible();
+    await expect
+      .poll(async () => (await (await request.get("/faq")).text()).includes("Yes, to"), {
+        timeout: 30_000,
+      })
+      .toBe(true);
+    const html = await (await request.get("/faq")).text();
+    expect(html).toContain('href="/shipping-delivery"');
+    expect(html).toContain("Yes, to many countries");
+  });
+});
