@@ -110,6 +110,18 @@ export const ADMIN_NAV_GROUPS: readonly AdminNavGroup[] = [
     ],
   },
   {
+    id: "marketing",
+    label: "Marketing",
+    items: [
+      {
+        href: "/admin/marketing/campaigns",
+        label: "Campaigns",
+        description: "Design, test, schedule and send emails to your subscribers",
+        permission: "campaigns:read",
+      },
+    ],
+  },
+  {
     id: "blog",
     label: "Blog",
     items: [

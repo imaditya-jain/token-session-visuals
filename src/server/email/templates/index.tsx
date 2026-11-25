@@ -5,7 +5,7 @@ import { BUSINESS_TYPES } from "@/lib/wholesale-schemas";
 
 import AccountDeleted from "./AccountDeleted";
 import AdminInvite from "./AdminInvite";
-import CampaignEmail from "./CampaignEmail";
+import CampaignDesigned from "./CampaignDesigned";
 import ContactMessage from "./ContactMessage";
 import EnquiryReceived from "./EnquiryReceived";
 import OrderUpdate from "./OrderUpdate";
@@ -27,9 +27,14 @@ const https = z
 const campaignSchema = z.object({
   subject: z.string().min(1).max(150),
   preheader: z.string().max(200).optional(),
+  /** `layout.palette`, one of the 108 designs. Absent = the classic design. */
+  design: z.string().max(40).optional(),
+  eyebrow: z.string().max(60).optional(),
   heading: z.string().min(1).max(150),
   paragraphs: z.array(z.string().min(1).max(2000)).min(1).max(20),
+  image: z.object({ src: https, alt: z.string().max(200) }).optional(),
   cta: z.object({ label: z.string().min(1).max(60), url: https }).optional(),
+  signoff: z.string().max(120).optional(),
   unsubscribeUrl: z.string().url(),
   oneClickUrl: z.string().url(),
 });
@@ -159,7 +164,7 @@ export const templates = {
   campaign: {
     subject: (data: { subject: string }) => data.subject,
     schema: campaignSchema,
-    element: (data: z.infer<typeof campaignSchema>) => <CampaignEmail {...data} />,
+    element: (data: z.infer<typeof campaignSchema>) => <CampaignDesigned {...data} />,
     headers: (data: { oneClickUrl: string }) => ({
       // RFC 8058 one-click unsubscribe: mailbox providers show their own "Unsubscribe" button.
       "List-Unsubscribe": `<${data.oneClickUrl}>`,

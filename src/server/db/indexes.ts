@@ -1,5 +1,6 @@
 import "server-only";
 
+import { Campaign } from "@/server/db/models/campaign";
 import { Category, MediaAsset, Post, Tag } from "@/server/db/models/blog";
 import { AuditLog } from "@/server/db/models/audit-log";
 import { AuthToken } from "@/server/db/models/auth-token";
@@ -27,6 +28,7 @@ export async function ensureIndexes(): Promise<void> {
     RateLimit.createIndexes(),
     AuthToken.createIndexes(),
     EmailJob.createIndexes(),
+    Campaign.createIndexes(),
     Job.createIndexes(),
     Notification.createIndexes(),
     Subscriber.createIndexes(),

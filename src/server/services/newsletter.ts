@@ -94,6 +94,10 @@ export type CampaignInput = {
   heading: string;
   paragraphs: string[];
   cta?: { label: string; url: string };
+  design?: string;
+  eyebrow?: string;
+  image?: { src: string; alt: string };
+  signoff?: string;
 };
 
 const BATCH = 200;
@@ -133,6 +137,10 @@ export async function enqueueCampaign(
           heading: input.heading,
           paragraphs: input.paragraphs,
           ...(input.cta ? { cta: input.cta } : {}),
+          ...(input.design ? { design: input.design } : {}),
+          ...(input.eyebrow ? { eyebrow: input.eyebrow } : {}),
+          ...(input.image ? { image: input.image } : {}),
+          ...(input.signoff ? { signoff: input.signoff } : {}),
           unsubscribeUrl: `${base}/unsubscribe?token=${token}`,
           oneClickUrl: `${base}/api/newsletter/unsubscribe?token=${token}`,
         },
