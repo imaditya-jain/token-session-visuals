@@ -146,6 +146,10 @@ export type MediaAssetRecord = {
   bytes: number;
   width?: number | undefined;
   height?: number | undefined;
+  /** The library folder it is filed in; absent = not in a folder. */
+  folderId?: Types.ObjectId | undefined;
+  /** Set when its picture was replaced in place. */
+  replacedAt?: Date | undefined;
   createdBy: Types.ObjectId;
   createdAt: Date;
 };
@@ -159,9 +163,29 @@ const mediaAssetSchema = new Schema<MediaAssetRecord>({
   bytes: { type: Number, required: true },
   width: { type: Number },
   height: { type: Number },
+  folderId: { type: Schema.Types.ObjectId },
+  replacedAt: { type: Date },
   createdBy: { type: Schema.Types.ObjectId, required: true },
   createdAt: { type: Date, required: true, default: () => new Date() },
 });
 mediaAssetSchema.index({ createdAt: -1 });
+mediaAssetSchema.index({ folderId: 1, createdAt: -1 });
 
 export const MediaAsset = defineModel<MediaAssetRecord>("MediaAsset", mediaAssetSchema);
+
+export type MediaFolderRecord = {
+  _id: Types.ObjectId;
+  name: string;
+  createdBy: Types.ObjectId;
+  createdAt: Date;
+};
+
+const mediaFolderSchema = new Schema<MediaFolderRecord>({
+  name: { type: String, required: true, trim: true, maxlength: 60 },
+  createdBy: { type: Schema.Types.ObjectId, required: true },
+  createdAt: { type: Date, required: true, default: () => new Date() },
+});
+// Folder names are unique regardless of case.
+mediaFolderSchema.index({ name: 1 }, { unique: true, collation: { locale: "en", strength: 2 } });
+
+export const MediaFolder = defineModel<MediaFolderRecord>("MediaFolder", mediaFolderSchema);

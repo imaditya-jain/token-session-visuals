@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { useApiResource } from "@/components/account/useApiResource";
-import MediaPicker from "@/components/admin/blog/MediaPicker";
+import MediaPicker from "@/components/admin/media/MediaPicker";
 import IconButton from "@/components/admin/IconButton";
 import PageHeader from "@/components/admin/PageHeader";
 import VariantsEditor from "@/components/admin/shop/VariantsEditor";

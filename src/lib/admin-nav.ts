@@ -137,10 +137,16 @@ export const ADMIN_NAV_GROUPS: readonly AdminNavGroup[] = [
         description: "Organise posts into categories and tags",
         permission: "categories:manage",
       },
+    ],
+  },
+  {
+    id: "library",
+    label: "Library",
+    items: [
       {
         href: "/admin/media",
-        label: "Media",
-        description: "The image library for your posts",
+        label: "Media library",
+        description: "Every picture: folders, where it is used, replace and clean up",
         permission: "media:manage",
       },
     ],

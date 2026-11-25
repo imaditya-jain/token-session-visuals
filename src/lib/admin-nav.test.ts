@@ -15,7 +15,8 @@ describe("admin navigation groups", () => {
       ["Sales", ["Orders", "Subscriptions"]],
       ["Shop", ["Products", "Inventory"]],
       ["Marketing", ["Campaigns"]],
-      ["Blog", ["Posts", "Categories & tags", "Media"]],
+      ["Blog", ["Posts", "Categories & tags"]],
+      ["Library", ["Media library"]],
       ["Administration", ["Team", "Roles", "Activity"]],
     ]);
   });
@@ -23,7 +24,8 @@ describe("admin navigation groups", () => {
   it("hides whole groups the person has nothing in, and single entries they can't open", () => {
     expect(shape(SYSTEM_ROLES.editor.permissions)).toEqual([
       [null, ["Dashboard"]],
-      ["Blog", ["Posts", "Categories & tags", "Media"]],
+      ["Blog", ["Posts", "Categories & tags"]],
+      ["Library", ["Media library"]],
     ]);
     expect(shape(["blog:read"])).toEqual([
       [null, ["Dashboard"]],
@@ -47,7 +49,7 @@ describe("admin navigation groups", () => {
 describe("admin navigation", () => {
   it("shows an editor the content sections but not team, roles or activity", () => {
     const labels = visibleNav(SYSTEM_ROLES.editor.permissions).map((item) => item.label);
-    expect(labels).toEqual(["Dashboard", "Posts", "Categories & tags", "Media"]);
+    expect(labels).toEqual(["Dashboard", "Posts", "Categories & tags", "Media library"]);
   });
 
   it("shows a super admin everything", () => {
@@ -66,7 +68,7 @@ describe("admin navigation", () => {
       "Campaigns",
       "Posts",
       "Categories & tags",
-      "Media",
+      "Media library",
       "Team",
       "Roles",
       "Activity",

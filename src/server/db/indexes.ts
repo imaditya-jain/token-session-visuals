@@ -1,7 +1,7 @@
 import "server-only";
 
 import { Campaign } from "@/server/db/models/campaign";
-import { Category, MediaAsset, Post, Tag } from "@/server/db/models/blog";
+import { Category, MediaAsset, MediaFolder, Post, Tag } from "@/server/db/models/blog";
 import { AuditLog } from "@/server/db/models/audit-log";
 import { AuthToken } from "@/server/db/models/auth-token";
 import { InventoryAdjustment } from "@/server/db/models/inventory-adjustment";
@@ -39,6 +39,7 @@ export async function ensureIndexes(): Promise<void> {
     Role.createIndexes(),
     AuditLog.createIndexes(),
     Category.createIndexes(),
+    MediaFolder.createIndexes(),
     Tag.createIndexes(),
     Post.createIndexes(),
     MediaAsset.createIndexes(),

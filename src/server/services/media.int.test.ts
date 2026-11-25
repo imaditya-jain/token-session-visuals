@@ -5,7 +5,9 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vites
 const uploadImageToShopify = vi.fn();
 const updateShopifyFileAlt = vi.fn();
 const deleteShopifyFile = vi.fn();
+const replaceShopifyFileImage = vi.fn();
 vi.mock("@/server/shopify/files", () => ({
+  replaceShopifyFileImage: (...a: unknown[]) => replaceShopifyFileImage(...a),
   uploadImageToShopify: (...a: unknown[]) => uploadImageToShopify(...a),
   updateShopifyFileAlt: (...a: unknown[]) => updateShopifyFileAlt(...a),
   deleteShopifyFile: (...a: unknown[]) => deleteShopifyFile(...a),
@@ -13,13 +15,33 @@ vi.mock("@/server/shopify/files", () => ({
 
 import { parseRichText } from "@/lib/rich-text";
 import { disconnectDb } from "@/server/db/connection";
-import { MediaAsset, Post } from "@/server/db/models/blog";
+import { MediaAsset, MediaFolder, Post } from "@/server/db/models/blog";
+import { Campaign } from "@/server/db/models/campaign";
+import { SiteSetting } from "@/server/db/models/site-setting";
 import { User } from "@/server/db/models/user";
 import { ShopifyError } from "@/server/shopify/client";
 import { startTestDatabase } from "@/test/mongo";
 
 import { createPost } from "./blog-admin";
-import { deleteMedia, listMedia, MAX_UPLOAD_BYTES, updateMediaAlt, uploadMedia } from "./media";
+import {
+  createFolder,
+  deleteFolder,
+  deleteMedia,
+  deleteUnused,
+  getMedia,
+  listFolders,
+  listMedia,
+  MAX_UPLOAD_BYTES,
+  mediaSummary,
+  moveMedia,
+  renameFolder,
+  replaceMedia,
+  updateMedia,
+  uploadMedia,
+} from "./media";
+import { mediaListQuerySchema } from "@/lib/media";
+
+const list = (over: Record<string, unknown> = {}) => mediaListQuerySchema.parse(over);
 
 let server: MongoMemoryServer;
 let userId: string;
@@ -36,7 +58,14 @@ afterAll(async () => {
 beforeEach(async () => {
   const { connectDb } = await import("@/server/db/connection");
   await connectDb();
-  await Promise.all([MediaAsset.deleteMany({}), Post.deleteMany({}), User.deleteMany({})]);
+  await Promise.all([
+    MediaAsset.deleteMany({}),
+    MediaFolder.deleteMany({}),
+    Post.deleteMany({}),
+    SiteSetting.deleteMany({}),
+    Campaign.deleteMany({}),
+    User.deleteMany({}),
+  ]);
   userId = String(
     (
       await User.create({
@@ -50,6 +79,7 @@ beforeEach(async () => {
   uploadImageToShopify.mockReset();
   updateShopifyFileAlt.mockReset().mockResolvedValue(undefined);
   deleteShopifyFile.mockReset().mockResolvedValue(undefined);
+  replaceShopifyFileImage.mockReset();
 });
 
 const png = (extra = 8) =>
@@ -164,22 +194,24 @@ describe("library", () => {
       await uploadMedia(userId, { bytes: png(), originalName: `img${i}.png` }, "");
       await new Promise((r) => setTimeout(r, 3));
     }
-    const first = await listMedia(1, 2);
+    const first = await listMedia(list({ page: 1, perPage: 2 }));
     expect(first.total).toBe(3);
     expect(first.items.map((i) => i.filename)).toEqual(["img3.png", "img2.png"]);
-    expect((await listMedia(2, 2)).items.map((i) => i.filename)).toEqual(["img1.png"]);
+    expect((await listMedia(list({ page: 2, perPage: 2 }))).items.map((i) => i.filename)).toEqual([
+      "img1.png",
+    ]);
   });
 
   it("updates alt text in Shopify first, then locally", async () => {
     ok();
     const { id } = await uploadMedia(userId, { bytes: png(), originalName: "a.png" }, "old");
-    expect((await updateMediaAlt(id, "new")).alt).toBe("new");
+    expect((await updateMedia(id, { alt: "new" })).alt).toBe("new");
     expect(updateShopifyFileAlt).toHaveBeenCalledWith("gid://shopify/MediaImage/1", "new");
 
     updateShopifyFileAlt.mockRejectedValue(new Error("down"));
-    await expect(updateMediaAlt(id, "again")).rejects.toMatchObject({ status: 503 });
+    await expect(updateMedia(id, { alt: "again" })).rejects.toMatchObject({ status: 503 });
     expect((await MediaAsset.findById(id).lean())?.alt).toBe("new");
-    await expect(updateMediaAlt("nope", "x")).rejects.toMatchObject({ status: 404 });
+    await expect(updateMedia("nope", { alt: "x" })).rejects.toMatchObject({ status: 404 });
   });
 
   it("won't delete an image a post still uses (as featured image or inside the text)", async () => {
@@ -225,5 +257,211 @@ describe("library", () => {
     deleteShopifyFile.mockRejectedValue(new Error("down"));
     await expect(deleteMedia(id)).rejects.toMatchObject({ status: 503 });
     expect(await MediaAsset.countDocuments()).toBe(1);
+  });
+});
+
+const upload = async (n: number, name = `img${n}.png`) => {
+  uploadImageToShopify.mockResolvedValueOnce({
+    gid: `gid://shopify/MediaImage/${n}`,
+    url: `https://cdn.shopify.com/s/files/1/0001/img${n}.png?v=${1000 + n}`,
+    width: 100,
+    height: 80,
+  });
+  return uploadMedia(userId, { bytes: png(), originalName: name }, "");
+};
+
+describe("usage", () => {
+  it("finds a picture in page content, the header/footer and campaigns, not only in posts", async () => {
+    const a = await upload(1);
+    await SiteSetting.create({
+      key: "page:about",
+      draft: { story: { image: { src: a.url, alt: "" } } },
+      published: {},
+    });
+    await SiteSetting.create({ key: "chrome", draft: { footer: { logo: a.url } }, published: {} });
+    await Campaign.create({
+      name: "Note",
+      subject: "s",
+      design: "card.classic",
+      status: "sent",
+      content: { image: { src: a.url } },
+    });
+    const { usages, media } = await getMedia(a.id);
+    expect(media.usageCount).toBe(3);
+    expect(usages.map((u) => u.type).sort()).toEqual(["campaign", "page", "site"]);
+    expect(usages.find((u) => u.type === "page")?.href).toBe("/admin/site/pages/about");
+    await expect(deleteMedia(a.id)).rejects.toMatchObject({ code: "media_in_use" });
+  });
+
+  it("recognises a picture by its address even when the version suffix differs", async () => {
+    const a = await upload(1);
+    await SiteSetting.create({
+      key: "page:home",
+      draft: {
+        hero: { image: { src: "https://cdn.shopify.com/s/files/1/0001/img1.png?v=1", alt: "" } },
+      },
+    });
+    expect((await getMedia(a.id)).usages).toHaveLength(1);
+  });
+
+  it("lists only unused pictures and deletes only those, keeping the ones in use", async () => {
+    const used = await upload(1);
+    const free1 = await upload(2);
+    const free2 = await upload(3);
+    await SiteSetting.create({
+      key: "page:home",
+      draft: { hero: { image: { src: used.url, alt: "" } } },
+    });
+    const unused = await listMedia(list({ usage: "unused" }));
+    expect(unused.items.map((i) => i.id).sort()).toEqual([free1.id, free2.id].sort());
+    expect(unused.total).toBe(2);
+    expect((await mediaSummary()).unused).toBe(2);
+
+    const result = await deleteUnused([used.id, free1.id, free2.id]);
+    expect(result).toEqual({ deleted: 2, kept: 1 });
+    expect(await MediaAsset.countDocuments()).toBe(1);
+    expect(deleteShopifyFile).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("replace", () => {
+  it("replaces the picture in place and updates every place that uses it", async () => {
+    const a = await upload(1);
+    const actor = { userId, canPublish: true, canDelete: true };
+    const post = await createPost(actor, {
+      categoryIds: [],
+      tags: [],
+      template: "classic",
+      status: "draft",
+      title: "With picture",
+      content: parseRichText({
+        type: "doc",
+        content: [{ type: "image", attrs: { src: a.url, alt: "x" } }],
+      }),
+      featuredImage: { url: a.url, alt: "x" },
+    });
+    await SiteSetting.create({
+      key: "page:about",
+      draft: { story: { image: { src: a.url, alt: "" } } },
+      published: { story: { image: { src: a.url, alt: "" } } },
+    });
+    await Campaign.create({
+      name: "Sent",
+      subject: "s",
+      design: "card.classic",
+      status: "sent",
+      content: { image: { src: a.url } },
+    });
+    await Campaign.create({
+      name: "Draft",
+      subject: "s",
+      design: "card.classic",
+      status: "draft",
+      content: { image: { src: a.url } },
+    });
+
+    const newUrl = "https://cdn.shopify.com/s/files/1/0001/img1.png?v=9999";
+    replaceShopifyFileImage.mockResolvedValue({
+      gid: "gid://shopify/MediaImage/1",
+      url: newUrl,
+      width: 60,
+      height: 45,
+    });
+    const done = await replaceMedia(a.id, { bytes: png(20), originalName: "whatever.png" });
+
+    expect(done.media.url).toBe(newUrl);
+    expect(done.media).toMatchObject({ width: 60, height: 45, filename: "img1.png" });
+    expect(done.media.replacedAt).not.toBeNull();
+    expect(done.updatedReferences).toBe(3);
+    expect(replaceShopifyFileImage).toHaveBeenCalledWith(
+      "gid://shopify/MediaImage/1",
+      expect.objectContaining({ filename: "img1.png", mimeType: "image/png" }),
+    );
+
+    const savedPost = await Post.findById(post.id).lean();
+    expect(savedPost?.featuredImage?.url).toBe(newUrl);
+    expect(JSON.stringify(savedPost?.content)).toContain(newUrl);
+    expect(JSON.stringify(savedPost?.content)).not.toContain("v=1001");
+    expect(savedPost?.contentHtml).toContain(encodeURIComponent(newUrl));
+    const page = await SiteSetting.findOne({ key: "page:about" }).lean();
+    expect(JSON.stringify([page?.draft, page?.published])).not.toContain("v=1001");
+    expect(JSON.stringify(page?.published)).toContain(newUrl);
+    // A campaign that was already sent is a record and keeps what it showed; a draft follows the new picture.
+    expect(JSON.stringify((await Campaign.findOne({ name: "Sent" }).lean())?.content)).toContain(
+      "v=1001",
+    );
+    expect(JSON.stringify((await Campaign.findOne({ name: "Draft" }).lean())?.content)).toContain(
+      newUrl,
+    );
+  });
+
+  it("leaves everything as it was when Shopify refuses, and checks the file's content", async () => {
+    const a = await upload(1);
+    replaceShopifyFileImage.mockRejectedValue(new Error("down"));
+    await expect(replaceMedia(a.id, { bytes: png(), originalName: "x.png" })).rejects.toMatchObject(
+      { status: 503 },
+    );
+    expect((await MediaAsset.findById(a.id).lean())?.url).toBe(a.url);
+    await expect(
+      replaceMedia(a.id, { bytes: new Uint8Array([1, 2, 3, 4]), originalName: "x.png" }),
+    ).rejects.toMatchObject({ code: "unsupported_image" });
+    await expect(
+      replaceMedia(a.id, { bytes: new Uint8Array(MAX_UPLOAD_BYTES + 1), originalName: "x.png" }),
+    ).rejects.toMatchObject({ status: 413 });
+    await expect(
+      replaceMedia("nope", { bytes: png(), originalName: "x.png" }),
+    ).rejects.toMatchObject({ status: 404 });
+  });
+});
+
+describe("folders", () => {
+  it("creates unique folders, files pictures in them, filters, and never deletes pictures with a folder", async () => {
+    const [a, b, c] = [await upload(1), await upload(2), await upload(3)];
+    const blog = await createFolder(userId, "Blog");
+    await expect(createFolder(userId, "blog")).rejects.toMatchObject({
+      code: "folder_exists",
+      status: 409,
+    });
+    expect(await moveMedia([a.id, b.id], blog.id)).toBe(2);
+
+    expect((await listMedia(list({ folder: blog.id }))).items.map((i) => i.id).sort()).toEqual(
+      [a.id, b.id].sort(),
+    );
+    expect((await listMedia(list({ folder: "none" }))).items.map((i) => i.id)).toEqual([c.id]);
+    expect(await listFolders()).toEqual([{ id: blog.id, name: "Blog", count: 2 }]);
+    expect(await mediaSummary()).toMatchObject({
+      total: 3,
+      unfiled: 1,
+      folders: [{ name: "Blog", count: 2 }],
+    });
+
+    await renameFolder(blog.id, "Journal");
+    expect((await listFolders())[0]?.name).toBe("Journal");
+    await expect(moveMedia([a.id], "64b7f0c2a1b2c3d4e5f60718")).rejects.toMatchObject({
+      code: "folder_not_found",
+    });
+
+    await deleteFolder(blog.id);
+    expect(await MediaAsset.countDocuments()).toBe(3);
+    expect(await MediaAsset.countDocuments({ folderId: { $exists: true } })).toBe(0);
+  });
+
+  it("uploads into a folder, searches by name or alt and moves a picture out again", async () => {
+    const folder = await createFolder(userId, "Shop");
+    uploadImageToShopify.mockResolvedValueOnce({
+      gid: "gid://shopify/MediaImage/9",
+      url: "https://cdn.shopify.com/s/files/1/0001/fern-pot.png?v=1",
+    });
+    const up = await uploadMedia(
+      userId,
+      { bytes: png(), originalName: "Fern Pot.png" },
+      "A pot",
+      folder.id,
+    );
+    expect(up.folderId).toBe(folder.id);
+    expect((await listMedia(list({ search: "fern" }))).total).toBe(1);
+    expect((await listMedia(list({ search: "a pot" }))).total).toBe(1);
+    expect((await listMedia(list({ search: "(.*" }))).total).toBe(0);
+    expect((await updateMedia(up.id, { folderId: null })).folderId).toBeNull();
   });
 });

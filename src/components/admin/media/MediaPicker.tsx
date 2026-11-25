@@ -1,8 +1,8 @@
 "use client";
 
-import MediaLibrary from "@/components/admin/blog/MediaLibrary";
+import MediaLibrary from "@/components/admin/media/MediaLibrary";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
-import type { MediaView } from "@/lib/blog-types";
+import type { MediaItem } from "@/lib/media";
 
 /** A slide-over library: choose an image, or upload a new one and use it straight away. */
 export default function MediaPicker({
@@ -12,7 +12,7 @@ export default function MediaPicker({
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onPick: (media: MediaView) => void;
+  onPick: (media: MediaItem) => void;
 }) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
