@@ -6,6 +6,7 @@ import { useApiResource } from "@/components/account/useApiResource";
 import { Button } from "@/components/ui/button";
 import { apiFetch } from "@/lib/api-client";
 import { auditLabel } from "@/lib/audit-labels";
+import Skeleton from "@/components/admin/Skeleton";
 
 type Entry = {
   id: string;
@@ -32,11 +33,7 @@ export default function ActivityList({ pageSize, paged }: { pageSize: number; pa
   const [moreFailed, setMoreFailed] = useState(false);
 
   if (first.status === "loading") {
-    return (
-      <p role="status" className="text-sm text-muted-foreground">
-        Loading…
-      </p>
-    );
+    return <Skeleton variant="list" />;
   }
   if (first.status === "error") {
     return (

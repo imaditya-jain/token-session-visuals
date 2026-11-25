@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import type { AdminUserView, RoleView } from "@/lib/admin-types";
 import { inviteAdminSchema } from "@/lib/admin-schemas";
 import { useAppSelector } from "@/store/hooks";
+import Skeleton from "@/components/admin/Skeleton";
 
 const selectClass =
   "h-11 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring";
@@ -33,9 +34,7 @@ export default function UsersPanel() {
     return (
       <>
         <PageHeader title="Team" />
-        <p role="status" className="text-sm text-muted-foreground">
-          Loading…
-        </p>
+        <Skeleton variant="list" />
       </>
     );
   }

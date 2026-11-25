@@ -154,3 +154,9 @@ export function adminEnv(): AdminEnv {
   cachedAdmin = parsed.data;
   return cachedAdmin;
 }
+
+/** Seal Subscriptions Merchant API token (Seal app > Settings > General Settings > API). Optional. */
+export function sealToken(): string | null {
+  const token = process.env["SEAL_API_TOKEN"]?.trim();
+  return token && token.length >= 10 ? token : null;
+}

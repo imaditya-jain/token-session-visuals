@@ -119,7 +119,7 @@ export default function AdminShell({
             Admin
           </span>
         </Link>
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-2">
+        <div className="min-h-0 flex-1 admin-scroll overflow-y-auto overscroll-contain px-4 py-2">
           <NavLinks access={access} />
         </div>
         <div className="shrink-0 space-y-3 border-t border-cream/15 px-4 py-4">
@@ -151,7 +151,7 @@ export default function AdminShell({
                 <SheetTitle className="font-display text-2xl text-cream">Fernwood Admin</SheetTitle>
                 <SheetDescription className="sr-only">Admin sections</SheetDescription>
               </div>
-              <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-2">
+              <div className="min-h-0 flex-1 admin-scroll overflow-y-auto overscroll-contain px-4 py-2">
                 <NavLinks access={access} onNavigate={() => setMenuOpen(false)} />
               </div>
               <div className="shrink-0 space-y-3 border-t border-cream/15 px-4 py-4">

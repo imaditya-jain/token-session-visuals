@@ -17,6 +17,7 @@ import {
   type EnquiryListItem,
 } from "@/lib/enquiries";
 import { useAppSelector } from "@/store/hooks";
+import Skeleton from "@/components/admin/Skeleton";
 
 const PER_PAGE = 20;
 
@@ -216,9 +217,7 @@ export default function EnquiriesPanel({ kind }: { kind: EnquiryKind }) {
       </div>
 
       {list.status === "loading" ? (
-        <p role="status" className="text-sm text-muted-foreground">
-          Loading…
-        </p>
+        <Skeleton variant="list" />
       ) : list.status === "error" ? (
         <div role="alert" className="text-sm text-destructive">
           {list.message}{" "}

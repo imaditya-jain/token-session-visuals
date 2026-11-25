@@ -16,14 +16,14 @@ in MongoDB except read-only mirrors that already exist).
 ## Phases
 | # | Module | Status | Notes / dependencies |
 |---|---|---|---|
-| 1 | CMS pages and sections | [ ] | Needs each storefront page's content moved into data with identical defaults |
+| 1 | CMS pages and sections | [~] | Framework + **Home page** done (`/admin/site/pages`): every section's text, links and pictures, draft/publish, defaults identical to the old hard-coded content. **Other pages (about, care guide, FAQ, policies, shipping, press, careers, ...) are not yet moved into the registry**: add each page to `PAGES` in `lib/page-content.ts` and read it with `getPageContent(id)` |
 | 2 | Header, announcement, footer, social links | [x] | Built and verified on `feat/site-chrome`; **41 screenshot baselines await owner approval** (the new "Journal" link) |
 | 3 | Blog completion + storefront nav | [x] | Blog pages use the common header/footer; "Journal" is in the header menu and footer; remaining blog gaps (revisions, autosave) are listed in CLAUDE.md |
 | 4 | Wholesale + contact management | [x] | Saved in MongoDB, team + sender emails, admin lists/detail/notes/assign/archive/delete/export; sender acknowledgement is limited to one per address per day |
-| 5 | Shopify products, variants, inventory | [ ] | Admin token scopes `read/write_products`, `read/write_inventory` are already granted |
-| 6 | Order management | [ ] | `read_orders` granted; refunds/cancel need `write_orders` (granted) |
-| 7 | Gardening subscriptions | [ ] | **Dependency:** Seal Subscriptions API key (the provider); without it only Shopify-side data can be shown |
-| 8 | Business analytics | [ ] | Shopify Admin data + Mongo; metrics without a source are shown as "unavailable", never zero |
+| 5 | Shopify products, variants, inventory | [x] | Products (create/edit/archive/delete, options, variants, images, collections, sales-channel publishing), inventory (low/sold-out, adjust with reason, history, threshold). Live-verified on the dev store: create, publish, edit, variant price, republish, delete. **Not live-verified:** image reorder/remove (Shopify returned no media right after adding) and activate-at-location |
+| 6 | Order management | [x] | List (state/payment/fulfilment/date/search), detail like Shopify (items, payment, timeline, customer, addresses, shipments, notes/tags), fulfil with tracking, refund, cancel, CSV export. Live-verified read-only (list, filters, detail, suggested refund, CSV). **Fulfil, refund and cancel mutations are covered by code and types only; they were not run against real dev orders** |
+| 7 | Gardening subscriptions | [~] | List/detail/pause/resume/cancel through the Seal Merchant API (`SEAL_API_TOKEN`). Live-verified: token accepted and list shape (`payload.subscriptions`, `next_cursor`); the dev store has no subscriptions yet, so detail and the pause/resume/cancel calls are unverified. Seal has no single "next billing date" field, so it is the earliest unprocessed billing attempt. Not built: skip/reschedule a charge |
+| 8 | Business analytics | [x] | Dashboard "Business at a glance": date presets + custom range, revenue/orders/AOV/items/refunds/customers with change vs the previous period, daily chart, top products, to-fulfil, low stock, new enquiries, subscriptions. Each figure is `unavailable` with a reason when its source can't be read. Counts up to 2,000 orders per period (says so); dates are UTC; first-time vs returning uses the customer's current order count |
 | 9 | Email templates + campaigns | [ ] | Needs an email provider for real volume (Gmail SMTP caps at ~500/day); open/click tracking needs one too |
 | 10 | Media library (central) + social links | [~] | Social links done with phase 2; the central library generalises the blog's media (folders, reuse in pages/campaigns) |
 | 11 | Responsive testing + integration | [ ] | Axe + overflow checks per module as they land |

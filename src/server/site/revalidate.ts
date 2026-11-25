@@ -3,6 +3,7 @@ import "server-only";
 import { revalidatePath, revalidateTag } from "next/cache";
 
 import { logger } from "@/server/logger";
+import { PAGE_CONTENT_TAG } from "@/server/services/page-content-public";
 import { SITE_CHROME_TAG } from "@/server/services/site-chrome-public";
 
 /**
@@ -33,6 +34,19 @@ export function revalidateCatalog(): void {
     logger.warn(
       { err: error instanceof Error ? error.message : String(error) },
       "Catalog revalidation skipped",
+    );
+  }
+}
+
+/** After a page's content is published: drop the cached content and rebuild that page on its next visit. Never throws. */
+export function revalidatePageContent(path: string): void {
+  try {
+    revalidateTag(PAGE_CONTENT_TAG, { expire: 0 });
+    revalidatePath(path);
+  } catch (error) {
+    logger.warn(
+      { err: error instanceof Error ? error.message : String(error) },
+      "Page content revalidation skipped",
     );
   }
 }

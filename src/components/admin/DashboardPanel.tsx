@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 
+import AnalyticsOverview from "@/components/admin/AnalyticsOverview";
 import ActivityList from "@/components/admin/ActivityList";
 import PageHeader from "@/components/admin/PageHeader";
 import { visibleNav } from "@/lib/admin-nav";
@@ -24,6 +25,8 @@ export default function DashboardPanel() {
         title={`Welcome, ${user?.firstName ?? "there"}`}
         lead={`You are signed in as ${roleName}.`}
       />
+
+      <AnalyticsOverview />
 
       {sections.length > 0 ? (
         <section aria-labelledby="sections-heading" className="mb-12">

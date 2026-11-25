@@ -11,6 +11,7 @@ import { flattenCategories } from "@/lib/blog-tree";
 import { BLOG_TEMPLATES } from "@/lib/blog-templates";
 import type { CategoryView, PostCounts, PostListItem, PostStatus } from "@/lib/blog-types";
 import { useAppSelector } from "@/store/hooks";
+import Skeleton from "@/components/admin/Skeleton";
 
 const PER_PAGE = 20;
 type Bulk = "trash" | "restore" | "delete" | "publish" | "draft";
@@ -248,9 +249,7 @@ export default function PostsPanel() {
       ) : null}
 
       {posts.status === "loading" ? (
-        <p role="status" className="text-sm text-muted-foreground">
-          Loading…
-        </p>
+        <Skeleton variant="list" />
       ) : posts.status === "error" ? (
         <div role="alert" className="text-sm text-destructive">
           {posts.message}{" "}
