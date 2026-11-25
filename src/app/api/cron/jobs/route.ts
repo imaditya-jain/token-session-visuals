@@ -4,6 +4,7 @@ import { drainDueEmailJobs } from "@/server/email/outbox";
 import { drainDueJobs } from "@/server/queue/jobs";
 import { enqueueMirrorBackfill } from "@/server/queue/producers";
 import { revalidateBlog } from "@/server/blog/revalidate";
+import { sendDueCampaigns } from "@/server/services/campaigns";
 import { publishDuePosts } from "@/server/services/blog-admin";
 import { route } from "@/server/http/handler";
 import { assertBearerSecret } from "@/server/http/secret";
@@ -27,5 +28,7 @@ export const GET = route(async ({ request }) => {
   // Scheduled posts whose time has come: keep their status honest and refresh the public pages.
   const published = await publishDuePosts();
   if (published > 0) revalidateBlog();
-  return NextResponse.json({ data: { ...emails, jobs, postsPublished: published } });
+  // Campaigns scheduled for now (or interrupted mid-send): queue their emails, then deliver what is due.
+  const campaignsSent = await sendDueCampaigns();
+  return NextResponse.json({ data: { ...emails, jobs, postsPublished: published, campaignsSent } });
 });

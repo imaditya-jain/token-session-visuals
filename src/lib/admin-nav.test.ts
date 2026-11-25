@@ -10,9 +10,13 @@ describe("admin navigation groups", () => {
   it("groups a super admin's menu under Blog and Administration below the dashboard", () => {
     expect(shape(SYSTEM_ROLES.super_admin.permissions)).toEqual([
       [null, ["Dashboard"]],
-      ["Website", ["Header & announcement", "Footer", "Social links"]],
+      ["Website", ["Page content", "Header & announcement", "Footer", "Social links"]],
       ["Enquiries", ["Contact messages", "Wholesale applications"]],
-      ["Blog", ["Posts", "Categories & tags", "Media"]],
+      ["Sales", ["Orders", "Subscriptions"]],
+      ["Shop", ["Products", "Inventory"]],
+      ["Marketing", ["Campaigns"]],
+      ["Blog", ["Posts", "Categories & tags"]],
+      ["Library", ["Media library"]],
       ["Administration", ["Team", "Roles", "Activity"]],
     ]);
   });
@@ -20,7 +24,8 @@ describe("admin navigation groups", () => {
   it("hides whole groups the person has nothing in, and single entries they can't open", () => {
     expect(shape(SYSTEM_ROLES.editor.permissions)).toEqual([
       [null, ["Dashboard"]],
-      ["Blog", ["Posts", "Categories & tags", "Media"]],
+      ["Blog", ["Posts", "Categories & tags"]],
+      ["Library", ["Media library"]],
     ]);
     expect(shape(["blog:read"])).toEqual([
       [null, ["Dashboard"]],
@@ -44,20 +49,26 @@ describe("admin navigation groups", () => {
 describe("admin navigation", () => {
   it("shows an editor the content sections but not team, roles or activity", () => {
     const labels = visibleNav(SYSTEM_ROLES.editor.permissions).map((item) => item.label);
-    expect(labels).toEqual(["Dashboard", "Posts", "Categories & tags", "Media"]);
+    expect(labels).toEqual(["Dashboard", "Posts", "Categories & tags", "Media library"]);
   });
 
   it("shows a super admin everything", () => {
     expect(visibleNav(SYSTEM_ROLES.super_admin.permissions).map((item) => item.label)).toEqual([
       "Dashboard",
+      "Page content",
       "Header & announcement",
       "Footer",
       "Social links",
       "Contact messages",
       "Wholesale applications",
+      "Orders",
+      "Subscriptions",
+      "Products",
+      "Inventory",
+      "Campaigns",
       "Posts",
       "Categories & tags",
-      "Media",
+      "Media library",
       "Team",
       "Roles",
       "Activity",

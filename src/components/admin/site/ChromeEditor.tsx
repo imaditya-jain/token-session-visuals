@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { ApiError, apiFetch } from "@/lib/api-client";
 import { SOCIAL_PLATFORMS, type SiteChrome, type SocialPlatform } from "@/lib/site-chrome";
 import { useAppSelector } from "@/store/hooks";
+import Skeleton from "@/components/admin/Skeleton";
 
 type AdminChrome = {
   draft: SiteChrome;
@@ -158,9 +159,7 @@ export default function ChromeEditor({
     return (
       <>
         <PageHeader title={title} />
-        <p role="status" className="text-sm text-muted-foreground">
-          Loading…
-        </p>
+        <Skeleton variant="form" />
       </>
     );
   }

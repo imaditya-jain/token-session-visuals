@@ -12,6 +12,7 @@ import {
   type EnquiryStatus,
 } from "@/lib/enquiries";
 import { useAppSelector } from "@/store/hooks";
+import Skeleton from "@/components/admin/Skeleton";
 
 const when = (iso: string) =>
   new Intl.DateTimeFormat("en", { dateStyle: "medium", timeStyle: "short" }).format(new Date(iso));
@@ -49,11 +50,7 @@ export default function EnquiryDetail({
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   if (resource.status === "loading") {
-    return (
-      <p role="status" className="mt-6 text-sm text-muted-foreground">
-        Loading…
-      </p>
-    );
+    return <Skeleton variant="form" />;
   }
   if (resource.status === "error") {
     return (

@@ -171,7 +171,7 @@ test.describe("permissions in the console", () => {
       "Dashboard",
       "Posts",
       "Categories & tags",
-      "Media",
+      "Media library",
     ]);
     await expect(nav(page).getByRole("group", { name: "Blog" })).toBeVisible();
     await expect(nav(page).getByRole("group", { name: "Administration" })).toHaveCount(0);
@@ -191,14 +191,20 @@ test.describe("permissions in the console", () => {
     await signInAdmin(page, email);
     await expect(nav(page).getByRole("link")).toHaveText([
       "Dashboard",
+      "Page content",
       "Header & announcement",
       "Footer",
       "Social links",
       "Contact messages",
       "Wholesale applications",
+      "Orders",
+      "Subscriptions",
+      "Products",
+      "Inventory",
+      "Campaigns",
       "Posts",
       "Categories & tags",
-      "Media",
+      "Media library",
       "Team",
       "Roles",
       "Activity",
@@ -207,7 +213,6 @@ test.describe("permissions in the console", () => {
     await expect(nav(page).getByRole("group", { name: "Blog" }).getByRole("link")).toHaveText([
       "Posts",
       "Categories & tags",
-      "Media",
     ]);
     await expect(
       nav(page).getByRole("group", { name: "Administration" }).getByRole("link"),

@@ -1,8 +1,10 @@
 import "server-only";
 
-import { Category, MediaAsset, Post, Tag } from "@/server/db/models/blog";
+import { Campaign } from "@/server/db/models/campaign";
+import { Category, MediaAsset, MediaFolder, Post, Tag } from "@/server/db/models/blog";
 import { AuditLog } from "@/server/db/models/audit-log";
 import { AuthToken } from "@/server/db/models/auth-token";
+import { InventoryAdjustment } from "@/server/db/models/inventory-adjustment";
 import { Enquiry } from "@/server/db/models/enquiry";
 import { EmailJob } from "@/server/db/models/email-job";
 import { Notification } from "@/server/db/models/notification";
@@ -26,6 +28,7 @@ export async function ensureIndexes(): Promise<void> {
     RateLimit.createIndexes(),
     AuthToken.createIndexes(),
     EmailJob.createIndexes(),
+    Campaign.createIndexes(),
     Job.createIndexes(),
     Notification.createIndexes(),
     Subscriber.createIndexes(),
@@ -36,10 +39,12 @@ export async function ensureIndexes(): Promise<void> {
     Role.createIndexes(),
     AuditLog.createIndexes(),
     Category.createIndexes(),
+    MediaFolder.createIndexes(),
     Tag.createIndexes(),
     Post.createIndexes(),
     MediaAsset.createIndexes(),
     SiteSetting.createIndexes(),
     Enquiry.createIndexes(),
+    InventoryAdjustment.createIndexes(),
   ]);
 }

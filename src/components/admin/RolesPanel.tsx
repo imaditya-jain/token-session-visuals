@@ -12,6 +12,7 @@ import type { RoleView } from "@/lib/admin-types";
 import { PERMISSIONS, type Permission } from "@/lib/permissions";
 import { roleKeyFromName } from "@/lib/role-key";
 import { useAppSelector } from "@/store/hooks";
+import Skeleton from "@/components/admin/Skeleton";
 
 type Draft = { name: string; description: string; permissions: Permission[] };
 const emptyDraft: Draft = { name: "", description: "", permissions: [] };
@@ -90,9 +91,7 @@ export default function RolesPanel() {
     return (
       <>
         <PageHeader title="Roles" />
-        <p role="status" className="text-sm text-muted-foreground">
-          Loading…
-        </p>
+        <Skeleton variant="list" />
       </>
     );
   }

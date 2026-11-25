@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, type KeyboardEvent } from "react";
 
 import { useApiResource } from "@/components/account/useApiResource";
-import MediaPicker from "@/components/admin/blog/MediaPicker";
+import MediaPicker from "@/components/admin/media/MediaPicker";
 import TemplatePicker from "@/components/admin/blog/TemplatePicker";
 import PageHeader from "@/components/admin/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ import { fromLocalInput, toLocalInput } from "@/lib/datetime-local";
 import { EMPTY_DOC, type RichDoc } from "@/lib/rich-text";
 import { slugify } from "@/lib/slug";
 import { useAppSelector } from "@/store/hooks";
+import Skeleton from "@/components/admin/Skeleton";
 
 // The editor (ProseMirror) is only ever needed here, so it stays out of every other bundle.
 const RichTextEditor = dynamic(() => import("@/components/admin/blog/RichTextEditor"), {
@@ -517,9 +518,7 @@ function Editor({
                   Couldn&apos;t load categories.
                 </p>
               ) : (
-                <p role="status" className="text-sm text-muted-foreground">
-                  Loading…
-                </p>
+                <Skeleton variant="form" />
               )}
               <p className="mt-2 text-xs text-muted-foreground">
                 With none ticked, the post goes in Uncategorized.
@@ -671,9 +670,7 @@ export default function PostEditor({ id }: { id?: string }) {
     return (
       <>
         <PageHeader title="Edit post" />
-        <p role="status" className="text-sm text-muted-foreground">
-          Loading…
-        </p>
+        <Skeleton variant="form" />
       </>
     );
   }

@@ -182,3 +182,91 @@ test.describe("header, footer and social links", () => {
     ).toBeVisible();
   });
 });
+
+test.describe("page content", () => {
+  test("a section edit stays a draft until published, then shows on the home page", async ({
+    page,
+    request,
+    baseURL,
+  }) => {
+    const email = await createAccount(request, baseURL ?? "", "boss", "super_admin");
+    await signInAdmin(page, email);
+
+    await page.goto("/");
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Let's go green!");
+
+    await page.goto("/admin/site/pages/home");
+    await expect(page.getByRole("heading", { level: 1, name: "Home page" })).toBeVisible();
+    // The first section starts open.
+    await expect(page.getByRole("button", { name: "Hero banner" })).toHaveAttribute(
+      "aria-expanded",
+      "true",
+    );
+    await page.getByLabel("Heading", { exact: true }).first().fill("Grow something wonderful");
+    await page.getByRole("button", { name: "Save draft" }).click();
+    await expect(page.getByRole("status").filter({ hasText: "Draft saved." })).toBeVisible();
+
+    // The draft is private.
+    expect(await (await request.get("/")).text()).not.toContain("Grow something wonderful");
+
+    await page.getByRole("button", { name: "Publish to website" }).click();
+    await expect(page.getByRole("status").filter({ hasText: "Published." })).toBeVisible();
+
+    await expect
+      .poll(async () =>
+        (await (await request.get("/")).text()).includes("Grow something wonderful"),
+      )
+      .toBe(true);
+    await page.goto("/");
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Grow something wonderful");
+
+    // An unsafe link is refused and nothing changes.
+    await page.goto("/admin/site/pages/home");
+    // The first section starts open.
+    await expect(page.getByRole("button", { name: "Hero banner" })).toHaveAttribute(
+      "aria-expanded",
+      "true",
+    );
+    await page
+      .getByLabel("Goes to (/page, #section or https://…)")
+      .first()
+      .fill("javascript:alert(1)");
+    await page.getByRole("button", { name: "Save draft" }).click();
+    await expect(page.getByText("Use a web address, a path like /shop")).toBeVisible();
+  });
+});
+
+test.describe("other pages' content", () => {
+  test("editing a content page's heading and FAQ answer reaches the storefront once published", async ({
+    page,
+    request,
+    baseURL,
+  }) => {
+    const email = await createAccount(request, baseURL ?? "", "boss", "super_admin");
+    await signInAdmin(page, email);
+
+    await page.goto("/admin/site/pages");
+    await expect(page.getByRole("link", { name: /Press/ })).toBeVisible();
+    await page.goto("/admin/site/pages/press");
+    await page.getByLabel("Title", { exact: true }).first().fill("In the news");
+    await page.getByRole("button", { name: "Publish to website" }).click();
+    await expect(page.getByRole("status").filter({ hasText: "Published." })).toBeVisible();
+    await expect
+      .poll(async () => (await (await request.get("/press")).text()).includes("In the news"))
+      .toBe(true);
+
+    await page.goto("/admin/site/pages/faq");
+    await page.getByRole("button", { name: "Questions and answers" }).click();
+    await page.getByLabel("Answer 1.2").fill("Yes, to [many countries](/shipping-delivery).");
+    await page.getByRole("button", { name: "Publish to website" }).click();
+    await expect(page.getByRole("status").filter({ hasText: "Published." })).toBeVisible();
+    await expect
+      .poll(async () => (await (await request.get("/faq")).text()).includes("Yes, to"), {
+        timeout: 30_000,
+      })
+      .toBe(true);
+    const html = await (await request.get("/faq")).text();
+    expect(html).toContain('href="/shipping-delivery"');
+    expect(html).toContain("Yes, to many countries");
+  });
+});

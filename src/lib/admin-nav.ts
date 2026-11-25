@@ -30,6 +30,12 @@ export const ADMIN_NAV_GROUPS: readonly AdminNavGroup[] = [
     label: "Website",
     items: [
       {
+        href: "/admin/site/pages",
+        label: "Page content",
+        description: "Edit the text, links and pictures of storefront pages, section by section",
+        permission: "site:write",
+      },
+      {
         href: "/admin/site/header",
         label: "Header & announcement",
         description: "The menu and the announcement bar on every page",
@@ -68,6 +74,54 @@ export const ADMIN_NAV_GROUPS: readonly AdminNavGroup[] = [
     ],
   },
   {
+    id: "sales",
+    label: "Sales",
+    items: [
+      {
+        href: "/admin/orders",
+        label: "Orders",
+        description: "Every order: fulfil, refund, cancel and export",
+        permission: "orders:read",
+      },
+      {
+        href: "/admin/subscriptions",
+        label: "Subscriptions",
+        description: "Gardening plans from Seal Subscriptions",
+        permission: "subscriptions:read",
+      },
+    ],
+  },
+  {
+    id: "shop",
+    label: "Shop",
+    items: [
+      {
+        href: "/admin/shop/products",
+        label: "Products",
+        description: "Products, variants, images and sales channels in Shopify",
+        permission: "products:read",
+      },
+      {
+        href: "/admin/shop/inventory",
+        label: "Inventory",
+        description: "Low and sold-out stock, and stock changes",
+        permission: "inventory:read",
+      },
+    ],
+  },
+  {
+    id: "marketing",
+    label: "Marketing",
+    items: [
+      {
+        href: "/admin/marketing/campaigns",
+        label: "Campaigns",
+        description: "Design, test, schedule and send emails to your subscribers",
+        permission: "campaigns:read",
+      },
+    ],
+  },
+  {
     id: "blog",
     label: "Blog",
     items: [
@@ -83,10 +137,16 @@ export const ADMIN_NAV_GROUPS: readonly AdminNavGroup[] = [
         description: "Organise posts into categories and tags",
         permission: "categories:manage",
       },
+    ],
+  },
+  {
+    id: "library",
+    label: "Library",
+    items: [
       {
         href: "/admin/media",
-        label: "Media",
-        description: "The image library for your posts",
+        label: "Media library",
+        description: "Every picture: folders, where it is used, replace and clean up",
         permission: "media:manage",
       },
     ],

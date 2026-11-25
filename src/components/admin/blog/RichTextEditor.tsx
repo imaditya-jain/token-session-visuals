@@ -6,7 +6,7 @@ import { EditorContent, useEditor, useEditorState, type Editor } from "@tiptap/r
 import StarterKit from "@tiptap/starter-kit";
 import { useState, type ReactNode } from "react";
 
-import MediaPicker from "@/components/admin/blog/MediaPicker";
+import MediaPicker from "@/components/admin/media/MediaPicker";
 import { proseClass } from "@/components/content/prose";
 import { Button } from "@/components/ui/button";
 import type { MediaView } from "@/lib/blog-types";
@@ -68,7 +68,14 @@ function ToolbarButton({
   );
 }
 
-function Toolbar({ editor, onImage }: { editor: Editor; onImage: () => void }) {
+/** The formatting toolbar. The image button appears only where an image picker is provided. */
+export function Toolbar({
+  editor,
+  onImage,
+}: {
+  editor: Editor;
+  onImage?: (() => void) | undefined;
+}) {
   const state = useEditorState({
     editor,
     selector: ({ editor: e }) => ({
@@ -201,9 +208,11 @@ function Toolbar({ editor, onImage }: { editor: Editor; onImage: () => void }) {
         <ToolbarButton label="Link" active={state.link} onClick={openLink}>
           Link
         </ToolbarButton>
-        <ToolbarButton label="Insert image" onClick={onImage}>
-          Image
-        </ToolbarButton>
+        {onImage ? (
+          <ToolbarButton label="Insert image" onClick={onImage}>
+            Image
+          </ToolbarButton>
+        ) : null}
         <span className="mx-1 w-px self-stretch bg-border" aria-hidden />
         <ToolbarButton label="Undo" disabled={!state.canUndo} onClick={() => chain().undo().run()}>
           ↶

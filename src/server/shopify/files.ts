@@ -145,16 +145,10 @@ export const isPermanentCdnUrl = (value: string): boolean => {
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-/**
- * Uploads an image to Shopify Files: stage the upload, send the bytes to the staged target, register the file and
- * wait until Shopify has processed it (so the returned URL is final and serves). Throws on any failure, never
- * pretending an upload succeeded.
- */
-export async function uploadImageToShopify(
-  file: { bytes: Uint8Array; filename: string; mimeType: string },
-  alt: string,
-  options: { pollIntervalMs?: number; timeoutMs?: number } = {},
-): Promise<UploadedImage> {
+type FileInput = { bytes: Uint8Array; filename: string; mimeType: string };
+
+/** Stages an upload and sends the bytes to the staged target; returns the temporary source Shopify will read from. */
+async function stageAndSend(file: FileInput): Promise<string> {
   const staged = stagedResponse.parse(
     await adminQuery(STAGE, {
       input: [
@@ -183,34 +177,29 @@ export async function uploadImageToShopify(
   });
   if (!sent.ok)
     throw new ShopifyError(`Shopify upload target responded ${sent.status}`, sent.status);
+  return target.resourceUrl;
+}
 
-  const created = fileCreateResponse.parse(
-    await adminQuery(CREATE, {
-      files: [
-        { originalSource: target.resourceUrl, contentType: "IMAGE", alt, filename: file.filename },
-      ],
-    }),
-  ).fileCreate;
-  const made = created.files[0];
-  if (!made || created.userErrors.length) return fail("fileCreate", created.userErrors);
+type PollOptions = { pollIntervalMs?: number; timeoutMs?: number };
 
+/**
+ * Waits until Shopify has processed the file and returns its final, permanent address. A failed or never-finishing
+ * file is NOT deleted here: the caller decides (a replacement must leave the original untouched).
+ */
+async function waitUntilReady(gid: string, options: PollOptions): Promise<UploadedImage> {
   const interval = options.pollIntervalMs ?? 1000;
   const deadline = Date.now() + (options.timeoutMs ?? 25_000);
   while (Date.now() < deadline) {
-    const { node } = fileNodeResponse.parse(await adminQuery(POLL, { id: made.id }));
-    if (node?.fileStatus === "FAILED") {
-      await deleteShopifyFile(made.id).catch(() => undefined);
+    const { node } = fileNodeResponse.parse(await adminQuery(POLL, { id: gid }));
+    if (node?.fileStatus === "FAILED")
       throw new ShopifyError("Shopify could not process the image");
-    }
     if (node?.fileStatus === "READY" && node.image?.url) {
       // The upload target's address is temporary. Only the permanent CDN address of the processed file is ever
       // returned (and therefore stored); anything else is treated as a failure.
-      if (!isPermanentCdnUrl(node.image.url)) {
-        await deleteShopifyFile(made.id).catch(() => undefined);
+      if (!isPermanentCdnUrl(node.image.url))
         throw new ShopifyError("Shopify returned an address that isn't a permanent CDN link");
-      }
       return {
-        gid: made.id,
+        gid,
         url: node.image.url,
         ...(node.image.width ? { width: node.image.width } : {}),
         ...(node.image.height ? { height: node.image.height } : {}),
@@ -218,9 +207,50 @@ export async function uploadImageToShopify(
     }
     await wait(interval);
   }
-  // Don't leave a half-processed file behind in the merchant's library.
-  await deleteShopifyFile(made.id).catch(() => undefined);
   throw new ShopifyError("Shopify is still processing the image; please try again");
+}
+
+/**
+ * Uploads an image to Shopify Files: stage the upload, send the bytes to the staged target, register the file and
+ * wait until Shopify has processed it (so the returned URL is final and serves). Throws on any failure, never
+ * pretending an upload succeeded.
+ */
+export async function uploadImageToShopify(
+  file: FileInput,
+  alt: string,
+  options: PollOptions = {},
+): Promise<UploadedImage> {
+  const resourceUrl = await stageAndSend(file);
+  const created = fileCreateResponse.parse(
+    await adminQuery(CREATE, {
+      files: [{ originalSource: resourceUrl, contentType: "IMAGE", alt, filename: file.filename }],
+    }),
+  ).fileCreate;
+  const made = created.files[0];
+  if (!made || created.userErrors.length) return fail("fileCreate", created.userErrors);
+  try {
+    return await waitUntilReady(made.id, options);
+  } catch (error) {
+    // Don't leave a failed or half-processed file behind in the merchant's library.
+    await deleteShopifyFile(made.id).catch(() => undefined);
+    throw error;
+  }
+}
+
+/** Replaces the picture of an existing file in place (same Shopify file, new bytes). */
+export async function replaceShopifyFileImage(
+  gid: string,
+  file: FileInput,
+  options: PollOptions = {},
+): Promise<UploadedImage> {
+  const resourceUrl = await stageAndSend(file);
+  const { fileUpdate } = fileUpdateResponse.parse(
+    await adminQuery(UPDATE, {
+      files: [{ id: gid, originalSource: resourceUrl, filename: file.filename }],
+    }),
+  );
+  if (fileUpdate.userErrors.length) return fail("fileUpdate", fileUpdate.userErrors);
+  return waitUntilReady(gid, options);
 }
 
 export async function updateShopifyFileAlt(gid: string, alt: string): Promise<void> {
