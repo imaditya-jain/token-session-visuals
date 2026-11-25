@@ -54,9 +54,15 @@ test.describe("email campaigns", () => {
       design: "feature.evergreen",
     });
 
-    // Nobody has subscribed in this database, so it can't be sent to an empty audience.
-    await expect(page.getByText("There are no confirmed subscribers yet.")).toBeVisible();
-    await expect(page.getByRole("button", { name: "Send now" })).toBeDisabled();
+    // The audience is stated, and an empty audience can't be sent to (the test database is shared with other
+    // specs, so it may or may not hold subscribers).
+    const audience = page.getByText(
+      /There are no confirmed subscribers yet\.|It will go to \d+ confirmed/,
+    );
+    await expect(audience).toBeVisible({ timeout: 15_000 });
+    if ((await audience.textContent())?.includes("no confirmed")) {
+      await expect(page.getByRole("button", { name: "Send now" })).toBeDisabled();
+    }
 
     // The sandboxed preview frame is the email itself (not part of the admin UI), so it is left out of the scan.
     const { violations } = await new AxeBuilder({ page })

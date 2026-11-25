@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, type KeyboardEvent } from "react";
 
 import { useApiResource } from "@/components/account/useApiResource";
-import MediaPicker from "@/components/admin/blog/MediaPicker";
+import MediaPicker from "@/components/admin/media/MediaPicker";
 import TemplatePicker from "@/components/admin/blog/TemplatePicker";
 import PageHeader from "@/components/admin/PageHeader";
 import { Button } from "@/components/ui/button";

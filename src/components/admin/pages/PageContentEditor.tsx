@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { useApiResource } from "@/components/account/useApiResource";
-import MediaPicker from "@/components/admin/blog/MediaPicker";
+import MediaPicker from "@/components/admin/media/MediaPicker";
 import PageHeader from "@/components/admin/PageHeader";
 import Skeleton from "@/components/admin/Skeleton";
 import { Button } from "@/components/ui/button";

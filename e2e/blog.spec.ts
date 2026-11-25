@@ -355,7 +355,7 @@ test.describe("media", () => {
     baseURL,
   }) => {
     await admin(page, request, baseURL);
-    await adminNav(page).getByRole("link", { name: "Media" }).click();
+    await adminNav(page).getByRole("link", { name: "Media library" }).click();
     await page.getByLabel("Upload an image").setInputFiles({
       name: "tiny.png",
       mimeType: "image/png",
@@ -428,7 +428,7 @@ test.describe("accessibility and responsiveness", () => {
       for (const [path, heading] of [
         ["/admin/posts", "Posts"],
         ["/admin/categories", "Categories and tags"],
-        ["/admin/media", "Media"],
+        ["/admin/media", "Media library"],
         ["/admin/posts/new", "New post"],
       ] as const) {
         await page.goto(path);

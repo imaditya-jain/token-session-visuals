@@ -6,7 +6,7 @@ import { EditorContent, useEditor, useEditorState, type Editor } from "@tiptap/r
 import StarterKit from "@tiptap/starter-kit";
 import { useState, type ReactNode } from "react";
 
-import MediaPicker from "@/components/admin/blog/MediaPicker";
+import MediaPicker from "@/components/admin/media/MediaPicker";
 import { proseClass } from "@/components/content/prose";
 import { Button } from "@/components/ui/button";
 import type { MediaView } from "@/lib/blog-types";
