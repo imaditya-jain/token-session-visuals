@@ -168,3 +168,82 @@ export function listingSummary(query: ShopQuery, pageInfo: PageInfo, shown: numb
     ? `Showing ${first} product`
     : `Showing ${first}–${first + shown - 1} products`;
 }
+
+// ---- In-memory listing (used in the browser, and for the offline fallback catalog) -----------------------------------
+
+/** Same rules the Shopify queries apply: search terms, availability, price range and product type. */
+export function filterProducts(products: Product[], query: ShopQuery): Product[] {
+  const terms = searchTerms(query.search);
+  return products.filter((product) => {
+    if (terms.length > 0) {
+      const haystack = `${product.name} ${product.category} ${product.light}`.toLowerCase();
+      if (!terms.every((term) => haystack.includes(term))) return false;
+    }
+    if (query.inStock !== query.outOfStock && product.inStock !== query.inStock) return false;
+    if (query.min !== undefined && product.price < query.min) return false;
+    if (query.max !== undefined && product.price > query.max) return false;
+    if (query.types.length > 0 && !query.types.includes(product.category)) return false;
+    return true;
+  });
+}
+
+/**
+ * `salesOrder` is the shop's real best-selling ranking (product ids, best first). Without it the "Bestseller" badge
+ * is the best available signal. Everything keeps its original (featured) order among equals.
+ */
+export function sortProducts(
+  products: Product[],
+  sort: SortKey,
+  salesOrder?: readonly string[],
+): Product[] {
+  const list = [...products];
+  switch (sort) {
+    case "best-selling": {
+      if (salesOrder && salesOrder.length > 0) {
+        const rank = new Map(salesOrder.map((id, index) => [id, index]));
+        const position = (product: Product) => rank.get(product.id) ?? Number.MAX_SAFE_INTEGER;
+        return list.sort((a, b) => position(a) - position(b));
+      }
+      return list.sort(
+        (a, b) => Number(b.badge === "Bestseller") - Number(a.badge === "Bestseller"),
+      );
+    }
+    case "alpha-asc":
+      return list.sort((a, b) => a.name.localeCompare(b.name));
+    case "alpha-desc":
+      return list.sort((a, b) => b.name.localeCompare(a.name));
+    case "price-asc":
+      return list.sort((a, b) => a.price - b.price);
+    case "price-desc":
+      return list.sort((a, b) => b.price - a.price);
+    default:
+      return list;
+  }
+}
+
+export type ListedPage = {
+  products: Product[];
+  /** Products matching the filters, across all pages. */
+  total: number;
+  /** The page actually shown (the requested one, kept inside the available range). */
+  page: number;
+  pageCount: number;
+};
+
+/** One page of the filtered and sorted list. Pages are numbered; a page past the end shows the last one. */
+export function listProducts(
+  products: Product[],
+  query: ShopQuery,
+  salesOrder?: readonly string[],
+): ListedPage {
+  const sorted = sortProducts(filterProducts(products, query), query.sort, salesOrder);
+  const pageCount = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
+  const page = Math.min(Math.max(1, query.page), pageCount);
+  const start = (page - 1) * PAGE_SIZE;
+  return {
+    products: sorted.slice(start, start + PAGE_SIZE),
+    total: sorted.length,
+    page,
+    pageCount,
+  };
+}

@@ -11,7 +11,7 @@ const priceOf = async (page: Page, index: number) => {
 };
 
 test.describe("shop", () => {
-  test("lists 12 products per page and paginates with cursors both ways", async ({ page }) => {
+  test("lists 12 products per page and pages forward and back in the browser", async ({ page }) => {
     await page.goto("/shop");
     await expect(page.getByRole("heading", { level: 1, name: "Shop all" })).toBeVisible();
     await expect(cards(page)).toHaveCount(12);
@@ -22,7 +22,7 @@ test.describe("shop", () => {
     const firstPageNames = await cards(page).getByRole("heading", { level: 3 }).allTextContents();
 
     await page.getByRole("link", { name: /Next/ }).click();
-    await expect(page).toHaveURL(/after=/);
+    await expect(page).toHaveURL(/page=2/);
     await expect(page.getByText("Page 2")).toBeVisible();
     const secondPageNames = await cards(page).getByRole("heading", { level: 3 }).allTextContents();
     expect(secondPageNames.length).toBeGreaterThan(0);
@@ -78,6 +78,8 @@ test.describe("shop", () => {
 
   test("sorting by price puts the cheapest first", async ({ page }) => {
     await page.goto("/shop?sort=price-asc");
+    // The address is applied as soon as the page has loaded in the browser.
+    await expect.poll(() => priceOf(page, 0)).toBe(18);
     const first = await priceOf(page, 0);
     const second = await priceOf(page, 1);
     expect(first).toBeLessThanOrEqual(second);
@@ -99,11 +101,51 @@ test.describe("shop", () => {
     await expect(page.getByRole("heading", { level: 1, name: "Shop all" })).toBeVisible();
   });
 
-  test("filtered and paginated URLs are noindex, the base page is indexable", async ({ page }) => {
-    await page.goto("/shop");
-    await expect(page.locator('meta[name="robots"][content*="noindex"]')).toHaveCount(0);
+  test("every filtered address is the same cached page and names the plain shop as its canonical", async ({
+    page,
+    request,
+  }) => {
+    for (const path of ["/shop", "/shop?sort=price-asc", "/shop?page=2&stock=in"]) {
+      const response = await request.get(path);
+      expect(response.headers()["cache-control"], path).toContain("s-maxage");
+    }
     await page.goto("/shop?sort=price-asc");
-    await expect(page.locator('meta[name="robots"][content*="noindex"]')).toHaveCount(1);
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", /\/shop$/);
+  });
+
+  test("a filtered address opens already filtered, and back/forward follow the filters", async ({
+    page,
+  }) => {
+    await page.goto("/shop?type=Seeds%20%26%20Tools");
+    await expect(cards(page)).toHaveCount(4);
+    await page.getByRole("button", { name: "Clear all", exact: true }).click();
+    await expect(cards(page)).toHaveCount(12);
+    await page.goBack();
+    await expect(cards(page)).toHaveCount(4);
+    await page.goForward();
+    await expect(cards(page)).toHaveCount(12);
+  });
+
+  test("changing a filter never asks the server for a new page", async ({ page }) => {
+    await page.goto("/shop");
+    await expect(cards(page)).toHaveCount(12);
+    // Links in view are prefetched in the background (that is not a page being requested for a filter), so only
+    // real requests for the shop page itself count.
+    const pageRequests: string[] = [];
+    page.on("request", (request) => {
+      const prefetch = "next-router-prefetch" in request.headers();
+      if (new URL(request.url()).pathname === "/shop" && !prefetch)
+        pageRequests.push(request.url());
+    });
+    await page.getByRole("button", { name: /^Availability/ }).click();
+    await page.getByRole("checkbox", { name: "In stock" }).click();
+    await page.keyboard.press("Escape");
+    await expect(page).toHaveURL(/stock=in/);
+    await page.getByRole("combobox", { name: "Sort products" }).click();
+    await page.getByRole("option", { name: "Price, high to low" }).click();
+    await expect(page).toHaveURL(/sort=price-desc/);
+    await page.getByRole("link", { name: /Next/ }).click();
+    await expect(page).toHaveURL(/page=2/);
+    expect(pageRequests).toEqual([]);
   });
 });

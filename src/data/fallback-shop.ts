@@ -1,4 +1,10 @@
-import { PAGE_SIZE, searchTerms, type ProductPage, type ShopQuery } from "@/lib/shop";
+import {
+  filterProducts,
+  PAGE_SIZE,
+  sortProducts,
+  type ProductPage,
+  type ShopQuery,
+} from "@/lib/shop";
 import type { Product } from "@/lib/types";
 
 /**
@@ -11,41 +17,6 @@ const decode = (cursor: string | undefined): number | undefined => {
   const match = /^i:(\d+)$/.exec(Buffer.from(cursor, "base64url").toString());
   return match ? Number(match[1]) : undefined;
 };
-
-function filterProducts(products: Product[], query: ShopQuery): Product[] {
-  const terms = searchTerms(query.search);
-  return products.filter((product) => {
-    if (terms.length > 0) {
-      const haystack = `${product.name} ${product.category} ${product.light}`.toLowerCase();
-      if (!terms.every((term) => haystack.includes(term))) return false;
-    }
-    if (query.inStock !== query.outOfStock && product.inStock !== query.inStock) return false;
-    if (query.min !== undefined && product.price < query.min) return false;
-    if (query.max !== undefined && product.price > query.max) return false;
-    if (query.types.length > 0 && !query.types.includes(product.category)) return false;
-    return true;
-  });
-}
-
-function sortProducts(products: Product[], sort: ShopQuery["sort"]): Product[] {
-  const list = [...products];
-  switch (sort) {
-    case "best-selling":
-      return list.sort(
-        (a, b) => Number(b.badge === "Bestseller") - Number(a.badge === "Bestseller"),
-      );
-    case "alpha-asc":
-      return list.sort((a, b) => a.name.localeCompare(b.name));
-    case "alpha-desc":
-      return list.sort((a, b) => b.name.localeCompare(a.name));
-    case "price-asc":
-      return list.sort((a, b) => a.price - b.price);
-    case "price-desc":
-      return list.sort((a, b) => b.price - a.price);
-    default:
-      return list;
-  }
-}
 
 export function paginateFallback(products: Product[], query: ShopQuery): ProductPage {
   const sorted = sortProducts(filterProducts(products, query), query.sort);

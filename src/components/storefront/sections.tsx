@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Heart, X } from "lucide-react";
 
 import { getBestSellers, getCollections } from "@/data/catalog";
 import CollectionCard from "@/components/storefront/CollectionCard";
@@ -52,6 +52,82 @@ export async function Collections() {
         {collections.map((collection) => (
           <CollectionCard key={collection.slug} collection={collection} />
         ))}
+      </div>
+    </section>
+  );
+}
+
+/** A teaser for the Plant Finder: a short pitch and a stack of swipe cards that opens the quiz. */
+export async function PlantFinderTeaser() {
+  const c = await getPageContent("home");
+  const cta = c.link("finder", "cta");
+  const eyebrow = c.text("finder", "eyebrow");
+  const cards = [c.image("finder", "cardOne"), c.image("finder", "cardTwo")];
+  const front = c.image("finder", "cardThree");
+  return (
+    <section id="plant-finder" className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
+      <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
+        <div className="rounded-2xl bg-sage-light p-8 sm:p-12">
+          {eyebrow && (
+            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.25em] text-clay">
+              {eyebrow}
+            </p>
+          )}
+          <h2 className="font-display text-3xl font-medium text-forest sm:text-4xl">
+            {c.text("finder", "title")}
+          </h2>
+          <p className="mt-5 leading-relaxed text-foreground/80">{c.text("finder", "text")}</p>
+          <Link
+            href={cta.href}
+            className="mt-8 inline-flex items-center gap-2 rounded-md bg-forest px-7 py-3 text-sm font-semibold text-cream transition-colors hover:bg-forest-deep"
+          >
+            {cta.label} <ArrowRight className="size-4" aria-hidden />
+          </Link>
+        </div>
+        <Link
+          href={cta.href}
+          aria-label={cta.label}
+          className="group relative mx-auto block aspect-[3/4] w-full max-w-[19rem]"
+        >
+          {cards.map((card, index) => (
+            <span
+              key={card.src}
+              aria-hidden
+              className={`absolute inset-0 overflow-hidden rounded-2xl bg-card shadow-lg ring-1 ring-border/60 transition-transform duration-500 ${
+                index === 0
+                  ? "-translate-x-5 -rotate-6 group-hover:-translate-x-8 group-hover:-rotate-[9deg]"
+                  : "translate-x-4 rotate-3 group-hover:translate-x-7 group-hover:rotate-[6deg]"
+              }`}
+            >
+              <Image
+                src={card.src}
+                alt=""
+                width={600}
+                height={760}
+                sizes="304px"
+                className="h-3/4 w-full object-cover"
+              />
+            </span>
+          ))}
+          <span className="absolute inset-0 flex flex-col overflow-hidden rounded-2xl bg-card shadow-xl ring-1 ring-border/60 transition-transform duration-500 group-hover:-translate-y-1">
+            <Image
+              src={front.src}
+              alt={front.alt}
+              width={600}
+              height={760}
+              sizes="304px"
+              className="h-3/4 w-full object-cover"
+            />
+            <span className="flex flex-1 items-center justify-center gap-5">
+              <span className="inline-flex size-12 items-center justify-center rounded-full bg-muted text-foreground">
+                <X className="size-5" aria-hidden />
+              </span>
+              <span className="inline-flex size-12 items-center justify-center rounded-full bg-forest text-cream">
+                <Heart className="size-5 fill-current" aria-hidden />
+              </span>
+            </span>
+          </span>
+        </Link>
       </div>
     </section>
   );

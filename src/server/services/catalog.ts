@@ -21,9 +21,11 @@ import {
   COLLECTION_PAGE_QUERY,
   COLLECTION_PRODUCTS_QUERY,
   COLLECTION_QUERY,
+  COLLECTION_SALES_ORDER_QUERY,
   COLLECTIONS_QUERY,
   PRODUCT_PAGE_QUERY,
   PRODUCT_QUERY,
+  PRODUCT_SALES_ORDER_QUERY,
   PRODUCT_TYPES_QUERY,
   PRODUCTS_QUERY,
 } from "@/server/shopify/queries";
@@ -31,9 +33,11 @@ import {
   collectionPageResponse,
   collectionProductsResponse,
   collectionResponse,
+  collectionSalesOrderResponse,
   collectionsResponse,
   productPageResponse,
   productResponse,
+  productSalesOrderResponse,
   productTypesResponse,
   productsResponse,
 } from "@/server/shopify/schemas";
@@ -240,6 +244,36 @@ export async function getCollectionPage(handle: string, query: ShopQuery): Promi
     }
     throw error;
   }
+}
+
+/** Product ids in best-selling order for the whole shop, or for one collection when a handle is given. */
+export async function getSalesOrder(handle?: string): Promise<string[]> {
+  if (handle === undefined) {
+    const nodes = await paginate(
+      async (after) =>
+        (
+          await run(
+            productSalesOrderResponse,
+            PRODUCT_SALES_ORDER_QUERY,
+            { first: LIST_PAGE_SIZE, after },
+            [tags.catalog],
+          )
+        ).products,
+    );
+    return nodes.map((node) => node.id);
+  }
+  const nodes = await paginate(
+    async (after) =>
+      (
+        await run(
+          collectionSalesOrderResponse,
+          COLLECTION_SALES_ORDER_QUERY,
+          { handle, first: LIST_PAGE_SIZE, after },
+          [tags.catalog, tags.collection(handle)],
+        )
+      ).collection?.products ?? null,
+  );
+  return nodes.map((node) => node.id);
 }
 
 export async function getProductTypes(): Promise<string[]> {
