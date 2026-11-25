@@ -1,14 +1,20 @@
 import Image from "next/image";
 import Link from "next/link";
-const heroImage = "/images/hero-plants.jpg";
 
-export default function Hero() {
+import { getPageContent } from "@/server/services/page-content-public";
+
+export default async function Hero() {
+  const c = await getPageContent("home");
+  const image = c.image("hero", "image");
+  const eyebrow = c.text("hero", "eyebrow");
+  const primary = c.link("hero", "primaryCta");
+  const secondary = c.link("hero", "secondaryCta");
   return (
     <section className="relative">
       <div className="relative h-[78vh] min-h-[520px] w-full overflow-hidden sm:h-[82vh] lg:h-[88vh]">
         <Image
-          src={heroImage}
-          alt="A table full of lush house plants in terracotta and cream pots"
+          src={image.src}
+          alt={image.alt}
           sizes="100vw"
           className="absolute inset-0 h-full w-full object-cover"
           width={1920}
@@ -20,27 +26,29 @@ export default function Hero() {
         <div className="absolute inset-0 bg-gradient-to-b from-forest-deep/35 via-transparent to-forest-deep/20" />
 
         <div className="relative z-10 flex h-full flex-col items-center justify-center px-4 text-center">
-          <p className="mb-4 text-xs font-semibold uppercase tracking-[0.3em] text-cream/90 sm:text-sm">
-            Nursery-grown · Delivered with care
-          </p>
+          {eyebrow && (
+            <p className="mb-4 text-xs font-semibold uppercase tracking-[0.3em] text-cream/90 sm:text-sm">
+              {eyebrow}
+            </p>
+          )}
           <h1 className="max-w-3xl font-display text-5xl font-medium leading-[1.05] text-cream drop-shadow-sm sm:text-6xl lg:text-7xl">
-            Let&apos;s go green!
+            {c.text("hero", "title")}
           </h1>
           <p className="mt-5 max-w-xl text-base text-cream/95 sm:text-lg">
-            Bring color and life to your home with plants straight from our greenhouse.
+            {c.text("hero", "subtitle")}
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Link
-              href="/collections/house-plants"
+              href={primary.href}
               className="inline-flex items-center justify-center rounded-md bg-cream px-7 py-3 text-sm font-semibold text-forest-deep shadow-md transition-all hover:bg-cream/90 hover:shadow-lg"
             >
-              Shop indoor plants
+              {primary.label}
             </Link>
             <Link
-              href="/collections/succulents-cacti"
+              href={secondary.href}
               className="inline-flex items-center justify-center rounded-md border border-cream/50 bg-cream/15 px-7 py-3 text-sm font-semibold text-cream backdrop-blur-sm transition-all hover:bg-cream/25"
             >
-              Shop succulents
+              {secondary.label}
             </Link>
           </div>
         </div>

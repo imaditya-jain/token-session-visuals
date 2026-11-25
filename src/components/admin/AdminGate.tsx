@@ -9,6 +9,7 @@ import { logout } from "@/features/auth/authThunks";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 
 import AdminShell from "./AdminShell";
+import Skeleton from "@/components/admin/Skeleton";
 
 function Notice({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -70,10 +71,16 @@ export default function AdminGate({ children }: { children: ReactNode }) {
     );
   }
   return (
-    <main className="flex min-h-screen items-center justify-center bg-background">
-      <p role="status" className="text-sm text-muted-foreground">
-        Loading…
-      </p>
-    </main>
+    <div className="flex min-h-screen bg-background">
+      <div aria-hidden="true" className="hidden w-64 shrink-0 bg-forest-deep p-6 lg:block">
+        <div className="mb-8 h-7 w-28 rounded-md bg-white/10 motion-safe:animate-pulse" />
+        {Array.from({ length: 9 }, (_, i) => (
+          <div key={i} className="mb-3 h-8 rounded-md bg-white/5 motion-safe:animate-pulse" />
+        ))}
+      </div>
+      <main className="min-w-0 flex-1 p-6 sm:p-10">
+        <Skeleton variant="list" />
+      </main>
+    </div>
   );
 }

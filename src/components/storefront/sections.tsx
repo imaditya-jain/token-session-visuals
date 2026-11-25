@@ -3,15 +3,12 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
 import { getBestSellers, getCollections } from "@/data/catalog";
-import { testimonials } from "@/data/site";
 import CollectionCard from "@/components/storefront/CollectionCard";
 import ProductCard from "@/components/storefront/ProductCard";
 import SocialIcon from "@/components/storefront/SocialIcon";
 import { phoneHref, SOCIAL_PLATFORMS } from "@/lib/site-chrome";
+import { getPageContent } from "@/server/services/page-content-public";
 import { getSiteChrome } from "@/server/services/site-chrome-public";
-const promoImage = "/images/promo-repotting.jpg";
-const seasonalImage = "/images/seasonal-greenhouse.jpg";
-const storyImage = "/images/story-nursery.jpg";
 import { Truck, Leaf, HeartHandshake, Sprout, Star, Quote } from "lucide-react";
 
 function SectionHeading({
@@ -41,14 +38,15 @@ function SectionHeading({
 export async function Collections() {
   const collections = await getCollections();
   if (collections.length === 0) return null;
+  const c = await getPageContent("home");
   return (
     <section
       id="collections"
       className="mx-auto max-w-7xl px-4 pb-20 pt-14 sm:px-6 lg:px-8 lg:pb-28"
     >
       <SectionHeading
-        title="Shop house plants"
-        description="Curated collections for every corner — from sun-drenched shelves to cozy low-light nooks."
+        title={c.text("collections", "title")}
+        description={c.text("collections", "description")}
       />
       <div className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
         {collections.map((collection) => (
@@ -62,13 +60,15 @@ export async function Collections() {
 export async function BestSellers() {
   const bestSellers = await getBestSellers();
   if (bestSellers.length === 0) return null;
+  const c = await getPageContent("home");
+  const cta = c.link("bestSellers", "cta");
   return (
     <section id="best-sellers" className="bg-sage-light/60 py-20 lg:py-28">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <SectionHeading
-          eyebrow="Loved by plant parents"
-          title="Best sellers this season"
-          description="Our most-loved greenery, shipped straight from the greenhouse in protective, plant-friendly packaging."
+          eyebrow={c.text("bestSellers", "eyebrow")}
+          title={c.text("bestSellers", "title")}
+          description={c.text("bestSellers", "description")}
         />
         <div className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
           {bestSellers.map((product) => (
@@ -77,10 +77,10 @@ export async function BestSellers() {
         </div>
         <div className="mt-10 text-center">
           <Link
-            href="/collections/house-plants"
+            href={cta.href}
             className="inline-flex items-center gap-2 rounded-md border border-forest bg-transparent px-7 py-3 text-sm font-semibold text-forest transition-colors hover:bg-forest hover:text-cream"
           >
-            View all plants <ArrowRight className="size-4" aria-hidden />
+            {cta.label} <ArrowRight className="size-4" aria-hidden />
           </Link>
         </div>
       </div>
@@ -88,41 +88,42 @@ export async function BestSellers() {
   );
 }
 
-export function PromoSplit() {
+export async function PromoSplit() {
+  const c = await getPageContent("home");
+  const image = c.image("promo", "image");
+  const cta = c.link("promo", "cta");
+  const eyebrow = c.text("promo", "eyebrow");
   return (
     <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
       <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
         <div className="relative order-2 lg:order-1">
           <Image
-            src={promoImage}
-            alt="Hands repotting a plant into a terracotta pot"
+            src={image.src}
+            alt={image.alt}
             width={1200}
             height={900}
             sizes="(min-width: 1024px) 600px, 100vw"
             className="aspect-[5/4] w-full rounded-2xl object-cover shadow-md"
           />
           <div className="absolute -bottom-5 left-6 hidden rounded-xl bg-forest px-6 py-4 text-cream shadow-lg sm:block">
-            <p className="font-display text-2xl">120+</p>
-            <p className="text-xs uppercase tracking-wider text-sage">Species in our nursery</p>
+            <p className="font-display text-2xl">{c.text("promo", "statValue")}</p>
+            <p className="text-xs uppercase tracking-wider text-sage">
+              {c.text("promo", "statLabel")}
+            </p>
           </div>
         </div>
         <div className="order-1 lg:order-2">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.25em] text-clay">
-            Repotting season
-          </p>
+          {eyebrow && (
+            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.25em] text-clay">
+              {eyebrow}
+            </p>
+          )}
           <h2 className="font-display text-3xl font-medium text-forest sm:text-4xl">
-            Everything your plants need to put down roots
+            {c.text("promo", "title")}
           </h2>
-          <p className="mt-5 leading-relaxed text-muted-foreground">
-            From breathable terracotta to our chunky, well-draining houseplant mix, every Fernwood
-            essential is tested in our own greenhouse before it ever reaches your shelf.
-          </p>
+          <p className="mt-5 leading-relaxed text-muted-foreground">{c.text("promo", "text")}</p>
           <ul className="mt-6 space-y-3 text-sm text-foreground/90">
-            {[
-              "Hand-thrown pots with proper drainage",
-              "Peat-free soil blends mixed in-house",
-              "Step-by-step care card with every plant",
-            ].map((item) => (
+            {c.list("promo", "bullets").map((item) => (
               <li key={item} className="flex items-start gap-3">
                 <Sprout className="mt-0.5 size-4 shrink-0 text-clay" aria-hidden />
                 {item}
@@ -130,10 +131,10 @@ export function PromoSplit() {
             ))}
           </ul>
           <a
-            href="#collections"
+            href={cta.href}
             className="mt-8 inline-flex items-center gap-2 rounded-md bg-forest px-7 py-3 text-sm font-semibold text-cream transition-colors hover:bg-forest-deep"
           >
-            Shop pots & soil <ArrowRight className="size-4" aria-hidden />
+            {cta.label} <ArrowRight className="size-4" aria-hidden />
           </a>
         </div>
       </div>
@@ -141,12 +142,17 @@ export function PromoSplit() {
   );
 }
 
-export function SeasonalBanner() {
+export async function SeasonalBanner() {
+  const c = await getPageContent("home");
+  const image = c.image("seasonal", "image");
+  const cta = c.link("seasonal", "cta");
+  const eyebrow = c.text("seasonal", "eyebrow");
+  const note = c.text("seasonal", "note");
   return (
     <section className="relative overflow-hidden">
       <Image
-        src={seasonalImage}
-        alt="Sunlit Victorian greenhouse filled with plants"
+        src={image.src}
+        alt={image.alt}
         width={1600}
         height={900}
         sizes="100vw"
@@ -156,24 +162,25 @@ export function SeasonalBanner() {
       <div className="absolute inset-0 flex items-center">
         <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="max-w-lg rounded-2xl bg-cream/92 p-8 shadow-xl backdrop-blur-sm sm:p-10">
-            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.25em] text-clay">
-              Featured collection
-            </p>
+            {eyebrow && (
+              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.25em] text-clay">
+                {eyebrow}
+              </p>
+            )}
             <h2 className="font-display text-3xl font-medium text-forest sm:text-4xl">
-              The Winter Greenhouse Edit
+              {c.text("seasonal", "title")}
             </h2>
             <p className="mt-4 leading-relaxed text-muted-foreground">
-              Statement plants that shrug off short days — plus our warmest grow-light picks for the
-              darker months. Save up to 25% while the collection lasts.
+              {c.text("seasonal", "text")}
             </p>
             <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center">
               <a
-                href="#best-sellers"
+                href={cta.href}
                 className="inline-flex items-center justify-center gap-2 rounded-md bg-clay px-7 py-3 text-sm font-semibold text-cream transition-colors hover:bg-clay-deep"
               >
-                Shop the edit <ArrowRight className="size-4" aria-hidden />
+                {cta.label} <ArrowRight className="size-4" aria-hidden />
               </a>
-              <p className="text-xs text-muted-foreground">Ends Sunday · Free heat pack included</p>
+              {note && <p className="text-xs text-muted-foreground">{note}</p>}
             </div>
           </div>
         </div>
@@ -182,81 +189,64 @@ export function SeasonalBanner() {
   );
 }
 
-const perks = [
-  {
-    icon: Leaf,
-    title: "Nursery-grown quality",
-    text: "Every plant is raised in our own greenhouses, never brokered from unknown sources.",
-  },
-  {
-    icon: Truck,
-    title: "Arrive-alive guarantee",
-    text: "Protective packaging and a 30-day guarantee — if it arrives unhappy, we replace it.",
-  },
-  {
-    icon: HeartHandshake,
-    title: "Care that continues",
-    text: "Photo check-ins, a detailed care card and horticulturists on chat for the life of your plant.",
-  },
-  {
-    icon: Sprout,
-    title: "Grown responsibly",
-    text: "Peat-free soils, recycled packaging and integrated pest management instead of sprays.",
-  },
-];
+const perkIcons = [Leaf, Truck, HeartHandshake, Sprout, Star, Leaf];
 
-export function WhyUs() {
+export async function WhyUs() {
+  const c = await getPageContent("home");
+  const perks = c.cards("whyUs", "perks");
   return (
     <section id="our-story" className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
-      <SectionHeading eyebrow="Why shop with us" title="From our greenhouse to your home" />
+      <SectionHeading eyebrow={c.text("whyUs", "eyebrow")} title={c.text("whyUs", "title")} />
       <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-        {perks.map((perk) => (
-          <div
-            key={perk.title}
-            className="rounded-2xl bg-card p-7 shadow-sm ring-1 ring-border/60 transition-shadow hover:shadow-md"
-          >
-            <div className="mb-4 inline-flex size-12 items-center justify-center rounded-full bg-sage-light text-forest">
-              <perk.icon className="size-6" aria-hidden />
+        {perks.map((perk, index) => {
+          const Icon = perkIcons[index % perkIcons.length] ?? Leaf;
+          return (
+            <div
+              key={perk.title}
+              className="rounded-2xl bg-card p-7 shadow-sm ring-1 ring-border/60 transition-shadow hover:shadow-md"
+            >
+              <div className="mb-4 inline-flex size-12 items-center justify-center rounded-full bg-sage-light text-forest">
+                <Icon className="size-6" aria-hidden />
+              </div>
+              <h3 className="font-display text-lg font-medium text-forest">{perk.title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{perk.text}</p>
             </div>
-            <h3 className="font-display text-lg font-medium text-forest">{perk.title}</h3>
-            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{perk.text}</p>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </section>
   );
 }
 
-export function StoryTestimonial() {
+export async function StoryTestimonial() {
+  const c = await getPageContent("home");
+  const image = c.image("story", "image");
+  const cta = c.link("story", "cta");
+  const eyebrow = c.text("story", "eyebrow");
   return (
     <section className="bg-forest text-cream">
       <div className="mx-auto grid max-w-7xl items-center gap-10 px-4 py-20 sm:px-6 lg:grid-cols-2 lg:gap-16 lg:px-8 lg:py-28">
         <div>
-          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.25em] text-sage">
-            Our story
-          </p>
+          {eyebrow && (
+            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.25em] text-sage">
+              {eyebrow}
+            </p>
+          )}
           <h2 className="font-display text-3xl font-medium sm:text-4xl">
-            Three generations of growers, one shared obsession
+            {c.text("story", "title")}
           </h2>
-          <p className="mt-5 leading-relaxed text-cream/85">
-            Fernwood began as a single glasshouse on our family farm in 1962. Today we propagate
-            over 120 species across four nurseries — and every plant still passes through the hands
-            of a grower before it ships.
-          </p>
-          <p className="mt-4 leading-relaxed text-cream/85">
-            We believe a plant should arrive ready to thrive, not merely survive. That means honest
-            sizing, healthy roots, and guidance that continues long after the box is opened.
-          </p>
+          <p className="mt-5 leading-relaxed text-cream/85">{c.text("story", "paragraph1")}</p>
+          <p className="mt-4 leading-relaxed text-cream/85">{c.text("story", "paragraph2")}</p>
           <Link
-            href="/about"
+            href={cta.href}
             className="mt-8 inline-flex items-center gap-2 rounded-md border border-cream/50 px-7 py-3 text-sm font-semibold text-cream transition-colors hover:bg-cream/10"
           >
-            Meet the growers <ArrowRight className="size-4" aria-hidden />
+            {cta.label} <ArrowRight className="size-4" aria-hidden />
           </Link>
         </div>
         <Image
-          src={storyImage}
-          alt="A Fernwood grower holding a tray of seedlings in the nursery"
+          src={image.src}
+          alt={image.alt}
           width={1200}
           height={900}
           sizes="(min-width: 1024px) 600px, 100vw"
@@ -267,13 +257,15 @@ export function StoryTestimonial() {
   );
 }
 
-export function Testimonials() {
+export async function Testimonials() {
+  const c = await getPageContent("home");
+  const testimonials = c.quotes("testimonials", "quotes");
   return (
     <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
       <SectionHeading
-        eyebrow="Kind words"
-        title="What plant parents say"
-        description="Over 12,000 five-star reviews from homes and offices across the country."
+        eyebrow={c.text("testimonials", "eyebrow")}
+        title={c.text("testimonials", "title")}
+        description={c.text("testimonials", "description")}
       />
       <div className="grid gap-6 md:grid-cols-3">
         {testimonials.map((t) => (

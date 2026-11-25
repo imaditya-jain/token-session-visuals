@@ -9,6 +9,7 @@ import TextField from "@/components/auth/TextField";
 import { Button } from "@/components/ui/button";
 import { flattenCategories, subtreeIds } from "@/lib/blog-tree";
 import type { CategoryView, TagView } from "@/lib/blog-types";
+import Skeleton from "@/components/admin/Skeleton";
 
 const selectClass =
   "h-11 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring";
@@ -120,9 +121,7 @@ export default function TaxonomyPanel() {
     return (
       <>
         <PageHeader title="Categories and tags" />
-        <p role="status" className="text-sm text-muted-foreground">
-          Loading…
-        </p>
+        <Skeleton variant="list" />
       </>
     );
   }

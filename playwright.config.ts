@@ -37,7 +37,7 @@ export default defineConfig({
           env: { PORT: String(port) },
           url: `http://localhost:${port}`,
           reuseExistingServer: !isCI,
-          timeout: 300_000,
+          timeout: 600_000,
         },
       }),
 });

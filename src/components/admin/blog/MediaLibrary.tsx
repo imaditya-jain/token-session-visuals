@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import { apiFetch } from "@/lib/api-client";
 import type { MediaView } from "@/lib/blog-types";
+import Skeleton from "@/components/admin/Skeleton";
 
 const PAGE_SIZE = 24;
 const MAX_BYTES = 4 * 1024 * 1024;
@@ -166,11 +167,7 @@ export default function MediaLibrary({
   };
 
   if (first.status === "loading") {
-    return (
-      <p role="status" className="text-sm text-muted-foreground">
-        Loading…
-      </p>
-    );
+    return <Skeleton variant="grid" />;
   }
   if (first.status === "error") {
     return (

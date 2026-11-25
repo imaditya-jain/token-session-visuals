@@ -32,6 +32,9 @@ const env = {
   SHOPIFY_STORE_URL: "",
   SHOPIFY_STOREFRONT_API_ACCESS_TOKEN: "",
   SHOPIFY_ADMIN_API_ACCESS_TOKEN: "",
+  // Seal Subscriptions is switched off too: tests must never reach the real billing provider.
+  SEAL_API_TOKEN: "",
+  SEAL_API_SECRET: "",
   SHOPIFY_WEBHOOK_SECRET: webhookSecret,
   // Email goes nowhere: SMTP points at a closed local port so delivery fails instantly and the queued job
   // (with its one-time link) stays in the database, where the tests read it.

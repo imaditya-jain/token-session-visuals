@@ -191,11 +191,16 @@ test.describe("permissions in the console", () => {
     await signInAdmin(page, email);
     await expect(nav(page).getByRole("link")).toHaveText([
       "Dashboard",
+      "Page content",
       "Header & announcement",
       "Footer",
       "Social links",
       "Contact messages",
       "Wholesale applications",
+      "Orders",
+      "Subscriptions",
+      "Products",
+      "Inventory",
       "Posts",
       "Categories & tags",
       "Media",
