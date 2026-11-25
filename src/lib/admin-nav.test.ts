@@ -14,6 +14,7 @@ describe("admin navigation groups", () => {
       ["Enquiries", ["Contact messages", "Wholesale applications"]],
       ["Sales", ["Orders", "Subscriptions"]],
       ["Shop", ["Products", "Inventory"]],
+      ["Marketing", ["Campaigns"]],
       ["Blog", ["Posts", "Categories & tags", "Media"]],
       ["Administration", ["Team", "Roles", "Activity"]],
     ]);
@@ -62,6 +63,7 @@ describe("admin navigation", () => {
       "Subscriptions",
       "Products",
       "Inventory",
+      "Campaigns",
       "Posts",
       "Categories & tags",
       "Media",

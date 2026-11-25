@@ -201,6 +201,7 @@ test.describe("permissions in the console", () => {
       "Subscriptions",
       "Products",
       "Inventory",
+      "Campaigns",
       "Posts",
       "Categories & tags",
       "Media",
