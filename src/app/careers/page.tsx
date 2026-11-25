@@ -1,33 +1,23 @@
-import type { Metadata } from "next";
-
 import ContactCta from "@/components/content/ContactCta";
 import ContentShell from "@/components/content/ContentShell";
-import { proseClass } from "@/components/content/prose";
+import RichBody from "@/components/content/RichBody";
+import { getPageContent } from "@/server/services/page-content-public";
+import { pageMetadata } from "@/server/services/page-meta";
 
-export const metadata: Metadata = {
-  title: "Careers — Fernwood",
-  description: "Careers at Fernwood: tell us about yourself.",
-  alternates: { canonical: "/careers" },
-};
+export const revalidate = 3600;
 
-export default function Page() {
+export const generateMetadata = () => pageMetadata("careers", "/careers");
+
+export default async function Page() {
+  const c = await getPageContent("careers");
   return (
     <ContentShell
-      eyebrow="Company"
-      title="Careers"
-      intro="Join the people who grow, pack and care for Fernwood plants."
+      eyebrow={c.text("header", "eyebrow")}
+      title={c.text("header", "title")}
+      intro={c.text("header", "intro")}
     >
-      <div className={proseClass}>
-        <p>
-          We do not have any open roles listed at the moment. If you grow, pack or care for plants
-          for a living, or you simply love them, we would still like to hear from you.
-        </p>
-        <p>
-          Tell us a little about yourself and what you would like to do, and we will keep it in
-          mind.
-        </p>
-      </div>
-      <ContactCta title="Interested in working with us?" topic="Careers" label="Get in touch" />
+      <RichBody doc={c.doc("body", "content")} />
+      <ContactCta title={c.text("cta", "title")} topic="Careers" label={c.text("cta", "label")} />
     </ContentShell>
   );
 }

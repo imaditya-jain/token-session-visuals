@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
@@ -14,6 +15,7 @@ import type { MediaView } from "@/lib/blog-types";
 import {
   pageDef,
   type CardValue,
+  type FaqGroup,
   type FieldDef,
   type FieldValue,
   type ImageValue,
@@ -21,6 +23,8 @@ import {
   type PageValues,
   type QuoteValue,
 } from "@/lib/page-content";
+import type { RichDoc } from "@/lib/rich-text/types";
+import type { EditorDoc } from "@/lib/page-content-core";
 import { useAppSelector } from "@/store/hooks";
 
 type AdminPage = {
@@ -30,6 +34,11 @@ type AdminPage = {
   publishedAt: string | null;
   hasUnpublished: boolean;
 };
+
+const RichTextEditor = dynamic(() => import("@/components/admin/blog/RichTextEditor"), {
+  ssr: false,
+  loading: () => <Skeleton variant="list" rows={3} />,
+});
 
 const field =
   "h-11 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring";
@@ -253,6 +262,137 @@ function FieldEditor({
               onClick={() => onChange([...v, { title: "", text: "" }])}
             >
               Add item
+            </Button>
+          ) : null}
+        </fieldset>
+      );
+    }
+    case "richtext":
+      return (
+        <div>
+          <p className="mb-1.5 text-sm font-medium">{def.label}</p>
+          <RichTextEditor
+            initial={value as unknown as RichDoc}
+            onChange={(d) => onChange(d as unknown as EditorDoc)}
+          />
+        </div>
+      );
+    case "faqs": {
+      const v = value as FaqGroup[];
+      const setGroup = (gi: number, group: FaqGroup) =>
+        onChange(v.map((g, j) => (j === gi ? group : g)));
+      return (
+        <fieldset className="space-y-4">
+          <legend className="mb-1.5 text-sm font-medium">{def.label}</legend>
+          <p className="text-xs text-muted-foreground">
+            In an answer, write **bold** and [link text](/page) for links.
+          </p>
+          {v.map((group, gi) => (
+            <div key={gi} className="space-y-3 rounded-lg bg-background p-3 ring-1 ring-border/60">
+              <label htmlFor={`${id}-${gi}-g`} className="block text-xs text-muted-foreground">
+                Group title {gi + 1}
+              </label>
+              <input
+                id={`${id}-${gi}-g`}
+                className={field}
+                maxLength={80}
+                value={group.title}
+                onChange={(e) => setGroup(gi, { ...group, title: e.target.value })}
+              />
+              {group.items.map((item, ii) => (
+                <div key={ii} className="space-y-2 border-l-2 border-sage pl-3">
+                  <label
+                    htmlFor={`${id}-${gi}-${ii}-q`}
+                    className="block text-xs text-muted-foreground"
+                  >
+                    Question {gi + 1}.{ii + 1}
+                  </label>
+                  <input
+                    id={`${id}-${gi}-${ii}-q`}
+                    className={field}
+                    maxLength={200}
+                    value={item.question}
+                    onChange={(e) =>
+                      setGroup(gi, {
+                        ...group,
+                        items: group.items.map((x, k) =>
+                          k === ii ? { ...x, question: e.target.value } : x,
+                        ),
+                      })
+                    }
+                  />
+                  <label
+                    htmlFor={`${id}-${gi}-${ii}-a`}
+                    className="block text-xs text-muted-foreground"
+                  >
+                    Answer {gi + 1}.{ii + 1}
+                  </label>
+                  <textarea
+                    id={`${id}-${gi}-${ii}-a`}
+                    rows={3}
+                    className={area}
+                    maxLength={1200}
+                    value={item.answer}
+                    onChange={(e) =>
+                      setGroup(gi, {
+                        ...group,
+                        items: group.items.map((x, k) =>
+                          k === ii ? { ...x, answer: e.target.value } : x,
+                        ),
+                      })
+                    }
+                  />
+                  {group.items.length > 1 ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-11"
+                      onClick={() =>
+                        setGroup(gi, { ...group, items: group.items.filter((_, k) => k !== ii) })
+                      }
+                    >
+                      Remove question {gi + 1}.{ii + 1}
+                    </Button>
+                  ) : null}
+                </div>
+              ))}
+              <div className="flex flex-wrap gap-2">
+                {group.items.length < 20 ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-11"
+                    onClick={() =>
+                      setGroup(gi, {
+                        ...group,
+                        items: [...group.items, { question: "", answer: "" }],
+                      })
+                    }
+                  >
+                    Add question to group {gi + 1}
+                  </Button>
+                ) : null}
+                {v.length > 1 ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-11"
+                    onClick={() => onChange(v.filter((_, j) => j !== gi))}
+                  >
+                    Remove group {gi + 1}
+                  </Button>
+                ) : null}
+              </div>
+            </div>
+          ))}
+          {v.length < def.maxGroups ? (
+            <Button
+              type="button"
+              variant="outline"
+              className="h-11"
+              onClick={() => onChange([...v, { title: "", items: [{ question: "", answer: "" }] }])}
+            >
+              Add group
             </Button>
           ) : null}
         </fieldset>

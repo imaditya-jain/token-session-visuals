@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { safeHref } from "@/lib/rich-text/parse";
+import { parseRichText, RichTextError, safeHref } from "@/lib/rich-text/parse";
 import { pageDef, type FieldDef, type PageDef, type PageValues } from "@/lib/page-content";
 import { configureZodForBrowser } from "@/lib/zod-browser";
 
@@ -60,6 +60,32 @@ function fieldSchema(def: FieldDef): z.ZodType {
         .array(z.object({ title: str(80, false), text: str(300, false) }))
         .min(1)
         .max(def.maxItems);
+    case "richtext":
+      // Checked by the same allow-list the blog uses; the editor's JSON is kept as written because the editor
+      // reads it back, and it is normalised again every time it is rendered.
+      return z.unknown().superRefine((value, ctx) => {
+        try {
+          parseRichText(value);
+        } catch (error) {
+          ctx.addIssue({
+            code: "custom",
+            message: error instanceof RichTextError ? error.message : "The text is invalid.",
+          });
+        }
+      });
+    case "faqs":
+      return z
+        .array(
+          z.object({
+            title: str(80, false),
+            items: z
+              .array(z.object({ question: str(200, false), answer: str(1200, false) }))
+              .min(1)
+              .max(20),
+          }),
+        )
+        .min(1)
+        .max(def.maxGroups);
     case "quotes":
       return z
         .array(z.object({ quote: str(400, false), name: str(60, false), location: str(60, true) }))

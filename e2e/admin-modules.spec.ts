@@ -14,6 +14,8 @@ const SCREENS = [
   { path: "/admin/subscriptions", heading: "Subscriptions" },
   { path: "/admin/site/pages", heading: "Page content" },
   { path: "/admin/site/pages/home", heading: "Home page" },
+  { path: "/admin/site/pages/care-guide", heading: "Plant care guide" },
+  { path: "/admin/site/pages/faq", heading: "Frequently asked questions" },
   { path: "/admin/shop/products/new", heading: "New product" },
 ] as const;
 

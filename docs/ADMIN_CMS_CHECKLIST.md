@@ -16,7 +16,7 @@ in MongoDB except read-only mirrors that already exist).
 ## Phases
 | # | Module | Status | Notes / dependencies |
 |---|---|---|---|
-| 1 | CMS pages and sections | [~] | Framework + **Home page** done (`/admin/site/pages`): every section's text, links and pictures, draft/publish, defaults identical to the old hard-coded content. **Other pages (about, care guide, FAQ, policies, shipping, press, careers, ...) are not yet moved into the registry**: add each page to `PAGES` in `lib/page-content.ts` and read it with `getPageContent(id)` |
+| 1 | CMS pages and sections | [x] | `/admin/site/pages`: 21 pages editable section by section (text, links, pictures, rich text, FAQs), draft/publish/discard, SEO title and description per page; defaults are the previous hard-coded content (visual baselines unchanged). Not editable here by design: Shopify-written policies, product/collection data, transactional account pages, search |
 | 2 | Header, announcement, footer, social links | [x] | Built and verified on `feat/site-chrome`; **41 screenshot baselines await owner approval** (the new "Journal" link) |
 | 3 | Blog completion + storefront nav | [x] | Blog pages use the common header/footer; "Journal" is in the header menu and footer; remaining blog gaps (revisions, autosave) are listed in CLAUDE.md |
 | 4 | Wholesale + contact management | [x] | Saved in MongoDB, team + sender emails, admin lists/detail/notes/assign/archive/delete/export; sender acknowledgement is limited to one per address per day |
