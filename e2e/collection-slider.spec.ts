@@ -5,7 +5,7 @@ test.describe("Home collections slider", () => {
   test("arrows and dots move the strip, and the section passes accessibility checks", async ({
     page,
   }) => {
-    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.setViewportSize({ width: 1100, height: 900 });
     await page.goto("/");
     const section = page.locator("#collections");
     await section.scrollIntoViewIfNeeded();

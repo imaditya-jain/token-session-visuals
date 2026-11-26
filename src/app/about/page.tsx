@@ -68,7 +68,7 @@ export default async function AboutPage() {
               {stats.map((stat) => (
                 <div key={stat.title} className="flex flex-col text-center">
                   <dt className="order-2 mt-2 text-sm text-cream/75">{stat.text}</dt>
-                  <dd className="font-display text-5xl font-medium text-cream lg:text-6xl">
+                  <dd className="font-display text-4xl font-medium text-cream sm:text-5xl lg:text-6xl">
                     {stat.title}
                   </dd>
                 </div>
