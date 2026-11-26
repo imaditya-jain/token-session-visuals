@@ -31,17 +31,19 @@ const parsePrice = (value: string): number | undefined => {
 };
 
 /**
- * Filter and sort bar for the shop. State lives in the URL (server-rendered results, shareable and
- * cursor-pagination friendly); any change returns to the first page.
+ * Filter and sort bar for the shop. State lives in the URL (shareable); any change returns to the first page.
  */
 export default function ListingToolbar({
   query,
   types,
   basePath,
+  onNavigate,
 }: {
   query: ShopQuery;
   types: string[];
   basePath: string;
+  /** When given, filters change in the browser (no server round trip); otherwise the page is requested again. */
+  onNavigate?: (href: string) => void;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -54,9 +56,9 @@ export default function ListingToolbar({
   const maxValue = draft.max ?? query.max?.toString() ?? "";
 
   const navigate = (patch: Partial<ShopQuery>) => {
-    startTransition(() =>
-      router.push(shopHref(resetPaging({ ...query, ...patch }), basePath), { scroll: false }),
-    );
+    const href = shopHref(resetPaging({ ...query, ...patch }), basePath);
+    if (onNavigate) onNavigate(href);
+    else startTransition(() => router.push(href, { scroll: false }));
   };
 
   const commitPrice = (rawMin: string, rawMax: string) => {
@@ -183,15 +185,12 @@ export default function ListingToolbar({
             onClick={() => {
               clearTimeout(timer.current);
               setDraft({});
-              startTransition(() =>
-                router.push(
-                  shopHref(
-                    { sort: query.sort, ...(query.search ? { search: query.search } : {}) },
-                    basePath,
-                  ),
-                  { scroll: false },
-                ),
+              const href = shopHref(
+                { sort: query.sort, ...(query.search ? { search: query.search } : {}) },
+                basePath,
               );
+              if (onNavigate) onNavigate(href);
+              else startTransition(() => router.push(href, { scroll: false }));
             }}
             className="flex items-center gap-1 text-sm font-medium text-clay transition-colors hover:text-clay/80"
           >

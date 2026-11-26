@@ -14,6 +14,7 @@ const STATIC_PATHS = [
   "/",
   "/shop",
   "/collections",
+  "/plant-finder",
   "/about",
   "/care-guide",
   "/faq",

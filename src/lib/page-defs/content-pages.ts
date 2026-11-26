@@ -651,6 +651,35 @@ export const NOT_FOUND = page("not-found", "Page not found (404)", "/", [
   },
 ]);
 
+export const PLANT_FINDER = page("plant-finder", "Plant Finder", "/plant-finder", [
+  header("Not sure where to start?", "Plant Finder"),
+  seo(
+    "Plant Finder — Fernwood",
+    "Answer a few quick questions, swipe through plants and we'll show the ones that suit your space.",
+  ),
+  {
+    id: "intro",
+    label: "Opening screen",
+    fields: {
+      title: text_("Heading", "Find the plant that fits your life", 80),
+      text: area(
+        "Text",
+        "Tell us about your space, then swipe through a few plants. Like the ones you love and pass on the rest, and we'll show the plants that suit you best.",
+        400,
+      ),
+      button: text_("Button text", "Let's go", 30),
+    },
+  },
+  {
+    id: "result",
+    label: "Results screen",
+    fields: {
+      title: text_("Heading", "Your best matches", 80),
+      retake: text_("Retake button text", "Start again", 30),
+    },
+  },
+]);
+
 export const CONTENT_PAGES: readonly PageDef[] = [
   ABOUT,
   CARE_GUIDE,
@@ -672,4 +701,5 @@ export const CONTENT_PAGES: readonly PageDef[] = [
   REGISTER,
   FORGOT,
   NOT_FOUND,
+  PLANT_FINDER,
 ];
