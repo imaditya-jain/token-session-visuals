@@ -37,6 +37,23 @@ export const HOME: PageDef = {
       },
     },
     {
+      id: "trust",
+      label: "Promise strip under the hero",
+      fields: {
+        items: {
+          kind: "cards",
+          label: "Promises (icons are chosen by position; leave empty to hide the strip)",
+          maxItems: 4,
+          default: [
+            { title: "Free shipping", text: "On every order over $75" },
+            { title: "30-day guarantee", text: "Arrives unhappy? We replace it" },
+            { title: "Plastic-free packing", text: "Recycled, plant-safe materials" },
+            { title: "Grown by us", text: "Raised in our own greenhouses" },
+          ],
+        },
+      },
+    },
+    {
       id: "collections",
       label: "Collections slider",
       fields: {

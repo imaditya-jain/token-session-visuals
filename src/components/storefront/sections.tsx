@@ -4,13 +4,14 @@ import { ArrowRight, Heart, X } from "lucide-react";
 
 import { getBestSellers, getCollections } from "@/data/catalog";
 import CollectionCard from "@/components/storefront/CollectionCard";
+import Logo from "@/components/storefront/Logo";
 import CollectionSlider from "@/components/storefront/CollectionSlider";
 import ProductCard from "@/components/storefront/ProductCard";
 import SocialIcon from "@/components/storefront/SocialIcon";
 import { phoneHref, SOCIAL_PLATFORMS } from "@/lib/site-chrome";
 import { getPageContent } from "@/server/services/page-content-public";
 import { getSiteChrome } from "@/server/services/site-chrome-public";
-import { Truck, Leaf, HeartHandshake, Sprout, Star, Quote } from "lucide-react";
+import { Truck, Leaf, HeartHandshake, Sprout, Star, Quote, ShieldCheck } from "lucide-react";
 
 function SectionHeading({
   eyebrow,
@@ -33,6 +34,53 @@ function SectionHeading({
       </h2>
       {description && <p className="mt-4 text-muted-foreground">{description}</p>}
     </div>
+  );
+}
+
+/** Soft curved edge that paints the previous section's colour over the top of a band. */
+function WaveTop({ className }: { className: string }) {
+  return (
+    <svg
+      aria-hidden
+      focusable="false"
+      viewBox="0 0 1440 40"
+      preserveAspectRatio="none"
+      className={`pointer-events-none absolute inset-x-0 top-0 h-4 w-full sm:h-8 ${className}`}
+      fill="currentColor"
+    >
+      <path d="M0 0h1440v10C1200 40 960 40 720 22S240-6 0 26Z" />
+    </svg>
+  );
+}
+
+const trustIcons = [Truck, ShieldCheck, Leaf, Sprout];
+
+/** Four short promises directly under the hero. */
+export async function TrustBar() {
+  const c = await getPageContent("home");
+  const items = c.cards("trust", "items");
+  if (items.length === 0) return null;
+  return (
+    <section aria-label="Why shop with Fernwood" className="relative z-10 -mt-px bg-background">
+      <ul className="mx-auto grid max-w-7xl grid-cols-2 gap-x-4 gap-y-6 px-4 py-8 sm:px-6 lg:grid-cols-4 lg:gap-x-8 lg:px-8 lg:py-10">
+        {items.map((item, index) => {
+          const Icon = trustIcons[index % trustIcons.length] ?? Leaf;
+          return (
+            <li key={item.title} className="flex items-start gap-3">
+              <span className="inline-flex size-11 shrink-0 items-center justify-center rounded-full bg-sage-light text-forest">
+                <Icon className="size-5" aria-hidden />
+              </span>
+              <span>
+                <span className="block text-sm font-semibold text-forest">{item.title}</span>
+                <span className="mt-0.5 block text-xs leading-snug text-muted-foreground sm:text-sm">
+                  {item.text}
+                </span>
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
   );
 }
 
@@ -150,7 +198,8 @@ export async function BestSellers() {
   const c = await getPageContent("home");
   const cta = c.link("bestSellers", "cta");
   return (
-    <section id="best-sellers" className="bg-sage-light/60 py-20 lg:py-28">
+    <section id="best-sellers" className="relative bg-sage-light/60 pb-20 pt-24 lg:pb-28 lg:pt-32">
+      <WaveTop className="text-background" />
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <SectionHeading
           eyebrow={c.text("bestSellers", "eyebrow")}
@@ -181,48 +230,51 @@ export async function PromoSplit() {
   const cta = c.link("promo", "cta");
   const eyebrow = c.text("promo", "eyebrow");
   return (
-    <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
-      <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
-        <div className="relative order-2 lg:order-1">
-          <Image
-            src={image.src}
-            alt={image.alt}
-            width={1200}
-            height={900}
-            sizes="(min-width: 1024px) 600px, 100vw"
-            className="aspect-[5/4] w-full rounded-2xl object-cover shadow-md"
-          />
-          <div className="absolute -bottom-5 left-6 hidden rounded-xl bg-forest px-6 py-4 text-cream shadow-lg sm:block">
-            <p className="font-display text-2xl">{c.text("promo", "statValue")}</p>
-            <p className="text-xs uppercase tracking-wider text-sage">
-              {c.text("promo", "statLabel")}
-            </p>
+    <section className="relative bg-sand/60">
+      <WaveTop className="text-background" />
+      <div className="mx-auto max-w-7xl px-4 pb-20 pt-24 sm:px-6 lg:px-8 lg:pb-28 lg:pt-32">
+        <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
+          <div className="relative order-2 lg:order-1">
+            <Image
+              src={image.src}
+              alt={image.alt}
+              width={1200}
+              height={900}
+              sizes="(min-width: 1024px) 600px, 100vw"
+              className="aspect-[5/4] w-full rounded-2xl object-cover shadow-md"
+            />
+            <div className="absolute -bottom-5 left-6 hidden rounded-xl bg-forest px-6 py-4 text-cream shadow-lg sm:block">
+              <p className="font-display text-2xl">{c.text("promo", "statValue")}</p>
+              <p className="text-xs uppercase tracking-wider text-sage">
+                {c.text("promo", "statLabel")}
+              </p>
+            </div>
           </div>
-        </div>
-        <div className="order-1 lg:order-2">
-          {eyebrow && (
-            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.25em] text-clay">
-              {eyebrow}
-            </p>
-          )}
-          <h2 className="font-display text-3xl font-medium text-forest sm:text-4xl">
-            {c.text("promo", "title")}
-          </h2>
-          <p className="mt-5 leading-relaxed text-muted-foreground">{c.text("promo", "text")}</p>
-          <ul className="mt-6 space-y-3 text-sm text-foreground/90">
-            {c.list("promo", "bullets").map((item) => (
-              <li key={item} className="flex items-start gap-3">
-                <Sprout className="mt-0.5 size-4 shrink-0 text-clay" aria-hidden />
-                {item}
-              </li>
-            ))}
-          </ul>
-          <a
-            href={cta.href}
-            className="mt-8 inline-flex items-center gap-2 rounded-md bg-forest px-7 py-3 text-sm font-semibold text-cream transition-colors hover:bg-forest-deep"
-          >
-            {cta.label} <ArrowRight className="size-4" aria-hidden />
-          </a>
+          <div className="order-1 lg:order-2">
+            {eyebrow && (
+              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.25em] text-clay">
+                {eyebrow}
+              </p>
+            )}
+            <h2 className="font-display text-3xl font-medium text-forest sm:text-4xl">
+              {c.text("promo", "title")}
+            </h2>
+            <p className="mt-5 leading-relaxed text-muted-foreground">{c.text("promo", "text")}</p>
+            <ul className="mt-6 space-y-3 text-sm text-foreground/90">
+              {c.list("promo", "bullets").map((item) => (
+                <li key={item} className="flex items-start gap-3">
+                  <Sprout className="mt-0.5 size-4 shrink-0 text-clay" aria-hidden />
+                  {item}
+                </li>
+              ))}
+            </ul>
+            <a
+              href={cta.href}
+              className="mt-8 inline-flex items-center gap-2 rounded-md bg-forest px-7 py-3 text-sm font-semibold text-cream transition-colors hover:bg-forest-deep"
+            >
+              {cta.label} <ArrowRight className="size-4" aria-hidden />
+            </a>
+          </div>
         </div>
       </div>
     </section>
@@ -348,33 +400,36 @@ export async function Testimonials() {
   const c = await getPageContent("home");
   const testimonials = c.quotes("testimonials", "quotes");
   return (
-    <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
-      <SectionHeading
-        eyebrow={c.text("testimonials", "eyebrow")}
-        title={c.text("testimonials", "title")}
-        description={c.text("testimonials", "description")}
-      />
-      <div className="grid gap-6 md:grid-cols-3">
-        {testimonials.map((t) => (
-          <figure
-            key={t.name}
-            className="flex flex-col rounded-2xl bg-card p-7 shadow-sm ring-1 ring-border/60"
-          >
-            <Quote className="mb-4 size-7 text-clay/60" aria-hidden />
-            <div className="mb-3 flex gap-0.5" role="img" aria-label="5 out of 5 stars">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <Star key={i} className="size-4 fill-clay text-clay" aria-hidden />
-              ))}
-            </div>
-            <blockquote className="flex-1 text-sm leading-relaxed text-foreground/90">
-              “{t.quote}”
-            </blockquote>
-            <figcaption className="mt-5 border-t border-border pt-4">
-              <p className="font-display text-base font-medium text-forest">{t.name}</p>
-              <p className="text-xs text-muted-foreground">{t.location}</p>
-            </figcaption>
-          </figure>
-        ))}
+    <section className="relative bg-sage-light/60">
+      <WaveTop className="text-forest" />
+      <div className="mx-auto max-w-7xl px-4 pb-20 pt-24 sm:px-6 lg:px-8 lg:pb-28 lg:pt-32">
+        <SectionHeading
+          eyebrow={c.text("testimonials", "eyebrow")}
+          title={c.text("testimonials", "title")}
+          description={c.text("testimonials", "description")}
+        />
+        <div className="grid gap-6 md:grid-cols-3">
+          {testimonials.map((t) => (
+            <figure
+              key={t.name}
+              className="flex flex-col rounded-2xl bg-card p-7 shadow-sm ring-1 ring-border/60"
+            >
+              <Quote className="mb-4 size-7 text-clay/60" aria-hidden />
+              <div className="mb-3 flex gap-0.5" role="img" aria-label="5 out of 5 stars">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Star key={i} className="size-4 fill-clay text-clay" aria-hidden />
+                ))}
+              </div>
+              <blockquote className="flex-1 text-sm leading-relaxed text-foreground/90">
+                “{t.quote}”
+              </blockquote>
+              <figcaption className="mt-5 border-t border-border pt-4">
+                <p className="font-display text-base font-medium text-forest">{t.name}</p>
+                <p className="text-xs text-muted-foreground">{t.location}</p>
+              </figcaption>
+            </figure>
+          ))}
+        </div>
       </div>
     </section>
   );
@@ -389,7 +444,9 @@ export async function Footer() {
       <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
         <div className="grid gap-10 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
           <div>
-            <p className="font-display text-3xl font-medium">Fernwood</p>
+            <p className="font-display text-3xl font-medium">
+              <Logo tone="dark" />
+            </p>
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-cream/75">{footer.about}</p>
             {links.length > 0 ? (
               <div className="mt-6 flex gap-3">
