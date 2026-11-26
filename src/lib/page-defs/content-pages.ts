@@ -550,11 +550,80 @@ export const GARDENER = page("gardener-services", "Gardener services", "/gardene
     "Book a Fernwood gardener for a single visit or on a regular schedule.",
   ),
   {
+    id: "hero",
+    label: "Top banner",
+    fields: {
+      image: image("Large arched picture", {
+        src: "/images/promo-repotting.jpg",
+        alt: "Hands repotting a plant into a terracotta pot",
+      }),
+      accent: image("Round picture", {
+        src: "/images/product-watering-can.jpg",
+        alt: "A brass watering can beside potted herbs",
+      }),
+      badge: text_("Badge on the pictures", "Plant care at your door", 40),
+      primary: text_("First button text (goes to the plans)", "See plans and prices", 40),
+      secondary: text_("Second button text (goes to how it works)", "How it works", 40),
+    },
+  },
+  {
+    id: "steps",
+    label: "How it works",
+    fields: {
+      eyebrow: text_("Small line above the heading", "Simple by design", 60),
+      title: text_("Heading", "Three steps to a happier home", 80),
+      items: {
+        kind: "cards",
+        label: "Steps (icons are chosen by position)",
+        maxItems: 4,
+        default: [
+          {
+            title: "Choose a plan",
+            text: "Pick a one-time visit, or a monthly, fortnightly or weekly plan.",
+          },
+          {
+            title: "Tell us where and when",
+            text: "Add your address, your phone number and the day that suits you.",
+          },
+          {
+            title: "We come to you",
+            text: "A Fernwood gardener looks after your plants at your address.",
+          },
+        ],
+      },
+    },
+  },
+  {
+    id: "plans",
+    label: "Plans and prices",
+    fields: {
+      eyebrow: text_("Small line above the heading", "Plans", 60, true),
+      title: text_("Heading", "Pick the rhythm that suits your plants", 80),
+      popular: text_(
+        "Plan to highlight as most popular (a word from its name, empty for none)",
+        "Fortnightly",
+        40,
+        true,
+      ),
+      included: {
+        kind: "list",
+        label: "What every plan includes (shown on each card)",
+        maxItems: 6,
+        itemMax: 80,
+        default: [
+          "Care for your plants at your address",
+          "You choose the first visit date",
+          "Charged per visit, not upfront",
+        ],
+      },
+    },
+  },
+  {
     id: "text",
-    label: "Text above the booking form",
+    label: "Text above the plans",
     fields: {
       content: area(
-        "Text (the cities we serve are added to the start automatically)",
+        "Text",
         "Choose a one-time visit or a monthly, fortnightly or weekly plan, tell us where and when, and add it to your cart.",
         500,
       ),
@@ -570,6 +639,32 @@ export const GARDENER = page("gardener-services", "Gardener services", "/gardene
         "We are getting the gardener service ready. Ask us and we will let you know as soon as you can book.",
         300,
       ),
+    },
+  },
+  {
+    id: "faq",
+    label: "Questions",
+    fields: {
+      title: text_("Heading", "Good to know", 80),
+      items: {
+        kind: "cards",
+        label: "Questions and answers",
+        maxItems: 8,
+        default: [
+          {
+            title: "Where do you offer the service?",
+            text: "Currently in Nagpur, Pune and Mumbai.",
+          },
+          {
+            title: "How am I charged?",
+            text: "A one-time visit is paid at checkout. Plans are charged for each visit.",
+          },
+          {
+            title: "Can I choose the day?",
+            text: "Yes. You choose your preferred date when you book.",
+          },
+        ],
+      },
     },
   },
   cta("Questions about a visit?", "Talk to us"),
