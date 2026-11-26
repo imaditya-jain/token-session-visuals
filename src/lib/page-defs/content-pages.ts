@@ -70,9 +70,20 @@ export const ABOUT = page("about", "Our story", "/about", [
     "Fernwood began as a single glasshouse on a family farm in 1962. Meet the growers behind every plant.",
   ),
   {
+    id: "hero",
+    label: "Top banner picture",
+    fields: {
+      image: image("Background picture", {
+        src: "/images/seasonal-greenhouse.jpg",
+        alt: "A greenhouse full of healthy plants",
+      }),
+    },
+  },
+  {
     id: "story",
     label: "Story",
     fields: {
+      eyebrow: text("Small line above the heading", "Since 1962", 60, true),
       image: image("Picture", {
         src: "/images/story-nursery.jpg",
         alt: "A Fernwood grower holding a tray of seedlings in the nursery",
@@ -89,6 +100,23 @@ export const ABOUT = page("about", "Our story", "/about", [
           ),
         ),
       ),
+    },
+  },
+  {
+    id: "stats",
+    label: "Numbers",
+    fields: {
+      items: {
+        kind: "cards",
+        label: "Numbers (big number first, then what it counts; empty hides the strip)",
+        maxItems: 4,
+        default: [
+          { title: "1962", text: "Our first glasshouse" },
+          { title: "120+", text: "Species we propagate" },
+          { title: "4", text: "Nurseries" },
+          { title: "10,000+", text: "Five-star reviews" },
+        ],
+      },
     },
   },
   {
@@ -118,8 +146,9 @@ export const ABOUT = page("about", "Our story", "/about", [
   },
   {
     id: "actions",
-    label: "Buttons at the bottom",
+    label: "Closing banner",
     fields: {
+      title: text("Heading", "Come and see what we grow", 80),
       primary: link("First button", { label: "Shop the greenhouse", href: "/shop" }),
       secondary: link("Second button", { label: "Read the care guide", href: "/care-guide" }),
     },
