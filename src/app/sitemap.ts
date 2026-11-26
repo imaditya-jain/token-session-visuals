@@ -23,6 +23,7 @@ const STATIC_PATHS = [
   "/careers",
   "/wholesale",
   "/gardener-services",
+  "/plant-doctor",
   "/sustainability",
   "/press",
   "/accessibility",

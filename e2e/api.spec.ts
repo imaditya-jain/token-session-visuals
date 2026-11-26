@@ -1459,3 +1459,66 @@ test.describe("push registration API", () => {
     expect((await json(api, "/api/mobile/push", { token }, "delete", auth)).status()).toBe(204);
   });
 });
+
+test.describe("plant doctor API", () => {
+  test("needs a valid session", async () => {
+    const api = await client();
+    expect((await api.get("/api/plant-doctor")).status()).toBe(401);
+    expect((await api.get("/api/plant-doctor/abc")).status()).toBe(401);
+    expect((await api.delete("/api/plant-doctor/abc")).status()).toBe(401);
+    expect(
+      (
+        await api.post("/api/plant-doctor", {
+          multipart: { photo: { name: "p.jpg", mimeType: "image/jpeg", buffer: Buffer.from("x") } },
+        })
+      ).status(),
+    ).toBe(401);
+  });
+
+  test("reports itself switched off here, keeps history private, and refuses hostile input", async () => {
+    const api = await client();
+    const registered = await json(api, "/api/auth/register", {
+      email: uniqueEmail("doctor"),
+      password,
+      firstName: "D",
+      lastName: "R",
+      acceptsMarketing: false,
+    });
+    const auth = { authorization: `Bearer ${(await body(registered)).data.accessToken}` };
+
+    expect(await body(await api.get("/api/plant-doctor", { headers: auth }))).toEqual({
+      data: { enabled: false, items: [] },
+    });
+    expect((await api.get("/api/plant-doctor/not-an-id", { headers: auth })).status()).toBe(404);
+    expect(
+      (await api.get("/api/plant-doctor/aaaaaaaaaaaaaaaaaaaaaaaa", { headers: auth })).status(),
+    ).toBe(404);
+    expect(
+      (await api.delete("/api/plant-doctor/aaaaaaaaaaaaaaaaaaaaaaaa", { headers: auth })).status(),
+    ).toBe(204);
+
+    // JSON instead of a photo upload, and no photo at all, are refused before anything else happens.
+    expect((await json(api, "/api/plant-doctor", { photo: "x" }, "post", auth)).status()).toBe(400);
+    const noKey = await api.post("/api/plant-doctor", {
+      headers: auth,
+      multipart: {
+        photo: { name: "p.jpg", mimeType: "image/jpeg", buffer: Buffer.from("not really a jpeg") },
+      },
+    });
+    expect(noKey.status()).toBe(503);
+    expect((await body(noKey)).error.code).toBe("plant_doctor_not_configured");
+
+    const foreign = await client({ origin: "https://evil.example" });
+    const blocked = await foreign.post("/api/plant-doctor", {
+      headers: auth,
+      multipart: { photo: { name: "p.jpg", mimeType: "image/jpeg", buffer: Buffer.from("x") } },
+    });
+    expect(blocked.status()).toBe(403);
+  });
+
+  test("only the documented methods work", async () => {
+    const api = await client();
+    expect((await api.put("/api/plant-doctor", { data: {} })).status()).toBe(405);
+    expect((await api.post("/api/plant-doctor/abc", { data: {} })).status()).toBe(405);
+  });
+});

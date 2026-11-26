@@ -13,12 +13,14 @@ import {
   WhyUs,
 } from "@/components/storefront/sections";
 import Newsletter from "@/components/storefront/Newsletter";
+import WelcomeIntro from "@/components/storefront/WelcomeIntro";
 import { getSiteChrome } from "@/server/services/site-chrome-public";
 
 export default async function HomePage() {
   const { newsletter } = await getSiteChrome();
   return (
     <div className="min-h-screen bg-background text-foreground">
+      <WelcomeIntro />
       <Header />
       <main>
         <Hero />
