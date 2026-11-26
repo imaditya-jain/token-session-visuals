@@ -988,6 +988,44 @@ test.describe("cart API (Shopify disabled: reads work, writes degrade cleanly)",
     });
   }
 
+  test("gift options are validated before anything reaches Shopify", async () => {
+    const api = await client();
+    const tomorrow = new Date(Date.now() + 2 * 86_400_000).toISOString().slice(0, 10);
+    const bouquet = {
+      kind: "bouquet",
+      recipient: "Asha Patil",
+      address: "12 Civil Lines, Nagpur",
+      phone: "+91 98765 43210",
+      date: tomorrow,
+    };
+    // A well-formed gift passes validation and then degrades like any add (no Shopify here).
+    expect((await json(api, "/api/cart/lines", { variantId, gift: bouquet })).status()).toBe(503);
+    expect(
+      (
+        await json(api, "/api/cart/lines", {
+          variantId,
+          gift: { kind: "message", message: "Thank you" },
+        })
+      ).status(),
+    ).toBe(503);
+    for (const bad of [
+      { ...bouquet, date: "2020-01-01" },
+      { ...bouquet, phone: "x" },
+      { kind: "bouquet", message: "no delivery details" },
+      { kind: "message", message: "x".repeat(301) },
+      { kind: "message", message: "bell\u0007" },
+      { kind: "unknown" },
+      { message: "no kind" },
+      "just text",
+    ]) {
+      expect((await json(api, "/api/cart/lines", { variantId, gift: bad })).status()).toBe(400);
+    }
+    // A booking and a gift together are refused.
+    expect(
+      (await json(api, "/api/cart/lines", { variantId, gift: bouquet, booking: {} })).status(),
+    ).toBe(400);
+  });
+
   test("updates and removals need a cart", async () => {
     const api = await client();
     expect((await json(api, "/api/cart/lines", { lineId, quantity: 1 }, "patch")).status()).toBe(

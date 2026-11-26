@@ -24,6 +24,7 @@ const STATIC_PATHS = [
   "/wholesale",
   "/gardener-services",
   "/plant-doctor",
+  "/gifts",
   "/sustainability",
   "/press",
   "/accessibility",

@@ -26,4 +26,6 @@ export type Product = {
   /** Shopify variant a cart line is created from (the first variant). Absent in the offline fallback catalog. */
   variantId?: string;
   collectionSlugs: string[];
+  /** Occasions this product suits (from `occasion-*` tags), for example `birthday`. */
+  occasions?: string[];
 };

@@ -1,5 +1,6 @@
 import "server-only";
 
+import { occasionsFromTags } from "@/lib/gift";
 import type { Collection, Product, ProductBadge } from "@/lib/types";
 
 import type { CollectionNode, ProductNode } from "./schemas";
@@ -20,6 +21,7 @@ export function mapProduct(node: ProductNode): Product {
   const price = toAmount(node.priceRange.minVariantPrice.amount);
   const compare = toAmount(node.compareAtPriceRange.minVariantPrice.amount);
   const variantId = node.variants.nodes[0]?.id;
+  const occasions = occasionsFromTags(node.tags);
   const badge = BADGE_PRIORITY.find((candidate) => node.tags.includes(candidate));
 
   return {
@@ -36,6 +38,7 @@ export function mapProduct(node: ProductNode): Product {
     inStock: node.availableForSale,
     ...(variantId ? { variantId } : {}),
     collectionSlugs: node.collections.nodes.filter(isStorefrontCollection).map((c) => c.handle),
+    ...(occasions.length > 0 ? { occasions } : {}),
   };
 }
 

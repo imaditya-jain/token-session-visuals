@@ -4,6 +4,7 @@ import {
   BestSellers,
   Collections,
   Footer,
+  GiftsTeaser,
   PlantFinderTeaser,
   PromoSplit,
   SeasonalBanner,
@@ -28,6 +29,7 @@ export default async function HomePage() {
         <Collections />
         <BestSellers />
         <PlantFinderTeaser />
+        <GiftsTeaser />
         <PromoSplit />
         <SeasonalBanner />
         <WhyUs />

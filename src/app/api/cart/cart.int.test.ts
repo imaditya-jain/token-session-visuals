@@ -17,6 +17,8 @@ vi.mock("@/server/shopify/client", async (original) => ({
   storefrontQuery: storefront.query,
 }));
 
+vi.mock("@/data/catalog", () => ({ getProducts: async () => [] }));
+
 const ORIGIN = "http://localhost:3100";
 const CART_ID = "gid://shopify/Cart/abc123?key=k1";
 const VARIANT = "gid://shopify/ProductVariant/1001";
