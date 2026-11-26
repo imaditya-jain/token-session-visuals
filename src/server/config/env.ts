@@ -46,6 +46,7 @@ export function resetEnvCache() {
   cachedAuth = undefined;
   cachedEmail = undefined;
   cachedAdmin = undefined;
+  cachedAi = undefined;
 }
 
 const UNIT_SECONDS = { s: 1, m: 60, h: 3600, d: 86_400 } as const;
@@ -159,4 +160,39 @@ export function adminEnv(): AdminEnv {
 export function sealToken(): string | null {
   const token = process.env["SEAL_API_TOKEN"]?.trim();
   return token && token.length >= 10 ? token : null;
+}
+
+const aiSchema = z.object({
+  /** Without a key the Plant Doctor reports itself as not set up; the rest of the site is unaffected. */
+  ANTHROPIC_API_KEY: z.preprocess((v) => (v === "" ? undefined : v), z.string().min(20).optional()),
+  /** Model used for photo diagnosis. Change deliberately, after checking quality and cost on real photos. */
+  PLANT_DOCTOR_MODEL: z.preprocess(
+    (v) => (v === "" ? undefined : v),
+    z.string().min(1).default("claude-opus-5-5"),
+  ),
+  /** Checks one signed-in person may run per day. */
+  PLANT_DOCTOR_PER_USER_DAILY: z.preprocess(
+    (v) => (v === "" ? undefined : v),
+    z.coerce.number().int().min(1).max(200).default(10),
+  ),
+  /** Checks the whole site may run per day: a hard ceiling on spend if something goes wrong. */
+  PLANT_DOCTOR_DAILY_CAP: z.preprocess(
+    (v) => (v === "" ? undefined : v),
+    z.coerce.number().int().min(1).max(100_000).default(300),
+  ),
+});
+
+export type AiEnv = z.infer<typeof aiSchema>;
+
+let cachedAi: AiEnv | undefined;
+
+export function aiEnv(): AiEnv {
+  if (cachedAi) return cachedAi;
+  const parsed = aiSchema.safeParse(process.env);
+  if (!parsed.success) {
+    const problems = parsed.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ");
+    throw new Error(`Invalid AI environment: ${problems}`);
+  }
+  cachedAi = parsed.data;
+  return cachedAi;
 }

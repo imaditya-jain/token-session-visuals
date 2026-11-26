@@ -16,7 +16,26 @@ export default defineConfig({
   workers: 2,
   retries: isCI ? 1 : 0,
   reporter: isCI ? [["github"], ["html", { open: "never" }]] : "list",
-  use: { baseURL: externalBaseUrl ?? `http://localhost:${port}`, trace: "retain-on-failure" },
+  use: {
+    baseURL: externalBaseUrl ?? `http://localhost:${port}`,
+    trace: "retain-on-failure",
+    // Every test starts as a visitor who has switched the welcome off; e2e/welcome.spec.ts clears this to test it.
+    storageState: {
+      cookies: [
+        {
+          name: "fw_welcome",
+          value: "off",
+          domain: "localhost",
+          path: "/",
+          expires: -1,
+          httpOnly: false,
+          secure: false,
+          sameSite: "Lax",
+        },
+      ],
+      origins: [],
+    },
+  },
   expect: { toHaveScreenshot: { maxDiffPixelRatio: 0.001, animations: "disabled" } },
   projects: [
     { name: "chromium", use: { browserName: "chromium" }, testIgnore: /site-mutation\.spec\.ts/ },
