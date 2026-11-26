@@ -27,7 +27,7 @@ export default function AuthShell({
       <main>
         {/* Same banner as the shop and collection pages, so every page opens the same way. */}
         <CollectionBanner image="/images/seasonal-greenhouse.jpg" title={title} tagline={eyebrow} />
-        <div className="mx-auto max-w-7xl px-4 pb-14 pt-16 sm:px-6 sm:pb-20 sm:pt-20 lg:px-8">
+        <div className="mx-auto max-w-7xl px-4 pb-14 pt-10 sm:px-6 sm:pb-20 sm:pt-14 lg:px-8">
           <div className={`mx-auto w-full ${wide ? "max-w-2xl" : "max-w-md"}`}>
             {description ? (
               <p className="mb-8 text-center text-muted-foreground">{description}</p>
