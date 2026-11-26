@@ -7,10 +7,12 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { Leaf, PackageCheck, Ruler, ShieldCheck, Sun, Truck } from "lucide-react";
+
+import ProductBuyButton from "@/components/storefront/ProductBuyButton";
 import Header from "@/components/storefront/Header";
 import ProductCard from "@/components/storefront/ProductCard";
-import { Footer } from "@/components/storefront/sections";
-import { Button } from "@/components/ui/button";
+import { Footer, WaveTop } from "@/components/storefront/sections";
 import {
   formatPrice,
   getCollection,
@@ -97,80 +99,118 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           </nav>
         </div>
 
-        <section className="mx-auto grid max-w-7xl gap-8 px-4 py-8 sm:px-6 md:grid-cols-2 md:gap-12 lg:px-8 lg:py-14">
-          <div className="overflow-hidden rounded-md bg-sand">
-            <Image
-              src={product.image}
-              alt={product.name}
-              priority
-              width={800}
-              height={1000}
-              sizes="(min-width: 1280px) 600px, (min-width: 768px) 50vw, 100vw"
-              className="aspect-[4/5] w-full object-cover"
-            />
-          </div>
-
-          <div className="flex flex-col items-start py-2 md:py-8">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-clay">
-              {product.category}
-            </p>
-            <h1 className="mt-3 font-display text-4xl font-medium leading-tight text-forest sm:text-5xl">
-              {product.name}
-            </h1>
-
-            <div className="mt-5 flex flex-wrap items-baseline gap-3">
-              <span className="text-xl font-semibold text-forest">
-                {formatPrice(product.price)}
-              </span>
-              {product.compareAtPrice !== undefined ? (
-                <span className="text-base text-muted-foreground line-through">
-                  {formatPrice(product.compareAtPrice)}
-                </span>
-              ) : null}
+        <section className="mx-auto grid max-w-7xl gap-8 px-4 py-8 sm:px-6 md:grid-cols-2 md:gap-14 lg:px-8 lg:py-14">
+          <div className="md:sticky md:top-28 md:self-start">
+            <div className="relative overflow-hidden rounded-[2rem] bg-sand shadow-xl ring-1 ring-border/60">
+              <Image
+                src={product.image}
+                alt={product.name}
+                priority
+                width={800}
+                height={1000}
+                sizes="(min-width: 1280px) 600px, (min-width: 768px) 50vw, 100vw"
+                className="aspect-[4/5] w-full object-cover"
+              />
               {product.badge ? (
-                <span className="rounded-sm bg-sage-light px-2.5 py-1 text-xs font-semibold text-forest">
+                <span className="absolute left-5 top-5 rounded-full bg-forest px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-cream shadow-md">
                   {product.badge}
                 </span>
               ) : null}
             </div>
+          </div>
 
-            <p className="mt-7 max-w-xl text-base leading-relaxed text-muted-foreground">
+          <div className="flex flex-col items-start md:py-6">
+            <p className="inline-flex rounded-full bg-sage-light px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-forest">
+              {product.category}
+            </p>
+            <h1 className="mt-4 font-display text-4xl font-medium leading-[1.05] tracking-tight text-forest sm:text-5xl lg:text-6xl">
+              {product.name}
+            </h1>
+
+            <div className="mt-6 flex flex-wrap items-baseline gap-3">
+              <span className="font-display text-4xl font-medium text-forest">
+                {formatPrice(product.price)}
+              </span>
+              {product.compareAtPrice !== undefined ? (
+                <>
+                  <span className="text-lg text-muted-foreground line-through">
+                    {formatPrice(product.compareAtPrice)}
+                  </span>
+                  <span className="rounded-full bg-clay px-3 py-1 text-xs font-semibold uppercase tracking-wider text-cream">
+                    Sale
+                  </span>
+                </>
+              ) : null}
+            </div>
+
+            <p className="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground">
               A thoughtful addition to a greener home. Find the size, growing conditions and
               availability below.
             </p>
 
-            <dl className="mt-8 w-full divide-y divide-border border-y border-border">
-              <div className="flex flex-wrap justify-between gap-3 py-4">
-                <dt className="text-sm font-medium text-muted-foreground">{detailLabel}</dt>
-                <dd className="text-right text-sm font-medium text-foreground">{product.light}</dd>
+            <dl className="mt-8 grid w-full gap-3 sm:grid-cols-3">
+              <div className="rounded-2xl bg-card p-4 shadow-sm ring-1 ring-border/60">
+                <dt className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  <Sun className="size-4 text-clay" aria-hidden />
+                  {detailLabel}
+                </dt>
+                <dd className="mt-2 text-sm font-medium text-foreground">{product.light}</dd>
               </div>
-              <div className="flex flex-wrap justify-between gap-3 py-4">
-                <dt className="text-sm font-medium text-muted-foreground">Size</dt>
-                <dd className="text-right text-sm font-medium text-foreground">{product.size}</dd>
+              <div className="rounded-2xl bg-card p-4 shadow-sm ring-1 ring-border/60">
+                <dt className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  <Ruler className="size-4 text-clay" aria-hidden />
+                  Size
+                </dt>
+                <dd className="mt-2 text-sm font-medium text-foreground">{product.size}</dd>
               </div>
-              <div className="flex flex-wrap justify-between gap-3 py-4">
-                <dt className="text-sm font-medium text-muted-foreground">Availability</dt>
+              <div className="rounded-2xl bg-card p-4 shadow-sm ring-1 ring-border/60">
+                <dt className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  <PackageCheck className="size-4 text-clay" aria-hidden />
+                  Availability
+                </dt>
                 <dd
-                  className={`text-right text-sm font-medium ${product.inStock ? "text-forest" : "text-clay"}`}
+                  className={`mt-2 text-sm font-medium ${product.inStock ? "text-forest" : "text-clay"}`}
                 >
                   {product.inStock ? "In stock" : "Sold out"}
                 </dd>
               </div>
             </dl>
 
+            <div className="mt-8 w-full">
+              <ProductBuyButton
+                name={product.name}
+                variantId={product.variantId}
+                inStock={product.inStock}
+              />
+            </div>
+
+            <ul className="mt-6 grid w-full gap-3 text-sm text-foreground/85 sm:grid-cols-3">
+              {[
+                { icon: Truck, text: "Free shipping over $75" },
+                { icon: ShieldCheck, text: "30-day guarantee" },
+                { icon: Leaf, text: "Plastic-free packing" },
+              ].map(({ icon: Icon, text }) => (
+                <li key={text} className="flex items-center gap-2">
+                  <Icon className="size-4 shrink-0 text-forest" aria-hidden />
+                  {text}
+                </li>
+              ))}
+            </ul>
+
             {collection ? (
-              <Button
-                asChild
-                className="mt-8 w-full rounded-md bg-forest px-7 py-6 text-sm font-semibold text-cream hover:bg-forest-deep sm:w-auto"
+              <Link
+                href={`/collections/${collection.slug}`}
+                className="mt-8 text-sm font-semibold text-forest underline-offset-4 transition-colors hover:text-clay hover:underline"
               >
-                <Link href={`/collections/${collection.slug}`}>Explore {collection.name}</Link>
-              </Button>
+                Explore {collection.name} →
+              </Link>
             ) : null}
           </div>
         </section>
 
         {relatedProducts.length > 0 ? (
-          <section className="bg-sage-light/50 py-14 sm:py-20">
+          <section className="relative bg-sage-light/50 pb-14 pt-20 sm:pb-20 sm:pt-28">
+            <WaveTop className="text-background" />
             <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
               <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
                 <div>
