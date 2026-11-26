@@ -594,6 +594,39 @@ export const GARDENER = page("gardener-services", "Gardener services", "/gardene
     },
   },
   {
+    id: "care",
+    label: "What we look after",
+    fields: {
+      eyebrow: text_("Small line above the heading", "On every visit", 60, true),
+      title: text_("Heading", "What we look after", 80),
+      items: {
+        kind: "cards",
+        label: "Three tiles (picture one is the large one)",
+        maxItems: 3,
+        default: [
+          {
+            title: "Repotting and soil",
+            text: "Fresh soil and the right pot, when your plant needs it.",
+          },
+          { title: "Watering and feeding", text: "The right amount, at the right time." },
+          { title: "Pruning and tidying", text: "Trimmed, cleaned and ready to grow." },
+        ],
+      },
+      imageOne: image("Large picture", {
+        src: "/images/promo-repotting.jpg",
+        alt: "Hands repotting a plant into a terracotta pot",
+      }),
+      imageTwo: image("Second picture", {
+        src: "/images/product-watering-can.jpg",
+        alt: "A brass watering can",
+      }),
+      imageThree: image("Third picture", {
+        src: "/images/product-pruners.jpg",
+        alt: "Garden pruners",
+      }),
+    },
+  },
+  {
     id: "plans",
     label: "Plans and prices",
     fields: {
@@ -639,6 +672,14 @@ export const GARDENER = page("gardener-services", "Gardener services", "/gardene
         "We are getting the gardener service ready. Ask us and we will let you know as soon as you can book.",
         300,
       ),
+    },
+  },
+  {
+    id: "final",
+    label: "Closing banner",
+    fields: {
+      title: text_("Heading", "Ready for happier plants?", 80),
+      text: area("Text", "Pick a plan and tell us when. We take care of the rest.", 200),
     },
   },
   {

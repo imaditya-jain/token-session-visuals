@@ -38,7 +38,7 @@ function SectionHeading({
 }
 
 /** Soft curved edge that paints the previous section's colour over the top of a band. */
-function WaveTop({ className }: { className: string }) {
+export function WaveTop({ className }: { className: string }) {
   return (
     <svg
       aria-hidden

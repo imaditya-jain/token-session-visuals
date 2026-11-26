@@ -4,7 +4,7 @@ import Image from "next/image";
 import ContactCta from "@/components/content/ContactCta";
 import GardenerBooking from "@/components/gardener/GardenerBooking";
 import Header from "@/components/storefront/Header";
-import { Footer } from "@/components/storefront/sections";
+import { Footer, WaveTop } from "@/components/storefront/sections";
 import { GARDENER_CITIES } from "@/lib/gardener-schemas";
 import { getGardenerService } from "@/server/services/gardener";
 import { getPageContent } from "@/server/services/page-content-public";
@@ -25,6 +25,16 @@ export default async function GardenerServicesPage() {
   const hero = c.image("hero", "image");
   const steps = c.cards("steps", "items");
   const faq = c.cards("faq", "items");
+  const careCards = c.cards("care", "items");
+  const careImages = [
+    c.image("care", "imageOne"),
+    c.image("care", "imageTwo"),
+    c.image("care", "imageThree"),
+  ];
+  const careTiles = careCards.slice(0, 3).flatMap((card, index) => {
+    const image = careImages[index];
+    return image ? [{ ...card, image }] : [];
+  });
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -109,6 +119,16 @@ export default async function GardenerServicesPage() {
               </div>
             </div>
           </div>
+          <svg
+            aria-hidden
+            focusable="false"
+            viewBox="0 0 1440 60"
+            preserveAspectRatio="none"
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-8 w-full text-background sm:h-14"
+            fill="currentColor"
+          >
+            <path d="M0 60V28C240 -4 480 -4 720 24s480 32 720 4v32Z" />
+          </svg>
         </section>
 
         {steps.length > 0 && (
@@ -152,7 +172,55 @@ export default async function GardenerServicesPage() {
           </section>
         )}
 
-        <section id="plans" className="scroll-mt-24 bg-sage-light/60 py-20 lg:py-28">
+        {careTiles.length > 0 && (
+          <section className="mx-auto max-w-6xl px-4 pb-20 sm:px-6 lg:pb-28">
+            <div className="mx-auto mb-12 max-w-2xl text-center">
+              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.25em] text-clay">
+                {c.text("care", "eyebrow")}
+              </p>
+              <h2 className="font-display text-3xl font-medium text-forest sm:text-4xl lg:text-5xl">
+                {c.text("care", "title")}
+              </h2>
+            </div>
+            <div className="grid gap-4 md:grid-cols-[1.35fr_1fr] md:grid-rows-2 lg:gap-5">
+              {careTiles.map((tile, index) => (
+                <figure
+                  key={tile.title}
+                  className={`reveal group relative isolate overflow-hidden rounded-3xl bg-forest-deep shadow-lg ${
+                    index === 0 ? "min-h-[22rem] md:row-span-2" : "min-h-[14rem]"
+                  }`}
+                >
+                  <Image
+                    src={tile.image.src}
+                    alt={tile.image.alt}
+                    fill
+                    sizes="(min-width: 768px) 33vw, 100vw"
+                    className="-z-10 object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 -z-10 bg-gradient-to-t from-forest-deep/85 via-forest-deep/20 to-transparent" />
+                  <figcaption className="absolute inset-x-0 bottom-0 p-6 text-cream">
+                    <p className="font-display text-2xl font-medium">{tile.title}</p>
+                    <p className="mt-1 text-sm text-cream/80">{tile.text}</p>
+                  </figcaption>
+                </figure>
+              ))}
+            </div>
+          </section>
+        )}
+
+        <section
+          id="plans"
+          className="relative isolate scroll-mt-24 overflow-hidden bg-sage-light/60 pb-24 pt-28 lg:pb-32 lg:pt-36"
+        >
+          <WaveTop className="text-background" />
+          <div
+            aria-hidden
+            className="absolute -left-24 top-40 -z-10 size-80 rounded-full bg-sage/30 blur-3xl"
+          />
+          <div
+            aria-hidden
+            className="absolute -right-20 bottom-10 -z-10 size-96 rounded-full bg-clay/10 blur-3xl"
+          />
           <div className="mx-auto max-w-6xl px-4 sm:px-6">
             <div className="mx-auto mb-14 max-w-2xl text-center">
               <p className="mb-3 text-xs font-semibold uppercase tracking-[0.25em] text-clay">
@@ -176,6 +244,24 @@ export default async function GardenerServicesPage() {
               </div>
             )}
           </div>
+        </section>
+
+        <section className="relative isolate overflow-hidden bg-forest-deep px-4 py-20 text-center text-cream sm:px-6 lg:py-24">
+          <div
+            aria-hidden
+            className="absolute left-1/2 top-0 -z-10 size-[30rem] -translate-x-1/2 rounded-full bg-moss/30 blur-3xl"
+          />
+          <h2 className="mx-auto max-w-2xl font-display text-3xl font-medium sm:text-4xl lg:text-5xl">
+            {c.text("final", "title")}
+          </h2>
+          <p className="mx-auto mt-4 max-w-xl text-cream/80">{c.text("final", "text")}</p>
+          <a
+            href="#plans"
+            className="mt-8 inline-flex h-12 items-center justify-center gap-2 rounded-full bg-cream px-8 text-sm font-semibold text-forest-deep shadow-lg transition-transform hover:-translate-y-0.5"
+          >
+            {c.text("hero", "primary")}
+            <ArrowRight className="size-4" aria-hidden />
+          </a>
         </section>
 
         {faq.length > 0 && (
