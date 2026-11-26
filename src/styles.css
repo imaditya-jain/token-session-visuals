@@ -211,6 +211,243 @@
   }
 }
 
+/* ---- Welcome: a walk into the nursery (home page, once per session). Pure CSS animation. ---- */
+.fw-welcome {
+  --u: min(100vw, 56vh);
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  overflow: hidden;
+  background: var(--forest-deep);
+  color: var(--cream);
+  animation: fw-out 0.35s ease 3.7s forwards;
+}
+.fw-welcome[data-off] {
+  display: none;
+}
+html:has(.fw-welcome:not([data-off])) {
+  overflow: hidden;
+}
+.fw-welcome[data-leaving] {
+  animation: fw-out 0.4s ease forwards;
+}
+@keyframes fw-out {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+.fw-w-photo,
+.fw-w-veil {
+  position: absolute;
+  inset: 0;
+}
+.fw-w-photo {
+  background: url("/images/seasonal-greenhouse.jpg") center / cover no-repeat;
+  transform: scale(1.18);
+  animation: fw-photo 2.8s cubic-bezier(0.22, 1, 0.36, 1) forwards, fw-photo-out 1.2s cubic-bezier(0.65, 0, 0.35, 1) 2.5s forwards;
+}
+@keyframes fw-photo {
+  to {
+    transform: scale(1.08);
+  }
+}
+@keyframes fw-photo-out {
+  to {
+    transform: scale(1.2);
+  }
+}
+.fw-w-veil {
+  background:
+    linear-gradient(to bottom right, rgb(255 214 140 / 0.2), transparent 55%),
+    linear-gradient(to bottom, rgb(26 44 22 / 0.8), rgb(26 44 22 / 0.46), rgb(20 34 17 / 0.92));
+  animation: fw-veil 1.2s ease 2.5s forwards;
+}
+@keyframes fw-veil {
+  to {
+    opacity: 0;
+  }
+}
+.fw-w-shaft {
+  position: absolute;
+  top: -10%;
+  width: 20%;
+  height: 130%;
+  transform: rotate(14deg);
+  background: linear-gradient(to bottom, rgb(255 236 190 / 0.95), transparent);
+  opacity: 0.08;
+  animation: fw-shaft 5.2s ease-in-out infinite;
+}
+@keyframes fw-shaft {
+  50% {
+    opacity: 0.26;
+  }
+}
+.fw-w-dolly {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  animation: fw-dolly 2.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+.fw-w-dolly[data-layer="far"] {
+  --dolly: 0.04;
+  --speed: 0.5;
+}
+.fw-w-dolly[data-layer="front"] {
+  --dolly: 0.13;
+  --speed: 1;
+}
+.fw-w-dolly[data-layer="near"] {
+  --dolly: 0.26;
+  --speed: 1.4;
+}
+@keyframes fw-dolly {
+  to {
+    transform: scale(calc(1 + var(--dolly)));
+  }
+}
+.fw-w-part {
+  position: absolute;
+  inset: 0;
+  --speed: 1;
+  animation: 1.2s cubic-bezier(0.65, 0, 0.35, 1) 2.5s forwards;
+}
+.fw-w-part[data-layer="far"] {
+  --speed: 0.5;
+}
+.fw-w-part[data-layer="near"] {
+  --speed: 1.4;
+}
+.fw-w-part[data-side="left"] {
+  animation-name: fw-part-left;
+}
+.fw-w-part[data-side="right"] {
+  animation-name: fw-part-right;
+}
+@keyframes fw-part-left {
+  to {
+    transform: translateX(calc(-95vw * var(--speed))) rotate(calc(-9deg * var(--speed))) scale(1.12);
+    opacity: 0;
+  }
+}
+@keyframes fw-part-right {
+  to {
+    transform: translateX(calc(95vw * var(--speed))) rotate(calc(9deg * var(--speed))) scale(1.12);
+    opacity: 0;
+  }
+}
+.fw-w-plant {
+  position: absolute;
+  display: block;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  transform-origin: 50% 100%;
+  transform: rotate(var(--r)) scaleX(var(--f));
+  animation: fw-sway 6.4s ease-in-out infinite;
+}
+@keyframes fw-sway {
+  50% {
+    transform: rotate(calc(var(--r) + 2.4deg)) skewX(1.1deg) scaleX(var(--f));
+  }
+}
+.fw-w-edge {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 22%;
+  pointer-events: none;
+}
+.fw-w-edge-left {
+  left: 0;
+  background: linear-gradient(to right, rgb(10 20 8 / 0.55), transparent);
+}
+.fw-w-edge-right {
+  right: 0;
+  background: linear-gradient(to left, rgb(10 20 8 / 0.55), transparent);
+}
+.fw-w-text {
+  position: absolute;
+  inset-inline: 0;
+  top: 30vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-inline: 2.5rem;
+  text-align: center;
+  text-shadow: 0 1px 14px rgb(10 20 8 / 0.65);
+  animation: fw-text-out 0.6s ease 2.5s forwards;
+}
+@keyframes fw-text-out {
+  to {
+    opacity: 0;
+  }
+}
+.fw-w-rise {
+  opacity: 0;
+  transform: translateY(18px);
+  animation: fw-rise 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.7s forwards;
+}
+.fw-w-late {
+  animation-delay: 1.25s;
+}
+@keyframes fw-rise {
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.fw-w-eyebrow {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: #f1d9a6;
+}
+.fw-w-title {
+  margin-top: 0.6rem;
+  font-family: var(--font-display);
+  font-size: clamp(3.4rem, 9vw, 6rem);
+  line-height: 1.05;
+  font-weight: 500;
+}
+.fw-w-greeting {
+  margin-top: 1.4rem;
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+}
+.fw-w-tip {
+  margin-top: 0.6rem;
+  max-width: 28rem;
+  font-size: 0.875rem;
+  opacity: 0.9;
+}
+.fw-w-skip {
+  position: absolute;
+  top: 1.25rem;
+  right: 1.25rem;
+  min-height: 2.75rem;
+  padding-inline: 1.25rem;
+  border-radius: 9999px;
+  border: 1px solid rgb(250 243 229 / 0.4);
+  background: rgb(26 44 22 / 0.4);
+  color: var(--cream);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  backdrop-filter: blur(6px);
+}
+.fw-w-skip:hover,
+.fw-w-skip:focus-visible {
+  background: rgb(250 243 229 / 0.2);
+}
+@media (prefers-reduced-motion: reduce) {
+  .fw-welcome {
+    display: none;
+  }
+}
+
 /* Slim, quiet scrollbar for the admin sidebar: a thin rounded thumb that brightens on hover. */
 .admin-scroll {
   scrollbar-width: thin;
