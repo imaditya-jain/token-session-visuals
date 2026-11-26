@@ -15,6 +15,7 @@ import { ShopifyCollection, ShopifyOrder, ShopifyProduct } from "@/server/db/mod
 import { Role } from "@/server/db/models/role";
 import { SiteSetting } from "@/server/db/models/site-setting";
 import { Subscriber } from "@/server/db/models/subscriber";
+import { PushDevice } from "@/server/db/models/push-device";
 import { User } from "@/server/db/models/user";
 import { Wishlist } from "@/server/db/models/wishlist";
 
@@ -32,6 +33,7 @@ export async function ensureIndexes(): Promise<void> {
     Campaign.createIndexes(),
     Job.createIndexes(),
     Notification.createIndexes(),
+    PushDevice.createIndexes(),
     Wishlist.createIndexes(),
     Subscriber.createIndexes(),
     ShopifyProduct.createIndexes(),

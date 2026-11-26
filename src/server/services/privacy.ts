@@ -3,9 +3,12 @@ import "server-only";
 import { verifyPassword } from "@/server/auth/password";
 import { connectDb } from "@/server/db/connection";
 import { AuthToken } from "@/server/db/models/auth-token";
+import { Notification } from "@/server/db/models/notification";
+import { PushDevice } from "@/server/db/models/push-device";
 import { ShopifyOrder } from "@/server/db/models/shopify-mirror";
 import { Subscriber } from "@/server/db/models/subscriber";
 import { User } from "@/server/db/models/user";
+import { Wishlist } from "@/server/db/models/wishlist";
 import { enqueueEmail } from "@/server/email/outbox";
 import { forbidden, unauthorized } from "@/server/http/errors";
 import { logger } from "@/server/logger";
@@ -103,6 +106,12 @@ export async function deleteAccount(userId: string, password: string): Promise<v
     { $unset: { userId: 1, emailKey: 1, customerGid: 1 } },
   );
   await AuthToken.deleteMany({ userId: user._id });
+  // Everything else we keep about this person goes with the account.
+  await Promise.all([
+    Wishlist.deleteMany({ userId: user._id }),
+    PushDevice.deleteMany({ userId: user._id }),
+    Notification.deleteMany({ userId: user._id }),
+  ]);
   await User.deleteOne({ _id: user._id });
 
   logger.info({ userId }, "Account deleted at the owner's request");

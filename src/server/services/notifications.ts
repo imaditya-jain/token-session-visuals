@@ -8,6 +8,7 @@ import { Notification, type NotificationKind } from "@/server/db/models/notifica
 import { User } from "@/server/db/models/user";
 import { enqueueEmail } from "@/server/email/outbox";
 import { logger } from "@/server/logger";
+import { sendPushToUser } from "@/server/services/push";
 
 const RETENTION_MS = 90 * 24 * 3600 * 1000;
 
@@ -73,6 +74,15 @@ export async function notifyOrderEvents(order: Order, events: NotificationKind[]
       } catch (error) {
         if ((error as { code?: number }).code !== 11000) throw error; // already notified: skip silently
       }
+    }
+
+    // A push only for what is genuinely new, so a redelivered webhook never pings the phone twice.
+    for (const kind of created) {
+      await sendPushToUser(String(order.userId), {
+        title: COPY[kind].title(order.name),
+        body: COPY[kind].body,
+        data: { link },
+      });
     }
 
     const wantsEmail = created.filter((kind) => COPY[kind].email);
