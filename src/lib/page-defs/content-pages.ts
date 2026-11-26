@@ -70,9 +70,20 @@ export const ABOUT = page("about", "Our story", "/about", [
     "Fernwood began as a single glasshouse on a family farm in 1962. Meet the growers behind every plant.",
   ),
   {
+    id: "hero",
+    label: "Top banner picture",
+    fields: {
+      image: image("Background picture", {
+        src: "/images/seasonal-greenhouse.jpg",
+        alt: "A greenhouse full of healthy plants",
+      }),
+    },
+  },
+  {
     id: "story",
     label: "Story",
     fields: {
+      eyebrow: text("Small line above the heading", "Since 1962", 60, true),
       image: image("Picture", {
         src: "/images/story-nursery.jpg",
         alt: "A Fernwood grower holding a tray of seedlings in the nursery",
@@ -89,6 +100,23 @@ export const ABOUT = page("about", "Our story", "/about", [
           ),
         ),
       ),
+    },
+  },
+  {
+    id: "stats",
+    label: "Numbers",
+    fields: {
+      items: {
+        kind: "cards",
+        label: "Numbers (big number first, then what it counts; empty hides the strip)",
+        maxItems: 4,
+        default: [
+          { title: "1962", text: "Our first glasshouse" },
+          { title: "120+", text: "Species we propagate" },
+          { title: "4", text: "Nurseries" },
+          { title: "10,000+", text: "Five-star reviews" },
+        ],
+      },
     },
   },
   {
@@ -118,8 +146,9 @@ export const ABOUT = page("about", "Our story", "/about", [
   },
   {
     id: "actions",
-    label: "Buttons at the bottom",
+    label: "Closing banner",
     fields: {
+      title: text("Heading", "Come and see what we grow", 80),
       primary: link("First button", { label: "Shop the greenhouse", href: "/shop" }),
       secondary: link("Second button", { label: "Read the care guide", href: "/care-guide" }),
     },
@@ -550,11 +579,113 @@ export const GARDENER = page("gardener-services", "Gardener services", "/gardene
     "Book a Fernwood gardener for a single visit or on a regular schedule.",
   ),
   {
+    id: "hero",
+    label: "Top banner",
+    fields: {
+      image: image("Large arched picture", {
+        src: "/images/promo-repotting.jpg",
+        alt: "Hands repotting a plant into a terracotta pot",
+      }),
+      accent: image("Round picture", {
+        src: "/images/product-watering-can.jpg",
+        alt: "A brass watering can beside potted herbs",
+      }),
+      badge: text_("Badge on the pictures", "Plant care at your door", 40),
+      primary: text_("First button text (goes to the plans)", "See plans and prices", 40),
+      secondary: text_("Second button text (goes to how it works)", "How it works", 40),
+    },
+  },
+  {
+    id: "steps",
+    label: "How it works",
+    fields: {
+      eyebrow: text_("Small line above the heading", "Simple by design", 60),
+      title: text_("Heading", "Three steps to a happier home", 80),
+      items: {
+        kind: "cards",
+        label: "Steps (icons are chosen by position)",
+        maxItems: 4,
+        default: [
+          {
+            title: "Choose a plan",
+            text: "Pick a one-time visit, or a monthly, fortnightly or weekly plan.",
+          },
+          {
+            title: "Tell us where and when",
+            text: "Add your address, your phone number and the day that suits you.",
+          },
+          {
+            title: "We come to you",
+            text: "A Fernwood gardener looks after your plants at your address.",
+          },
+        ],
+      },
+    },
+  },
+  {
+    id: "care",
+    label: "What we look after",
+    fields: {
+      eyebrow: text_("Small line above the heading", "On every visit", 60, true),
+      title: text_("Heading", "What we look after", 80),
+      items: {
+        kind: "cards",
+        label: "Three tiles (picture one is the large one)",
+        maxItems: 3,
+        default: [
+          {
+            title: "Repotting and soil",
+            text: "Fresh soil and the right pot, when your plant needs it.",
+          },
+          { title: "Watering and feeding", text: "The right amount, at the right time." },
+          { title: "Pruning and tidying", text: "Trimmed, cleaned and ready to grow." },
+        ],
+      },
+      imageOne: image("Large picture", {
+        src: "/images/promo-repotting.jpg",
+        alt: "Hands repotting a plant into a terracotta pot",
+      }),
+      imageTwo: image("Second picture", {
+        src: "/images/product-watering-can.jpg",
+        alt: "A brass watering can",
+      }),
+      imageThree: image("Third picture", {
+        src: "/images/product-pruners.jpg",
+        alt: "Garden pruners",
+      }),
+    },
+  },
+  {
+    id: "plans",
+    label: "Plans and prices",
+    fields: {
+      eyebrow: text_("Small line above the heading", "Plans", 60, true),
+      title: text_("Heading", "Pick the rhythm that suits your plants", 80),
+      popular: text_(
+        "Plan to highlight as most popular (a word from its name, empty for none)",
+        "Fortnightly",
+        40,
+        true,
+      ),
+      included: {
+        kind: "list",
+        label: "What every plan includes (shown on each card)",
+        maxItems: 6,
+        itemMax: 80,
+        default: [
+          "Care for your plants at your address",
+          "You choose the first visit date",
+          "Charged per visit, not upfront",
+        ],
+      },
+    },
+  },
+  {
     id: "text",
-    label: "Text above the booking form",
+    label: "Text above the plans",
     fields: {
       content: area(
-        "Text (the cities we serve are added to the start automatically)",
+        "Text",
         "Choose a one-time visit or a monthly, fortnightly or weekly plan, tell us where and when, and add it to your cart.",
         500,
       ),
@@ -570,6 +701,40 @@ export const GARDENER = page("gardener-services", "Gardener services", "/gardene
         "We are getting the gardener service ready. Ask us and we will let you know as soon as you can book.",
         300,
       ),
+    },
+  },
+  {
+    id: "final",
+    label: "Closing banner",
+    fields: {
+      title: text_("Heading", "Ready for happier plants?", 80),
+      text: area("Text", "Pick a plan and tell us when. We take care of the rest.", 200),
+    },
+  },
+  {
+    id: "faq",
+    label: "Questions",
+    fields: {
+      title: text_("Heading", "Good to know", 80),
+      items: {
+        kind: "cards",
+        label: "Questions and answers",
+        maxItems: 8,
+        default: [
+          {
+            title: "Where do you offer the service?",
+            text: "Currently in Nagpur, Pune and Mumbai.",
+          },
+          {
+            title: "How am I charged?",
+            text: "A one-time visit is paid at checkout. Plans are charged for each visit.",
+          },
+          {
+            title: "Can I choose the day?",
+            text: "Yes. You choose your preferred date when you book.",
+          },
+        ],
+      },
     },
   },
   cta("Questions about a visit?", "Talk to us"),

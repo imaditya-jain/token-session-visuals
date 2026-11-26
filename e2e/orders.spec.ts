@@ -143,7 +143,8 @@ test.describe("orders", () => {
     await page.goto("/account/orders");
     await expect(page.getByRole("heading", { name: "Order #1003" })).toBeVisible();
     await expect(page.getByText("$84.00").first()).toBeVisible();
-    await expect(page.getByText("Placed October 12, 2026 · 3 items").first()).toBeVisible();
+    await expect(page.getByText("October 12, 2026").first()).toBeVisible();
+    await expect(page.getByText("3 items").first()).toBeVisible();
     await expect(page.locator('span[aria-disabled="true"]', { hasText: "Previous" })).toBeVisible();
 
     await page.getByRole("link", { name: /Next/ }).click();

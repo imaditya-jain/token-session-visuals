@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Menu, Search, ShoppingBag, User, X, ChevronDown } from "lucide-react";
 
 import type { NavItem, SiteChrome } from "@/lib/site-chrome";
+import Logo from "@/components/storefront/Logo";
 import MiniCart from "@/components/storefront/MiniCart";
 import { setCartOpen } from "@/features/cart/cartSlice";
 import { setSearchOpen } from "@/features/ui/uiSlice";
@@ -248,7 +249,7 @@ export default function HeaderView({ announcement, nav: navLinks, helpEmail }: H
             href="/"
             className="font-display text-3xl font-medium tracking-tight text-forest lg:text-4xl"
           >
-            Fernwood
+            <Logo />
           </Link>
 
           {/* Desktop nav */}

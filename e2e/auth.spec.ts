@@ -35,7 +35,7 @@ test.describe("authentication", () => {
     const email = await register(page);
     await expect(page).toHaveURL(/\/account$/);
     await expect(page.getByRole("heading", { level: 1, name: "My account" })).toBeVisible();
-    await expect(page.getByText(email)).toBeVisible();
+    await expect(page.getByRole("region", { name: "Your profile" }).getByText(email)).toBeVisible();
 
     await page.reload();
     await expect(page.getByLabel("First name")).toHaveValue("Ada");

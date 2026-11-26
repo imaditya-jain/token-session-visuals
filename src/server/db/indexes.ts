@@ -16,6 +16,7 @@ import { Role } from "@/server/db/models/role";
 import { SiteSetting } from "@/server/db/models/site-setting";
 import { Subscriber } from "@/server/db/models/subscriber";
 import { User } from "@/server/db/models/user";
+import { Wishlist } from "@/server/db/models/wishlist";
 
 /**
  * Creates any missing indexes (idempotent, never drops). Uniqueness of accounts and TTL cleanup of rate
@@ -31,6 +32,7 @@ export async function ensureIndexes(): Promise<void> {
     Campaign.createIndexes(),
     Job.createIndexes(),
     Notification.createIndexes(),
+    Wishlist.createIndexes(),
     Subscriber.createIndexes(),
     ShopifyProduct.createIndexes(),
     ShopifyCollection.createIndexes(),
