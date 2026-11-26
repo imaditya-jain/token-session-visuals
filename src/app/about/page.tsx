@@ -47,6 +47,7 @@ export default async function AboutPage() {
               priority
               className="aspect-[4/5] w-full rounded-t-[999px] rounded-b-[2rem] object-cover shadow-2xl"
             />
+          </div>
           <div>
             <p className="mb-3 text-xs font-semibold uppercase tracking-[0.25em] text-clay">
               {c.text("story", "eyebrow")}
