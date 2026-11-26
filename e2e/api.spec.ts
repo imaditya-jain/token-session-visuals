@@ -1326,3 +1326,89 @@ test.describe("wishlist API", () => {
     expect((await api.get("/api/wishlist/items")).status()).toBe(405);
   });
 });
+
+test.describe("mobile auth API", () => {
+  const native = { "x-fernwood-client": "app" };
+
+  test("every mobile endpoint refuses a request without the native-client header", async () => {
+    const api = await client();
+    expect((await json(api, "/api/mobile/auth/register", {})).status()).toBe(403);
+    expect((await json(api, "/api/mobile/auth/verify", {})).status()).toBe(403);
+    expect(
+      (await json(api, "/api/mobile/auth/refresh", { refreshToken: "x".repeat(30) })).status(),
+    ).toBe(403);
+    expect(
+      (await json(api, "/api/mobile/auth/logout", { refreshToken: "x".repeat(30) })).status(),
+    ).toBe(403);
+  });
+
+  test("sign up, rotate, call an Origin-checked endpoint without an Origin, sign out", async () => {
+    const api = await client({ origin: null });
+    const registered = await json(
+      api,
+      "/api/mobile/auth/register",
+      {
+        email: uniqueEmail("app"),
+        password,
+        firstName: "A",
+        lastName: "P",
+        acceptsMarketing: false,
+      },
+      "post",
+      native,
+    );
+    expect(registered.status()).toBe(201);
+    expect(registered.headers()["set-cookie"]).toBeUndefined();
+    const session = (await body(registered)).data;
+    expect(session.refreshToken).toEqual(expect.any(String));
+
+    const auth = { ...native, authorization: `Bearer ${session.accessToken}` };
+    const saved = await json(
+      api,
+      "/api/wishlist/items",
+      { handle: "monstera-deliciosa" },
+      "post",
+      auth,
+    );
+    expect(saved.status()).toBe(200);
+
+    const rotated = await json(
+      api,
+      "/api/mobile/auth/refresh",
+      { refreshToken: session.refreshToken },
+      "post",
+      native,
+    );
+    expect(rotated.status()).toBe(200);
+    const next = (await body(rotated)).data;
+    expect(next.refreshToken).not.toBe(session.refreshToken);
+
+    expect(
+      (
+        await json(api, "/api/mobile/auth/refresh", { refreshToken: "short" }, "post", native)
+      ).status(),
+    ).toBe(400);
+    expect(
+      (
+        await json(
+          api,
+          "/api/mobile/auth/logout",
+          { refreshToken: next.refreshToken },
+          "post",
+          native,
+        )
+      ).status(),
+    ).toBe(204);
+    expect(
+      (
+        await json(
+          api,
+          "/api/mobile/auth/refresh",
+          { refreshToken: next.refreshToken },
+          "post",
+          native,
+        )
+      ).status(),
+    ).toBe(401);
+  });
+});
