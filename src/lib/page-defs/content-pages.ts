@@ -740,6 +740,18 @@ export const GARDENER = page("gardener-services", "Gardener services", "/gardene
   cta("Questions about a visit?", "Talk to us"),
 ]);
 
+export const PLANT_DOCTOR = page("plant-doctor", "Plant Doctor", "/plant-doctor", [
+  header(
+    "Plant care, powered by AI",
+    "Plant Doctor",
+    "Send a photo of your plant. We look for signs of disease, pests and care problems, then give you a plan and the right things from our shop.",
+  ),
+  seo(
+    "Plant Doctor — Fernwood",
+    "Upload a photo of your plant and get an AI-assisted look at what may be wrong, a step-by-step care plan and helpful products.",
+  ),
+]);
+
 export const ORDER_CONFIRMED = page("order-confirmed", "Order confirmed", "/order-confirmed", [
   header(
     "Thank you",
@@ -867,4 +879,5 @@ export const CONTENT_PAGES: readonly PageDef[] = [
   FORGOT,
   NOT_FOUND,
   PLANT_FINDER,
+  PLANT_DOCTOR,
 ];

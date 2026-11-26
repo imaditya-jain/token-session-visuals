@@ -184,6 +184,33 @@
   }
 }
 
+/* A soft light sweeping down a photo while the Plant Doctor looks at it. */
+@keyframes scan-line {
+  0% {
+    transform: translateY(-10%);
+    opacity: 0;
+  }
+  15%,
+  85% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(110%);
+    opacity: 0;
+  }
+}
+
+@utility animate-scan {
+  animation: scan-line 2.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-scan {
+    animation: none !important;
+    opacity: 0.6;
+  }
+}
+
 /* Slim, quiet scrollbar for the admin sidebar: a thin rounded thumb that brightens on hover. */
 .admin-scroll {
   scrollbar-width: thin;

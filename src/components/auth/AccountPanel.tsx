@@ -222,7 +222,7 @@ export default function AccountPanel() {
             {user.emailVerified ? "Email verified" : "Email not verified"}
           </span>
         </div>
-        <div className="mt-6 grid gap-3 sm:grid-cols-3">
+        <div className="mt-6 grid gap-3 sm:grid-cols-2">
           <Link
             href="/account/orders"
             className="flex items-center justify-between rounded-2xl bg-cream/10 px-5 py-4 text-sm font-semibold ring-1 ring-cream/15 transition-colors hover:bg-cream/20"
@@ -235,6 +235,13 @@ export default function AccountPanel() {
             className="flex items-center justify-between rounded-2xl bg-cream/10 px-5 py-4 text-sm font-semibold ring-1 ring-cream/15 transition-colors hover:bg-cream/20"
           >
             Your wishlist
+            <ArrowRight className="size-4" aria-hidden />
+          </Link>
+          <Link
+            href="/plant-doctor"
+            className="flex items-center justify-between rounded-2xl bg-cream/10 px-5 py-4 text-sm font-semibold ring-1 ring-cream/15 transition-colors hover:bg-cream/20"
+          >
+            Plant Doctor
             <ArrowRight className="size-4" aria-hidden />
           </Link>
           <Link
