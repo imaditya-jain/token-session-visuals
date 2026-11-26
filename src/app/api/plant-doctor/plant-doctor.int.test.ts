@@ -15,10 +15,10 @@ import { startTestDatabase } from "@/test/mongo";
 import { DELETE, GET as getOne } from "./[id]/route";
 import { GET as list, POST as analyse } from "./route";
 
-const sdk = vi.hoisted(() => ({ parse: vi.fn() }));
+const sdk = vi.hoisted(() => ({ parse: vi.fn(), create: vi.fn() }));
 vi.mock("@anthropic-ai/sdk", () => ({
   default: class {
-    beta = { messages: { parse: sdk.parse } };
+    beta = { messages: { parse: sdk.parse, create: sdk.create } };
   },
 }));
 
@@ -102,6 +102,7 @@ beforeEach(async () => {
   await connectDb();
   await Promise.all([User.deleteMany({}), PlantDiagnosis.deleteMany({}), RateLimit.deleteMany({})]);
   sdk.parse.mockReset();
+  sdk.create.mockReset();
   vi.stubEnv("ANTHROPIC_API_KEY", "sk-ant-test-key-0000000000000000");
   vi.stubEnv("PLANT_DOCTOR_PER_USER_DAILY", "");
   vi.stubEnv("PLANT_DOCTOR_DAILY_CAP", "");
@@ -228,6 +229,73 @@ describe("Plant Doctor", () => {
     expect(one.data.diagnosis.products).toHaveLength(2);
     const stored = await PlantDiagnosis.findOne({}).lean();
     expect(stored?.inputTokens).toBe(1500);
+  });
+
+  it("adds web research for a suspected disease: tips, treatments, https sources, and only real shop products", async () => {
+    const finding = {
+      title: "Leaf spot",
+      kind: "disease",
+      confidence: "medium",
+      severity: "moderate",
+      evidence: "Brown spots with yellow rims.",
+      likelyCauses: ["Fungus"],
+    };
+    sdk.parse.mockResolvedValue(modelResult(answer({ findings: [finding], productPicks: [] })));
+    sdk.create.mockResolvedValue({
+      stop_reason: "end_turn",
+      content: [
+        {
+          type: "web_search_tool_result",
+          content: [
+            { url: "https://extension.example.edu/leaf-spot", title: "Leaf spot guide" },
+            { url: "http://insecure.example/x", title: "Insecure" },
+          ],
+        },
+        {
+          type: "text",
+          text: 'Here you go {"tips":["Remove spotted leaves."],"treatments":[{"name":"Copper fungicide","about":"Slows fungal spread.","safety":"Follow the label."}],"productPicks":[{"handle":"pruners","reason":"Clean cuts."},{"handle":"invented","reason":"x"}]}',
+        },
+      ],
+    });
+    const { token } = await signUp("pd-research@example.com");
+    const { data } = await json(await analyse(upload(token, await jpeg())));
+    expect(data.diagnosis.research.tips).toEqual(["Remove spotted leaves."]);
+    expect(data.diagnosis.research.treatments[0].name).toBe("Copper fungicide");
+    expect(data.diagnosis.research.sources).toEqual([
+      { title: "Leaf spot guide", url: "https://extension.example.edu/leaf-spot" },
+    ]);
+    expect(
+      data.diagnosis.products.map((p: { product: { slug: string } }) => p.product.slug),
+    ).toEqual(["pruners"]);
+    const call = sdk.create.mock.calls[0]?.[0];
+    expect(call.tools[0].type).toBe("web_search_20250305");
+    expect(JSON.stringify(call.messages)).not.toContain("data:image");
+  });
+
+  it("still returns the photo diagnosis when the web research fails", async () => {
+    sdk.parse.mockResolvedValue(
+      modelResult(
+        answer({
+          findings: [
+            {
+              title: "Spider mites",
+              kind: "pest",
+              confidence: "high",
+              severity: "moderate",
+              evidence: "Fine webbing.",
+              likelyCauses: ["Dry air"],
+            },
+          ],
+        }),
+      ),
+    );
+    sdk.create.mockRejectedValue(new Error("search down"));
+    const { token } = await signUp("pd-research2@example.com");
+    const response = await analyse(upload(token, await jpeg()));
+    expect(response.status).toBe(201);
+    const { data } = await json(response);
+    expect(data.diagnosis.research ?? null).toBeNull();
+    expect(data.diagnosis.findings[0].title).toBe("Spider mites");
   });
 
   it("handles a photo that is not a plant or cannot be judged", async () => {

@@ -9,7 +9,7 @@ import { diagnose, listChecks, plantDoctorEnabled } from "@/server/services/plan
 
 export const dynamic = "force-dynamic";
 /** The model may think for a while on a hard photo; the platform's 60 s ceiling is the limit. */
-export const maxDuration = 60;
+export const maxDuration = 120;
 
 /** Past checks (newest first) and whether the feature is switched on. Only the caller's own. */
 export const GET = route(async ({ request }) => {
