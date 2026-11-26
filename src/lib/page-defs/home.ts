@@ -111,6 +111,32 @@ export const HOME: PageDef = {
       },
     },
     {
+      id: "gifts",
+      label: "Gifts & bouquets teaser",
+      fields: {
+        eyebrow: text("Small line above the heading", "Gifts & bouquets", 60, true),
+        title: text("Heading", "Fresh flowers, delivered in Nagpur", 100),
+        text: area(
+          "Text",
+          "Pick a bouquet, write your own message and choose the day it arrives. Plant gifts and hampers are here too.",
+          300,
+        ),
+        cta: link("Button", { label: "Shop gifts & bouquets", href: "/gifts" }),
+        bouquetsTitle: text("First card heading", "Fresh bouquets", 40),
+        bouquetsText: text("First card text", "Delivered within Nagpur", 80),
+        bouquetsImage: image("First card picture", {
+          src: "/images/bouquets/collection-bouquets.jpg",
+          alt: "A bouquet of roses, peonies and sunflowers wrapped in paper",
+        }),
+        giftsTitle: text("Second card heading", "Plant gifts", 40),
+        giftsText: text("Second card text", "Thoughtful things that grow", 80),
+        giftsImage: image("Second card picture", {
+          src: "/images/bouquets/collection-occasions.jpg",
+          alt: "A mixed bouquet of tulips, peonies and lavender",
+        }),
+      },
+    },
+    {
       id: "promo",
       label: "Repotting promo",
       fields: {

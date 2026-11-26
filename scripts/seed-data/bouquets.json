@@ -1,0 +1,18 @@
+{
+  "collection": {
+    "handle": "bouquets",
+    "title": "Bouquets",
+    "tagline": "Fresh flowers, delivered in Nagpur",
+    "position": 6,
+    "description": "Hand-tied fresh bouquets, delivered inside Nagpur on the day you choose. Placeholder products: replace names, prices and pictures in Shopify.",
+    "image": { "src": "https://fernwood-ruby.vercel.app/images/bouquets/collection-bouquets.jpg", "page": "", "photographer": "Fernwood illustration", "alt": "A bouquet of roses, peonies and sunflowers" }
+  },
+  "products": [
+    { "handle": "rose-classic-bouquet", "title": "Classic Rose Bouquet", "price": "42.00", "light": "Fresh flowers", "size": "Medium, about 35 cm", "occasions": ["anniversary", "birthday"], "description": "Deep pink roses with white daisies, hand-tied in paper. Placeholder product.", "image": { "src": "https://fernwood-ruby.vercel.app/images/bouquets/bouquet-rose-classic.jpg", "page": "", "photographer": "Fernwood illustration", "alt": "Rose bouquet" } },
+    { "handle": "blush-peony-bouquet", "title": "Blush Peony Bouquet", "price": "56.00", "light": "Fresh flowers", "size": "Large, about 40 cm", "occasions": ["anniversary", "congratulations"], "description": "Soft blush peonies with cream roses. Placeholder product.", "image": { "src": "https://fernwood-ruby.vercel.app/images/bouquets/bouquet-blush-peony.jpg", "page": "", "photographer": "Fernwood illustration", "alt": "Peony bouquet" } },
+    { "handle": "sunshine-bouquet", "title": "Sunshine Bouquet", "price": "38.00", "light": "Fresh flowers", "size": "Medium, about 35 cm", "occasions": ["birthday", "get-well", "congratulations"], "description": "Sunflowers, daisies and a touch of lavender to brighten a day. Placeholder product.", "image": { "src": "https://fernwood-ruby.vercel.app/images/bouquets/bouquet-sunshine.jpg", "page": "", "photographer": "Fernwood illustration", "alt": "Sunflower bouquet" } },
+    { "handle": "garden-mix-bouquet", "title": "Garden Mix Bouquet", "price": "40.00", "light": "Fresh flowers", "size": "Medium, about 35 cm", "occasions": ["thank-you", "housewarming", "birthday"], "description": "Tulips, peonies, lavender and daisies in a relaxed garden style. Placeholder product.", "image": { "src": "https://fernwood-ruby.vercel.app/images/bouquets/bouquet-garden-mix.jpg", "page": "", "photographer": "Fernwood illustration", "alt": "Garden mix bouquet" } },
+    { "handle": "lavender-dream-bouquet", "title": "Lavender Dream Bouquet", "price": "36.00", "light": "Fresh flowers", "size": "Medium, about 35 cm", "occasions": ["thank-you", "get-well"], "description": "Calming lavender with cream roses. Placeholder product.", "image": { "src": "https://fernwood-ruby.vercel.app/images/bouquets/bouquet-lavender-dream.jpg", "page": "", "photographer": "Fernwood illustration", "alt": "Lavender bouquet" } },
+    { "handle": "white-elegance-bouquet", "title": "White Elegance Bouquet", "price": "48.00", "light": "Fresh flowers", "size": "Large, about 40 cm", "occasions": ["housewarming", "congratulations", "anniversary"], "description": "Cream roses, white peonies and tulips. Placeholder product.", "image": { "src": "https://fernwood-ruby.vercel.app/images/bouquets/bouquet-white-elegance.jpg", "page": "", "photographer": "Fernwood illustration", "alt": "White bouquet" } }
+  ]
+}

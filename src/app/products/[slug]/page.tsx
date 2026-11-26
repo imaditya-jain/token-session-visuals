@@ -10,6 +10,8 @@ import { notFound } from "next/navigation";
 import { Leaf, PackageCheck, Ruler, ShieldCheck, Sun, Truck } from "lucide-react";
 
 import WishlistButton from "@/components/storefront/WishlistButton";
+import GiftBuy from "@/components/gifts/GiftBuy";
+import { isBouquet, isGift } from "@/lib/gift";
 import ProductBuyButton from "@/components/storefront/ProductBuyButton";
 import Header from "@/components/storefront/Header";
 import ProductCard from "@/components/storefront/ProductCard";
@@ -177,20 +179,36 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               </div>
             </dl>
 
-            <div className="mt-8 flex w-full items-center gap-3">
-              <div className="flex-1">
-                <ProductBuyButton
+            {isGift(product) ? (
+              <div className="mt-8 w-full space-y-3">
+                <GiftBuy
                   name={product.name}
                   variantId={product.variantId}
                   inStock={product.inStock}
+                  bouquet={isBouquet(product)}
+                />
+                <WishlistButton
+                  handle={product.slug}
+                  name={product.name}
+                  className="size-12 bg-card ring-1 ring-border/60"
                 />
               </div>
-              <WishlistButton
-                handle={product.slug}
-                name={product.name}
-                className="size-14 shrink-0 bg-card ring-1 ring-border/60"
-              />
-            </div>
+            ) : (
+              <div className="mt-8 flex w-full items-center gap-3">
+                <div className="flex-1">
+                  <ProductBuyButton
+                    name={product.name}
+                    variantId={product.variantId}
+                    inStock={product.inStock}
+                  />
+                </div>
+                <WishlistButton
+                  handle={product.slug}
+                  name={product.name}
+                  className="size-14 shrink-0 bg-card ring-1 ring-border/60"
+                />
+              </div>
+            )}
 
             <ul className="mt-6 grid w-full gap-3 text-sm text-foreground/85 sm:grid-cols-3">
               {[
