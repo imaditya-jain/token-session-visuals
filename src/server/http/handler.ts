@@ -120,7 +120,18 @@ export async function readJson<S extends z.ZodType>(
  * CSRF defence for state-changing, cookie-authenticated endpoints: the browser's Origin (or Fetch Metadata)
  * must show the request came from this site. Combined with SameSite=Strict on the refresh cookie.
  */
+export const NATIVE_CLIENT_HEADER = "x-fernwood-client";
+
+/**
+ * The mobile app is not a browser: it sends no Origin and keeps no ambient credentials. It proves it is not a
+ * cross-site page with a custom header, which a browser can only add to a cross-origin request after a
+ * preflight, and this server answers none (no CORS), so a malicious page can never send it.
+ */
+export const isNativeClient = (request: NextRequest): boolean =>
+  request.headers.get(NATIVE_CLIENT_HEADER) === "app";
+
 export function assertSameOrigin(request: NextRequest): void {
+  if (isNativeClient(request)) return;
   const origin = request.headers.get("origin");
   if (origin) {
     const allowed = new Set([request.nextUrl.origin]);
