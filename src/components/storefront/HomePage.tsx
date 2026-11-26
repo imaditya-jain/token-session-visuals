@@ -9,6 +9,7 @@ import {
   SeasonalBanner,
   StoryTestimonial,
   Testimonials,
+  TrustBar,
   WhyUs,
 } from "@/components/storefront/sections";
 import Newsletter from "@/components/storefront/Newsletter";
@@ -21,6 +22,7 @@ export default async function HomePage() {
       <Header />
       <main>
         <Hero />
+        <TrustBar />
         <Collections />
         <BestSellers />
         <PlantFinderTeaser />

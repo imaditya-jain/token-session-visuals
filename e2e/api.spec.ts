@@ -1250,3 +1250,79 @@ test.describe("notifications API", () => {
     expect((await api.get("/api/notifications/read")).status()).toBe(405);
   });
 });
+
+test.describe("wishlist API", () => {
+  test("need a valid session", async () => {
+    const api = await client();
+    expect((await api.get("/api/wishlist")).status()).toBe(401);
+    expect((await api.get("/api/wishlist/products")).status()).toBe(401);
+    expect(
+      (await api.get("/api/wishlist", { headers: { authorization: "Bearer nope" } })).status(),
+    ).toBe(401);
+    expect(
+      (await json(api, "/api/wishlist/items", { handle: "monstera-deliciosa" })).status(),
+    ).toBe(401);
+  });
+
+  test("save, list, remove; hostile input is a 400, unknown plants a 404, foreign origins a 403", async () => {
+    const api = await client();
+    const registered = await json(api, "/api/auth/register", {
+      email: uniqueEmail("wish"),
+      password,
+      firstName: "W",
+      lastName: "L",
+      acceptsMarketing: false,
+    });
+    const auth = { authorization: `Bearer ${(await body(registered)).data.accessToken}` };
+
+    expect(await body(await api.get("/api/wishlist", { headers: auth }))).toEqual({
+      data: { handles: [] },
+    });
+    const saved = await json(
+      api,
+      "/api/wishlist/items",
+      { handle: "monstera-deliciosa" },
+      "post",
+      auth,
+    );
+    expect(await body(saved)).toEqual({ data: { handles: ["monstera-deliciosa"] } });
+    const products = await body(await api.get("/api/wishlist/products", { headers: auth }));
+    expect(products.data.products.map((p: { slug: string }) => p.slug)).toEqual([
+      "monstera-deliciosa",
+    ]);
+
+    expect(
+      (await json(api, "/api/wishlist/items", { handle: "no-such-plant" }, "post", auth)).status(),
+    ).toBe(404);
+    for (const bad of [
+      { handle: { $ne: "" } },
+      { handle: "../x" },
+      { handle: "a", extra: 1 },
+      {},
+    ]) {
+      expect((await json(api, "/api/wishlist/items", bad, "post", auth)).status()).toBe(400);
+    }
+
+    const foreign = await client({ origin: "https://evil.example" });
+    expect(
+      (
+        await json(foreign, "/api/wishlist/items", { handle: "monstera-deliciosa" }, "post", auth)
+      ).status(),
+    ).toBe(403);
+
+    const removed = await json(
+      api,
+      "/api/wishlist/items",
+      { handle: "monstera-deliciosa" },
+      "delete",
+      auth,
+    );
+    expect(await body(removed)).toEqual({ data: { handles: [] } });
+  });
+
+  test("only the documented methods work", async () => {
+    const api = await client();
+    expect((await api.post("/api/wishlist", { data: {} })).status()).toBe(405);
+    expect((await api.get("/api/wishlist/items")).status()).toBe(405);
+  });
+});

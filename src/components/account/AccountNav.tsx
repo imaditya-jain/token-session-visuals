@@ -3,12 +3,16 @@ import Link from "next/link";
 const tabs = [
   { href: "/account", label: "Details" },
   { href: "/account/orders", label: "Orders" },
+  { href: "/account/wishlist", label: "Wishlist" },
 ] as const;
 
 /** Section tabs shared by the account pages. */
 export default function AccountNav({ current }: { current: (typeof tabs)[number]["href"] }) {
   return (
-    <nav aria-label="Account sections" className="mb-8 flex gap-6 border-b border-border">
+    <nav
+      aria-label="Account sections"
+      className="mb-8 inline-flex rounded-full bg-sage-light/70 p-1.5"
+    >
       {tabs.map((tab) => {
         const active = tab.href === current;
         return (
@@ -16,10 +20,10 @@ export default function AccountNav({ current }: { current: (typeof tabs)[number]
             key={tab.href}
             href={tab.href}
             aria-current={active ? "page" : undefined}
-            className={`-mb-px inline-flex min-h-11 items-center border-b-2 px-1 text-sm font-semibold transition-colors ${
+            className={`inline-flex min-h-11 items-center rounded-full px-6 text-sm font-semibold transition-all duration-300 ${
               active
-                ? "border-clay text-forest"
-                : "border-transparent text-muted-foreground hover:text-forest"
+                ? "bg-forest text-cream shadow-md"
+                : "text-forest/75 hover:bg-cream/70 hover:text-forest"
             }`}
           >
             {tab.label}

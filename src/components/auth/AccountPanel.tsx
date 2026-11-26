@@ -1,5 +1,7 @@
 "use client";
 
+import { ArrowRight } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 
@@ -191,6 +193,59 @@ export default function AccountPanel() {
 
   return (
     <div className="space-y-6">
+      <section
+        aria-label="Your profile"
+        className="relative isolate overflow-hidden rounded-3xl bg-forest-deep p-6 text-cream shadow-xl sm:p-8"
+      >
+        <div
+          aria-hidden
+          className="absolute -right-16 -top-16 -z-10 size-64 rounded-full bg-moss/40 blur-3xl"
+        />
+        <div className="flex flex-wrap items-center gap-5">
+          <span
+            aria-hidden
+            className="flex size-16 shrink-0 items-center justify-center rounded-full bg-cream font-display text-2xl font-medium text-forest shadow-md"
+          >
+            {`${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase()}
+          </span>
+          <div className="min-w-0">
+            <p className="font-display text-2xl font-medium">
+              {user.firstName} {user.lastName}
+            </p>
+            <p className="truncate text-sm text-cream/75">{user.email}</p>
+          </div>
+          <span
+            className={`ml-auto inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${
+              user.emailVerified ? "bg-sage/25 text-sage" : "bg-clay/25 text-cream"
+            }`}
+          >
+            {user.emailVerified ? "Email verified" : "Email not verified"}
+          </span>
+        </div>
+        <div className="mt-6 grid gap-3 sm:grid-cols-3">
+          <Link
+            href="/account/orders"
+            className="flex items-center justify-between rounded-2xl bg-cream/10 px-5 py-4 text-sm font-semibold ring-1 ring-cream/15 transition-colors hover:bg-cream/20"
+          >
+            Your orders
+            <ArrowRight className="size-4" aria-hidden />
+          </Link>
+          <Link
+            href="/account/wishlist"
+            className="flex items-center justify-between rounded-2xl bg-cream/10 px-5 py-4 text-sm font-semibold ring-1 ring-cream/15 transition-colors hover:bg-cream/20"
+          >
+            Your wishlist
+            <ArrowRight className="size-4" aria-hidden />
+          </Link>
+          <Link
+            href="/shop"
+            className="flex items-center justify-between rounded-2xl bg-cream/10 px-5 py-4 text-sm font-semibold ring-1 ring-cream/15 transition-colors hover:bg-cream/20"
+          >
+            Keep shopping
+            <ArrowRight className="size-4" aria-hidden />
+          </Link>
+        </div>
+      </section>
       {user.emailVerified ? null : <VerifyEmailNotice />}
       <section className={card} aria-labelledby="details-heading">
         <h2 id="details-heading" className="font-display text-2xl font-medium text-forest">

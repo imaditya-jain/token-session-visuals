@@ -5,6 +5,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { Provider } from "react-redux";
 
 import CartIdentitySync from "@/components/providers/CartIdentitySync";
+import WishlistSync from "@/components/providers/WishlistSync";
 import SmoothScroll from "@/components/providers/SmoothScroll";
 import { restoreSession } from "@/features/auth/authThunks";
 import { loadCart } from "@/features/cart/cartThunks";
@@ -30,6 +31,7 @@ export default function Providers({ children }: { children: ReactNode }) {
     <Provider store={store}>
       {inAdmin ? null : <SmoothScroll />}
       {inAdmin ? null : <CartIdentitySync />}
+      {inAdmin ? null : <WishlistSync />}
       {children}
     </Provider>
   );
