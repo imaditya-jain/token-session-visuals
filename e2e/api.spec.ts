@@ -1412,3 +1412,50 @@ test.describe("mobile auth API", () => {
     ).toBe(401);
   });
 });
+
+test.describe("push registration API", () => {
+  const native = { "x-fernwood-client": "app" };
+  const token = "ExponentPushToken[abcdefghijklmnopqrstuv]";
+
+  test("needs a session and the native-client header; validates input", async () => {
+    const api = await client({ origin: null });
+    expect(
+      (
+        await json(api, "/api/mobile/push", { token, platform: "android" }, "post", native)
+      ).status(),
+    ).toBe(401);
+    const registered = await json(
+      api,
+      "/api/mobile/auth/register",
+      {
+        email: uniqueEmail("push"),
+        password,
+        firstName: "P",
+        lastName: "S",
+        acceptsMarketing: false,
+      },
+      "post",
+      native,
+    );
+    const auth = {
+      ...native,
+      authorization: `Bearer ${(await body(registered)).data.accessToken}`,
+    };
+    expect(
+      (
+        await json(api, "/api/mobile/push", { token, platform: "android" }, "post", {
+          authorization: auth.authorization,
+        })
+      ).status(),
+    ).toBe(403);
+    expect(
+      (
+        await json(api, "/api/mobile/push", { token: "nope", platform: "android" }, "post", auth)
+      ).status(),
+    ).toBe(400);
+    expect(
+      (await json(api, "/api/mobile/push", { token, platform: "android" }, "post", auth)).status(),
+    ).toBe(204);
+    expect((await json(api, "/api/mobile/push", { token }, "delete", auth)).status()).toBe(204);
+  });
+});
