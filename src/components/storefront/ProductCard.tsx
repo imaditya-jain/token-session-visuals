@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import WishlistButton from "@/components/storefront/WishlistButton";
 import AddToCartButton from "@/components/storefront/AddToCartButton";
 import { formatPrice } from "@/lib/format";
 import type { Product } from "@/lib/types";
@@ -48,6 +49,12 @@ export default function ProductCard({ product }: { product: Product }) {
             </span>
           )
         )}
+
+        <WishlistButton
+          handle={product.slug}
+          name={product.name}
+          className="absolute right-3 top-3 z-10"
+        />
 
         {/* Quick add on hover / always visible on touch */}
         {soldOut ? (

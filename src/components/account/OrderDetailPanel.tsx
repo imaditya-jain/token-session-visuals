@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
+import OrderProgress from "@/components/account/OrderProgress";
 import StatusBadges from "@/components/account/StatusBadges";
 import { useApiResource } from "@/components/account/useApiResource";
 import { useRequireAuth } from "@/components/account/useRequireAuth";
@@ -92,8 +93,9 @@ export default function OrderDetailPanel({ id }: { id: string }) {
           </div>
           <StatusBadges order={order} />
         </div>
+        <OrderProgress order={order} />
 
-        <ul className="mt-6 divide-y divide-border">
+        <ul className="mt-8 divide-y divide-border">
           {order.lines.map((line, index) => (
             <li key={`${line.title}-${index}`} className="flex items-center gap-4 py-4">
               {line.image ? (

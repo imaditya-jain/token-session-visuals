@@ -16,28 +16,25 @@ export default function CollectionBanner({
 }) {
   return (
     <section className="relative isolate overflow-hidden bg-forest-deep text-cream">
+      <Image src={image} alt="" fill priority sizes="100vw" className="-z-20 object-cover" />
+      {/* Overlay: keeps the title readable on any picture and ties it to the brand colour. */}
       <div
         aria-hidden
-        className="absolute -left-28 -top-20 -z-10 size-96 rounded-full bg-moss/30 blur-3xl"
+        className="absolute inset-0 -z-10 bg-gradient-to-r from-forest-deep/95 via-forest-deep/75 to-forest-deep/35"
       />
       <div
         aria-hidden
-        className="absolute -bottom-24 right-10 -z-10 size-96 rounded-full bg-clay/15 blur-3xl"
+        className="absolute inset-0 -z-10 bg-gradient-to-t from-forest-deep/70 via-transparent to-transparent"
       />
-      <div className="mx-auto grid max-w-7xl items-center gap-8 px-4 pb-20 pt-14 sm:px-6 sm:pb-24 sm:pt-16 lg:grid-cols-[1.2fr_1fr] lg:px-8">
+      <div className="mx-auto max-w-7xl px-4 pb-24 pt-20 sm:px-6 sm:pb-32 sm:pt-28 lg:px-8">
         <div className="animate-rise text-center lg:text-left">
-          <p className="inline-flex items-center gap-2 rounded-full bg-cream/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.25em] text-sage ring-1 ring-cream/15">
+          <p className="inline-flex items-center gap-2 rounded-full bg-cream/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.25em] text-sage ring-1 ring-cream/20 backdrop-blur-sm">
             <Sprout className="size-3.5" aria-hidden />
             {tagline}
           </p>
           <h1 className="mt-5 font-display text-4xl font-medium leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">
             {title}
           </h1>
-        </div>
-        <div className="relative mx-auto hidden h-60 w-full max-w-xs lg:block lg:max-w-sm">
-          <div className="absolute inset-0 overflow-hidden rounded-t-[999px] rounded-b-3xl shadow-2xl ring-1 ring-cream/15">
-            <Image src={image} alt="" fill sizes="384px" className="object-cover" />
-          </div>
         </div>
       </div>
       <svg

@@ -107,45 +107,63 @@ export default function OrdersPanel() {
 
   return (
     <div className="space-y-4">
-      <ul className="space-y-4">
+      <ul className="space-y-5">
         {orders.map((order) => (
-          <li key={order.id} className={card}>
-            <div className="flex flex-wrap items-start justify-between gap-4">
+          <li
+            key={order.id}
+            className="overflow-hidden rounded-3xl bg-card shadow-sm ring-1 ring-border/60 transition-shadow duration-300 hover:shadow-lg"
+          >
+            <div className="grid gap-4 bg-sage-light/60 px-6 py-4 text-sm sm:grid-cols-[1fr_1fr_1fr_auto] sm:items-center sm:px-8">
               <div>
-                <h2 className="font-display text-2xl font-medium text-forest">
-                  Order {order.name}
-                </h2>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Placed {formatDate(order.processedAt)} · {order.itemCount}{" "}
-                  {order.itemCount === 1 ? "item" : "items"}
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Order placed
                 </p>
+                <p className="mt-0.5 font-medium text-forest">{formatDate(order.processedAt)}</p>
               </div>
-              <p className="text-lg font-semibold text-forest">{formatMoney(order.total)}</p>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Total
+                </p>
+                <p className="mt-0.5 font-medium text-forest">{formatMoney(order.total)}</p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Reference
+                </p>
+                <h2 className="mt-0.5 font-medium text-forest">Order {order.name}</h2>
+              </div>
+              <Link
+                href={`/account/orders/${order.id}`}
+                aria-label={`View order ${order.name}`}
+                className="inline-flex h-11 items-center justify-center rounded-full bg-forest px-6 text-sm font-semibold text-cream transition-colors hover:bg-forest-deep"
+              >
+                View order
+              </Link>
             </div>
-            <div className="mt-4 flex flex-wrap items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center justify-between gap-5 px-6 py-6 sm:px-8">
+              <div className="flex items-center gap-5">
                 {order.previewImages.length > 0 ? (
-                  <div className="flex -space-x-3">
+                  <div className="flex -space-x-4">
                     {order.previewImages.map((src) => (
                       <Image
                         key={src}
                         src={src}
                         alt=""
-                        width={56}
-                        height={56}
-                        sizes="56px"
-                        className="size-14 rounded-md border-2 border-card bg-sand object-cover"
+                        width={80}
+                        height={80}
+                        sizes="80px"
+                        className="size-20 rounded-2xl border-4 border-card bg-sand object-cover shadow-sm"
                       />
                     ))}
                   </div>
                 ) : null}
-                <StatusBadges order={order} />
+                <div>
+                  <StatusBadges order={order} />
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    {order.itemCount} {order.itemCount === 1 ? "item" : "items"}
+                  </p>
+                </div>
               </div>
-              <Button asChild variant="outline" className="h-11 px-6">
-                <Link href={`/account/orders/${order.id}`} aria-label={`View order ${order.name}`}>
-                  View order
-                </Link>
-              </Button>
             </div>
           </li>
         ))}

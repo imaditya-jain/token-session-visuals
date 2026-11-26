@@ -3,6 +3,7 @@ import Link from "next/link";
 const tabs = [
   { href: "/account", label: "Details" },
   { href: "/account/orders", label: "Orders" },
+  { href: "/account/wishlist", label: "Wishlist" },
 ] as const;
 
 /** Section tabs shared by the account pages. */
