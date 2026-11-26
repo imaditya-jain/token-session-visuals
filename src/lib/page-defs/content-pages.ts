@@ -752,6 +752,77 @@ export const PLANT_DOCTOR = page("plant-doctor", "Plant Doctor", "/plant-doctor"
   ),
 ]);
 
+export const GIFTS = page("gifts", "Gifts & bouquets", "/gifts", [
+  header(
+    "Gifts & bouquets",
+    "Say it with flowers",
+    "Choose a fresh bouquet or a plant gift, write your own message and pick the day it arrives in Nagpur.",
+  ),
+  seo(
+    "Gifts & bouquets — Fernwood",
+    "Fresh bouquets delivered in Nagpur on the day you choose, plus plant gifts with a personal message.",
+  ),
+  {
+    id: "hero",
+    label: "Top banner picture",
+    fields: {
+      image: image("Picture", {
+        src: "/images/bouquets/collection-bouquets.jpg",
+        alt: "A bouquet of roses, peonies and sunflowers wrapped in paper",
+      }),
+    },
+  },
+  {
+    id: "delivery",
+    label: "Delivery note",
+    fields: {
+      title: text_("Heading", "Fresh flowers, delivered in Nagpur", 80),
+      text: area(
+        "Text",
+        "Bouquets are delivered inside Nagpur on the date you choose when you order. Plant gifts and hampers ship like the rest of the shop.",
+        300,
+      ),
+    },
+  },
+  {
+    id: "bouquets",
+    label: "Bouquets",
+    fields: {
+      title: text_("Heading", "Fresh bouquets", 60),
+      empty: area(
+        "Text when there are none yet",
+        "Our first bouquets are on their way. Please check back soon.",
+        200,
+      ),
+    },
+  },
+  {
+    id: "steps",
+    label: "How it works",
+    fields: {
+      title: text_("Heading", "Three steps to a lovely surprise", 80),
+      items: {
+        kind: "cards",
+        label: "Steps (icons are chosen by position)",
+        maxItems: 4,
+        default: [
+          { title: "Choose", text: "Pick a bouquet or a plant gift for the occasion." },
+          { title: "Make it personal", text: "Write a message and tell us who it is for." },
+          { title: "We deliver", text: "Fresh bouquets arrive in Nagpur on the day you picked." },
+        ],
+      },
+    },
+  },
+  {
+    id: "gifts",
+    label: "Plant gifts",
+    fields: {
+      title: text_("Heading", "Gifts that keep growing", 60),
+      cta: link("Button", { label: "See all gifts", href: "/collections/gifts" }),
+    },
+  },
+]);
+
 export const ORDER_CONFIRMED = page("order-confirmed", "Order confirmed", "/order-confirmed", [
   header(
     "Thank you",
@@ -880,4 +951,5 @@ export const CONTENT_PAGES: readonly PageDef[] = [
   NOT_FOUND,
   PLANT_FINDER,
   PLANT_DOCTOR,
+  GIFTS,
 ];

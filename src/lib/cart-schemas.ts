@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { MAX_LINE_QUANTITY } from "@/lib/cart";
 import { bookingSchema } from "@/lib/gardener-schemas";
+import { giftSchema } from "@/lib/gift-schemas";
 
 /** Request validation for the cart API (server side only; the browser never loads zod for the cart). */
 export const variantIdSchema = z
@@ -17,14 +18,18 @@ export const sellingPlanIdSchema = z
   .string()
   .regex(/^gid:\/\/shopify\/SellingPlan\/\d{1,20}$/, "Invalid subscription plan");
 
-export const addLineSchema = z.object({
-  variantId: variantIdSchema,
-  quantity: quantity.default(1),
-  /** A subscription plan (Seal) for this line. */
-  sellingPlanId: sellingPlanIdSchema.optional(),
-  /** Gardener booking details; becomes line attributes on the order. */
-  booking: bookingSchema.optional(),
-});
+export const addLineSchema = z
+  .object({
+    variantId: variantIdSchema,
+    quantity: quantity.default(1),
+    /** A subscription plan (Seal) for this line. */
+    sellingPlanId: sellingPlanIdSchema.optional(),
+    /** Gardener booking details; becomes line attributes on the order. */
+    booking: bookingSchema.optional(),
+    /** Gift message, and for fresh bouquets the recipient, address and delivery date. Becomes line attributes. */
+    gift: giftSchema.optional(),
+  })
+  .refine((value) => !(value.booking && value.gift), "Send either a booking or a gift, not both");
 export const updateLineSchema = z.object({
   lineId: lineIdSchema,
   quantity: z.number().int().min(0).max(MAX_LINE_QUANTITY),

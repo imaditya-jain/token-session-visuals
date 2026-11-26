@@ -116,6 +116,80 @@ export async function Collections() {
   );
 }
 
+/** Gifts and fresh bouquets: two picture cards on a forest band, leading to /gifts. All text and pictures are editable. */
+export async function GiftsTeaser() {
+  const c = await getPageContent("home");
+  const cta = c.link("gifts", "cta");
+  const eyebrow = c.text("gifts", "eyebrow");
+  const cards = [
+    {
+      title: c.text("gifts", "bouquetsTitle"),
+      text: c.text("gifts", "bouquetsText"),
+      image: c.image("gifts", "bouquetsImage"),
+    },
+    {
+      title: c.text("gifts", "giftsTitle"),
+      text: c.text("gifts", "giftsText"),
+      image: c.image("gifts", "giftsImage"),
+    },
+  ];
+  return (
+    <section id="gifts" className="relative isolate overflow-hidden bg-forest-deep text-cream">
+      <div
+        aria-hidden
+        className="absolute -left-24 top-10 -z-10 size-80 rounded-full bg-moss/30 blur-3xl"
+      />
+      <div
+        aria-hidden
+        className="absolute -right-24 bottom-0 -z-10 size-96 rounded-full bg-clay/20 blur-3xl"
+      />
+      <div className="mx-auto grid max-w-7xl items-center gap-10 px-4 py-20 sm:px-6 lg:grid-cols-[1fr_1.1fr] lg:gap-16 lg:px-8 lg:py-28">
+        <div>
+          {eyebrow && (
+            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.25em] text-sage">
+              {eyebrow}
+            </p>
+          )}
+          <h2 className="font-display text-3xl font-medium sm:text-4xl lg:text-5xl">
+            {c.text("gifts", "title")}
+          </h2>
+          <p className="mt-5 max-w-md leading-relaxed text-cream/80">{c.text("gifts", "text")}</p>
+          <Link
+            href={cta.href}
+            className="mt-8 inline-flex h-12 items-center gap-2 rounded-full bg-cream px-8 text-sm font-semibold text-forest-deep shadow-lg transition-transform hover:-translate-y-0.5"
+          >
+            {cta.label} <ArrowRight className="size-4" aria-hidden />
+          </Link>
+        </div>
+        <ul className="grid grid-cols-2 gap-4 sm:gap-6">
+          {cards.map((card, index) => (
+            <li key={card.title} className={index === 1 ? "mt-8 sm:mt-12" : ""}>
+              <Link
+                href={cta.href}
+                className="group relative block overflow-hidden rounded-3xl bg-sand shadow-2xl ring-1 ring-cream/15"
+              >
+                <Image
+                  src={card.image.src}
+                  alt={card.image.alt}
+                  width={800}
+                  height={1000}
+                  sizes="(min-width: 1024px) 280px, 45vw"
+                  className="aspect-[4/5] w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-forest-deep/80 via-transparent to-transparent" />
+                <div className="absolute inset-x-0 bottom-0 p-4 sm:p-5">
+                  <p className="font-display text-lg font-medium sm:text-xl">{card.title}</p>
+                  <p className="text-xs text-cream/85 sm:text-sm">{card.text}</p>
+                </div>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  );
+}
+
 /** A teaser for the Plant Finder: a short pitch and a stack of swipe cards that opens the quiz. */
 export async function PlantFinderTeaser() {
   const c = await getPageContent("home");

@@ -4,6 +4,7 @@ import type { ApiFailure } from "@/features/auth/types";
 import { ApiError, apiFetch, publicJson } from "@/lib/api-client";
 import type { Cart } from "@/lib/cart";
 import type { Booking } from "@/lib/gardener-schemas";
+import type { GiftOptions } from "@/lib/gift-schemas";
 
 import {
   cartFailed,
@@ -66,17 +67,20 @@ export const addToCart = cartThunk(
     quantity = 1,
     sellingPlanId,
     booking,
+    gift,
   }: {
     variantId: string;
     quantity?: number;
     sellingPlanId?: string;
     booking?: Booking;
+    gift?: GiftOptions;
   }) =>
     publicJson<CartResponse>("/api/cart/lines", "POST", {
       variantId,
       quantity,
       ...(sellingPlanId ? { sellingPlanId } : {}),
       ...(booking ? { booking } : {}),
+      ...(gift ? { gift } : {}),
     }),
   ({ booking }) => Boolean(booking),
 );

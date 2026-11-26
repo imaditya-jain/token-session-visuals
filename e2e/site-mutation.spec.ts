@@ -35,7 +35,7 @@ test.describe("header, footer and social links", () => {
     await page.getByRole("button", { name: "Add a menu item" }).click();
     const items = page.getByRole("list", { name: "Menu items" }).locator("> li");
     const last = items.nth(4);
-    await last.getByLabel("Label", { exact: true }).first().fill("Gifts");
+    await last.getByLabel("Label", { exact: true }).first().fill("Presents");
     await last.getByLabel("Link", { exact: true }).first().fill("/gift-cards");
     await last.getByRole("button", { name: "Add a dropdown link" }).click();
     await last.getByLabel("Label", { exact: true }).nth(1).fill("Gift cards");
@@ -46,7 +46,7 @@ test.describe("header, footer and social links", () => {
     // A draft is invisible on the storefront.
     const draftPage = await (await request.get("/")).text();
     expect(draftPage).toContain("Free shipping on orders over $75");
-    expect(draftPage).not.toContain("Gifts");
+    expect(draftPage).not.toContain("Presents");
 
     // Footer + social (same draft).
     await adminNav(page).getByRole("link", { name: "Footer" }).click();
@@ -76,8 +76,8 @@ test.describe("header, footer and social links", () => {
     // Announcement is gone; the new menu item and its dropdown are there.
     await expect(page.getByRole("region", { name: "Announcement" })).toHaveCount(0);
     const nav = page.locator("header nav").first();
-    await expect(nav.getByRole("link", { name: "Gifts" })).toBeVisible();
-    await nav.getByRole("link", { name: "Gifts" }).hover();
+    await expect(nav.getByRole("link", { name: "Presents" })).toBeVisible();
+    await nav.getByRole("link", { name: "Presents" }).hover();
     await expect(nav.getByRole("link", { name: "Gift cards" })).toBeVisible();
 
     // Footer: the new copyright, only the enabled social icons with their real, safe links.
@@ -103,7 +103,7 @@ test.describe("header, footer and social links", () => {
       await page.goto(path);
       await expect(page.getByRole("region", { name: "Announcement" })).toHaveCount(0);
       await expect(
-        page.locator("header nav").first().getByRole("link", { name: "Gifts" }),
+        page.locator("header nav").first().getByRole("link", { name: "Presents" }),
       ).toBeVisible();
       await expect(page.getByRole("contentinfo")).toContainText("Fernwood Test Nursery.");
     }
@@ -116,7 +116,7 @@ test.describe("header, footer and social links", () => {
     await page.goto("/");
     await page.getByRole("button", { name: "Open menu" }).click();
     const dialog = page.getByRole("dialog");
-    await expect(dialog.getByRole("link", { name: "Gifts" })).toBeVisible();
+    await expect(dialog.getByRole("link", { name: "Presents" })).toBeVisible();
     await expect(dialog.getByRole("link", { name: "Gift cards" })).toBeVisible();
     expect(await audit(page), "phone menu").toEqual([]);
     await page.keyboard.press("Escape");
