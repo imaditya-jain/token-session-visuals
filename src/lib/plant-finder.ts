@@ -37,7 +37,7 @@ export type FinderPlant = Pick<
   "id" | "slug" | "name" | "category" | "price" | "image" | "light" | "size" | "inStock"
 >;
 
-const NON_PLANT = /pot|planter|seed|tool|gift|accessor|soil|fertili[sz]er|card/i;
+const NON_PLANT = /bouquet|pot|planter|seed|tool|gift|accessor|soil|fertili[sz]er|card/i;
 export const isPlant = (product: Pick<Product, "category">): boolean =>
   !NON_PLANT.test(product.category);
 

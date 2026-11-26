@@ -1,0 +1,76 @@
+{
+  "products": [
+    {
+      "handle": "neem-oil-plant-spray",
+      "title": "Neem Oil Plant Spray",
+      "price": "11.00",
+      "light": "Not applicable",
+      "size": "250 ml",
+      "description": "Cold-pressed neem oil spray for houseplants. A gentle first step against mites, aphids and mealybugs. Follow the label and keep away from pets and children. Placeholder product.",
+      "image": "neem-oil-plant-spray.jpg"
+    },
+    {
+      "handle": "insecticidal-soap-spray",
+      "title": "Insecticidal Soap Spray",
+      "price": "10.00",
+      "light": "Not applicable",
+      "size": "300 ml",
+      "description": "Ready-to-use soap spray that smothers soft-bodied pests such as aphids and whitefly. Test on one leaf first. Placeholder product.",
+      "image": "insecticidal-soap-spray.jpg"
+    },
+    {
+      "handle": "copper-fungicide-houseplants",
+      "title": "Copper Fungicide for Houseplants",
+      "price": "14.00",
+      "light": "Not applicable",
+      "size": "200 ml",
+      "description": "A copper-based fungicide used against leaf spot and blight on indoor plants. Always follow the label. Placeholder product.",
+      "image": "copper-fungicide-houseplants.jpg"
+    },
+    {
+      "handle": "balanced-liquid-plant-food",
+      "title": "Balanced Liquid Plant Food",
+      "price": "9.00",
+      "light": "Not applicable",
+      "size": "500 ml",
+      "description": "A balanced liquid feed for leafy houseplants, used through the growing season. Placeholder product.",
+      "image": "balanced-liquid-plant-food.jpg"
+    },
+    {
+      "handle": "slow-release-feeding-sticks",
+      "title": "Slow-Release Feeding Sticks",
+      "price": "8.00",
+      "light": "Not applicable",
+      "size": "30 sticks",
+      "description": "Push a stick into the soil and it feeds the plant for weeks. Placeholder product.",
+      "image": "slow-release-feeding-sticks.jpg"
+    },
+    {
+      "handle": "well-draining-potting-mix",
+      "title": "Well-Draining Potting Mix",
+      "price": "13.00",
+      "light": "Not applicable",
+      "size": "5 litre bag",
+      "description": "A light, airy mix with bark and perlite that helps prevent soggy roots. Placeholder product.",
+      "image": "well-draining-potting-mix.jpg"
+    },
+    {
+      "handle": "precision-pruning-snips",
+      "title": "Precision Pruning Snips",
+      "price": "15.00",
+      "light": "Not applicable",
+      "size": "Stainless steel",
+      "description": "Sharp snips for clean cuts when removing damaged leaves and stems. Wipe the blades between plants. Placeholder product.",
+      "image": "precision-pruning-snips.jpg"
+    },
+    {
+      "handle": "soil-moisture-meter",
+      "title": "Soil Moisture Meter",
+      "price": "12.00",
+      "light": "Not applicable",
+      "size": "Probe, 20 cm",
+      "description": "A simple probe that shows whether the soil is dry, moist or wet, so watering is never a guess. Placeholder product.",
+      "image": "soil-moisture-meter.jpg"
+    }
+  ]
+}
