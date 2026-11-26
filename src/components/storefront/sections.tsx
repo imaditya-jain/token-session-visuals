@@ -4,6 +4,7 @@ import { ArrowRight, Heart, X } from "lucide-react";
 
 import { getBestSellers, getCollections } from "@/data/catalog";
 import CollectionCard from "@/components/storefront/CollectionCard";
+import CollectionSlider from "@/components/storefront/CollectionSlider";
 import ProductCard from "@/components/storefront/ProductCard";
 import SocialIcon from "@/components/storefront/SocialIcon";
 import { phoneHref, SOCIAL_PLATFORMS } from "@/lib/site-chrome";
@@ -39,19 +40,29 @@ export async function Collections() {
   const collections = await getCollections();
   if (collections.length === 0) return null;
   const c = await getPageContent("home");
+  const cta = c.link("collections", "cta");
   return (
     <section
       id="collections"
       className="mx-auto max-w-7xl px-4 pb-20 pt-14 sm:px-6 lg:px-8 lg:pb-28"
     >
       <SectionHeading
+        eyebrow={c.text("collections", "eyebrow")}
         title={c.text("collections", "title")}
         description={c.text("collections", "description")}
       />
-      <div className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
+      <CollectionSlider label={c.text("collections", "title")}>
         {collections.map((collection) => (
           <CollectionCard key={collection.slug} collection={collection} />
         ))}
+      </CollectionSlider>
+      <div className="mt-6 text-center">
+        <Link
+          href={cta.href}
+          className="inline-flex items-center gap-2 rounded-md border border-forest/30 px-7 py-3 text-sm font-semibold text-forest transition-colors hover:bg-forest hover:text-cream"
+        >
+          {cta.label} <ArrowRight className="size-4" aria-hidden />
+        </Link>
       </div>
     </section>
   );

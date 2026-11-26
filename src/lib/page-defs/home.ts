@@ -38,14 +38,19 @@ export const HOME: PageDef = {
     },
     {
       id: "collections",
-      label: "Collections heading",
+      label: "Collections slider",
       fields: {
+        eyebrow: text("Small line above the heading", "", 60, true),
         title: text("Heading", "Shop house plants", 80),
         description: area(
           "Text",
           "Curated collections for every corner — from sun-drenched shelves to cozy low-light nooks.",
           240,
         ),
+        cta: link("Button under the slider", {
+          label: "View all collections",
+          href: "/collections",
+        }),
       },
     },
     {
