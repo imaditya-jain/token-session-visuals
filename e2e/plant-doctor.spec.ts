@@ -9,7 +9,7 @@ const audit = async (page: Page): Promise<string[]> =>
       .analyze()
   ).violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(" | ")}`);
 
-// The e2e server has no AI key, so the page shows its "almost ready" state. The full flow (photo in, diagnosis out)
+// The e2e server has no AI key, so the page shows its "coming soon" state. The full flow (photo in, diagnosis out)
 // is covered against a mocked model in src/app/api/plant-doctor/plant-doctor.int.test.ts.
 test.describe("Plant Doctor page", () => {
   for (const [name, size] of [
@@ -20,7 +20,7 @@ test.describe("Plant Doctor page", () => {
       await page.setViewportSize(size);
       await page.goto("/plant-doctor");
       await expect(page.getByRole("heading", { level: 1, name: "Plant Doctor" })).toBeVisible();
-      await expect(page.getByText("The Plant Doctor is almost ready")).toBeVisible();
+      await expect(page.getByText("Plant Doctor is coming soon")).toBeVisible();
       expect(await audit(page)).toEqual([]);
       const overflow = await page.evaluate(
         () => document.documentElement.scrollWidth > window.innerWidth,

@@ -11,7 +11,13 @@ import {
   MAX_NOTES_LENGTH,
 } from "@/lib/plant-doctor";
 import type { Product } from "@/lib/types";
-import { analysePlantPhoto, type CatalogLine, type ModelOutput } from "@/server/ai/plant-doctor";
+import {
+  analysePlantPhoto,
+  researchProblem,
+  type CatalogLine,
+  type ModelOutput,
+  type ResearchOutput,
+} from "@/server/ai/plant-doctor";
 import { prepareImage } from "@/server/ai/image";
 import { aiEnv } from "@/server/config/env";
 import { connectDb } from "@/server/db/connection";
@@ -24,6 +30,8 @@ import { rateLimiter } from "@/server/ratelimit";
 const RETENTION_MS = 183 * 24 * 3600 * 1000;
 const MAX_PRODUCTS = 4;
 const DAY = 86_400;
+/** The whole request must finish inside the route maxDuration; research gets only what is left of this. */
+const RESEARCH_DEADLINE_MS = 100_000;
 
 /** What is stored: the diagnosis with each product reduced to its handle, so prices and stock are read live later. */
 type StoredDiagnosis = Omit<Diagnosis, "products"> & {
@@ -97,6 +105,55 @@ export function toStored(output: ModelOutput, catalog: Product[]): StoredDiagnos
     questions: list(output.questions, 4, 200),
     whenToGetHelp: output.whenToGetHelp ? short(output.whenToGetHelp, 300) : null,
     products: noPlant ? [] : picks,
+  };
+}
+
+/** A web lookup is worth its time only when a disease, pest or feeding problem is suspected, or the plant is in trouble. */
+export function needsResearch(stored: StoredDiagnosis): boolean {
+  if (!stored.isPlant || stored.health === "healthy" || stored.health === "unclear") return false;
+  return (
+    stored.health === "urgent" ||
+    stored.findings.some(
+      (f) => ["disease", "pest", "nutrition"].includes(f.kind) && f.confidence !== "low",
+    )
+  );
+}
+
+const describeProblem = (stored: StoredDiagnosis, notes: string): string =>
+  [
+    stored.plant ? `Plant: ${stored.plant.commonName}` : "Plant: unidentified houseplant",
+    ...stored.findings.map((f) => `Suspected: ${f.title} (${f.kind}); ${f.evidence}`),
+    notes ? `Customer notes: ${notes}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+/** Adds the web findings to the stored diagnosis, plus any catalogue products the research picked (checked against the catalogue). */
+export function mergeResearch(
+  stored: StoredDiagnosis,
+  research: ResearchOutput,
+  catalog: Product[],
+): StoredDiagnosis {
+  const bySlug = new Map(catalog.map((p) => [p.slug, p]));
+  const products = [...stored.products];
+  for (const pick of research.productPicks) {
+    const product = bySlug.get(pick.handle);
+    if (!product || !product.inStock || products.some((p) => p.handle === product.slug)) continue;
+    if (products.length >= MAX_PRODUCTS) break;
+    products.push({ handle: product.slug, reason: short(pick.reason, 200) });
+  }
+  return {
+    ...stored,
+    products,
+    research: {
+      tips: list(research.tips, 5, 220),
+      treatments: research.treatments.slice(0, 3).map((t) => ({
+        name: short(t.name, 80),
+        about: short(t.about, 220),
+        safety: short(t.safety, 220),
+      })),
+      sources: research.sources,
+    },
   };
 }
 
@@ -181,7 +238,17 @@ export async function diagnose(input: {
     );
   }
 
-  const stored = toStored(result.output, catalog);
+  let stored = toStored(result.output, catalog);
+  // Web research is a bonus: skipped when the photo check already used most of the time, and never allowed to fail the check.
+  const budgetLeft = RESEARCH_DEADLINE_MS - (Date.now() - started);
+  if (needsResearch(stored) && budgetLeft > 12_000) {
+    const research = await researchProblem({
+      problem: describeProblem(stored, cleanNotes(input.notes)),
+      catalog: catalogLines(catalog),
+      timeoutMs: Math.min(40_000, budgetLeft),
+    });
+    if (research) stored = mergeResearch(stored, research, catalog);
+  }
   await connectDb();
   const now = new Date();
   const doc = await PlantDiagnosis.create({

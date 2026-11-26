@@ -35,6 +35,13 @@ export type Finding = {
   likelyCauses: string[];
 };
 
+/** What a web search found about the problem: general care tips, treatment types, and the pages it came from. */
+export type Research = {
+  tips: string[];
+  treatments: { name: string; about: string; safety: string }[];
+  sources: { title: string; url: string }[];
+};
+
 export type Diagnosis = {
   isPlant: boolean;
   /** When the photo cannot be judged, what would make a better one. */
@@ -48,6 +55,8 @@ export type Diagnosis = {
   /** Questions whose answers would sharpen the diagnosis. */
   questions: string[];
   whenToGetHelp: string | null;
+  /** Found on the web after the photo check, only when a disease, pest or feeding problem was suspected. Older checks have none. */
+  research?: Research | null;
   /** Products from our own shop that fit the plan, with the reason for each. */
   products: { product: Product; reason: string }[];
 };

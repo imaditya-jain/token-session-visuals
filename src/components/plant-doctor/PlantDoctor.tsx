@@ -196,6 +196,51 @@ function Result({ record, onAgain }: { record: DiagnosisRecord; onAgain: () => v
         </p>
       ) : null}
 
+      {d.research && (d.research.tips.length > 0 || d.research.treatments.length > 0) ? (
+        <section aria-labelledby="pd-research" className="space-y-4">
+          <h3 id="pd-research" className="font-display text-2xl font-medium text-forest">
+            From the web: care tips and treatments
+          </h3>
+          <div className="grid gap-4 md:grid-cols-2">
+            <Steps title="Tips for this problem" items={d.research.tips} />
+            {d.research.treatments.length > 0 ? (
+              <div className="rounded-2xl bg-card p-5 shadow-sm ring-1 ring-border/60">
+                <h4 className="font-display text-lg font-medium text-forest">
+                  Treatments gardeners use
+                </h4>
+                <ul className="mt-3 space-y-3 text-sm leading-relaxed text-foreground/90">
+                  {d.research.treatments.map((t) => (
+                    <li key={t.name}>
+                      <p className="font-semibold text-forest">{t.name}</p>
+                      <p>{t.about}</p>
+                      <p className="text-muted-foreground">{t.safety}</p>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+          </div>
+          {d.research.sources.length > 0 ? (
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              Sources:{" "}
+              {d.research.sources.map((source, index) => (
+                <span key={source.url}>
+                  {index > 0 ? " · " : ""}
+                  <a
+                    href={source.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline underline-offset-2"
+                  >
+                    {source.title}
+                  </a>
+                </span>
+              ))}
+            </p>
+          ) : null}
+        </section>
+      ) : null}
+
       {d.products.length > 0 ? (
         <section aria-labelledby="pd-products" className="space-y-4">
           <h3 id="pd-products" className="font-display text-2xl font-medium text-forest">
@@ -329,9 +374,9 @@ export default function PlantDoctor({ enabled }: { enabled: boolean }) {
   if (!enabled) {
     return (
       <div className="rounded-2xl bg-sage-light/60 p-8 text-center">
-        <p className="font-display text-2xl text-forest">The Plant Doctor is almost ready</p>
+        <p className="font-display text-2xl text-forest">Plant Doctor is coming soon</p>
         <p className="mt-2 text-sm text-muted-foreground">
-          We are putting the finishing touches on it. Please check back soon.
+          Soon you will be able to photograph a struggling plant and get a care plan. We will tell you when it is ready.
         </p>
       </div>
     );
