@@ -56,3 +56,14 @@ export async function prepareImage(
     );
   }
 }
+
+/**
+ * A smaller copy for providers that bill by tokens: the picture costs about the same up to 768 px a side, so larger
+ * ones only add cost. The sharper original is untouched for providers that take it.
+ */
+export async function shrinkForTokens(jpeg: Buffer, side = 768): Promise<Buffer> {
+  return sharp(jpeg)
+    .resize({ width: side, height: side, fit: "inside", withoutEnlargement: true })
+    .jpeg({ quality: 78, mozjpeg: true })
+    .toBuffer();
+}

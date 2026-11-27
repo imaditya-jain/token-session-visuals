@@ -165,30 +165,55 @@ export function sealToken(): string | null {
 const aiSchema = z.object({
   /** Without a key the Plant Doctor reports itself as not set up; the rest of the site is unaffected. */
   ANTHROPIC_API_KEY: z.preprocess((v) => (v === "" ? undefined : v), z.string().min(20).optional()),
+  /** Google Gemini key (alternative to Claude). `GEMINI_APIKEY` is accepted as an alias. */
+  GEMINI_API_KEY: z.preprocess((v) => (v === "" ? undefined : v), z.string().min(20).optional()),
+  /** Which provider answers. Unset: Claude when its key is present, otherwise Gemini. */
+  PLANT_DOCTOR_PROVIDER: z.preprocess(
+    (v) => (v === "" ? undefined : v),
+    z.enum(["anthropic", "gemini"]).optional(),
+  ),
+  PLANT_DOCTOR_GEMINI_MODEL: z.preprocess(
+    (v) => (v === "" ? undefined : v),
+    z.string().min(1).default("gemini-3-flash-preview"),
+  ),
   /** Model used for photo diagnosis. Change deliberately, after checking quality and cost on real photos. */
   PLANT_DOCTOR_MODEL: z.preprocess(
     (v) => (v === "" ? undefined : v),
     z.string().min(1).default("claude-opus-5-5"),
   ),
-  /** Checks one signed-in person may run per day. */
+  /** Checks one signed-in person may run per day (3 keeps a free Gemini plan well inside its quota). */
   PLANT_DOCTOR_PER_USER_DAILY: z.preprocess(
     (v) => (v === "" ? undefined : v),
-    z.coerce.number().int().min(1).max(200).default(10),
+    z.coerce.number().int().min(1).max(200).default(3),
   ),
   /** Checks the whole site may run per day: a hard ceiling on spend if something goes wrong. */
   PLANT_DOCTOR_DAILY_CAP: z.preprocess(
     (v) => (v === "" ? undefined : v),
-    z.coerce.number().int().min(1).max(100_000).default(300),
+    z.coerce.number().int().min(1).max(100_000).default(100),
   ),
 });
 
 export type AiEnv = z.infer<typeof aiSchema>;
 
+export type AiProvider = "anthropic" | "gemini";
+
+/** The provider that will answer, or null when none is configured (the feature then reports itself off). */
+export function aiProvider(): AiProvider | null {
+  const env = aiEnv();
+  if (env.PLANT_DOCTOR_PROVIDER === "gemini") return env.GEMINI_API_KEY ? "gemini" : null;
+  if (env.PLANT_DOCTOR_PROVIDER === "anthropic") return env.ANTHROPIC_API_KEY ? "anthropic" : null;
+  if (env.ANTHROPIC_API_KEY) return "anthropic";
+  return env.GEMINI_API_KEY ? "gemini" : null;
+}
+
 let cachedAi: AiEnv | undefined;
 
 export function aiEnv(): AiEnv {
   if (cachedAi) return cachedAi;
-  const parsed = aiSchema.safeParse(process.env);
+  const parsed = aiSchema.safeParse({
+    ...process.env,
+    GEMINI_API_KEY: process.env["GEMINI_API_KEY"] || process.env["GEMINI_APIKEY"],
+  });
   if (!parsed.success) {
     const problems = parsed.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ");
     throw new Error(`Invalid AI environment: ${problems}`);
