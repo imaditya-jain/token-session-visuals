@@ -1,6 +1,6 @@
 # Reels (customer photos and short videos)
 
-Customers post a **photo** (a *post*, up to 2 MB, stays up) or a **video** (a *reel*, up to 30 seconds and 5 MB,
+Customers post a **photo** (a *post*, up to 20 MB, stays up) or a **video** (a *reel*, up to 30 seconds and 20 MB,
 **deleted 24 hours after it goes live, file included**) about gardening, home planting or landscaping, link up to
 four products from the shop, and other customers like, comment and follow. An admin approves everything before it
 appears. The creator lives in the Expo app (`fernwood-app`); the website has the public `/reels` page, the API and
@@ -37,7 +37,7 @@ Accounts, comments, likes and reports stay in MongoDB; Supabase is used for file
 
 ## Set up Supabase (once per environment)
 
-1. Create a project, then **Storage > New bucket**: name `reels`, **Public bucket ON**, file size limit **5 MB**,
+1. Create a project, then **Storage > New bucket**: name `reels`, **Public bucket ON**, file size limit **20 MB** (the project-wide limit is 50 MB),
    allowed MIME types `image/jpeg, image/png, image/webp, video/mp4, video/quicktime`.
    No storage policies are needed: uploads use signed URLs created with the service-role key. Public means
    anyone who has a file's address can read it; addresses contain a random id and are only handed out for
@@ -51,8 +51,8 @@ Accounts, comments, likes and reports stay in MongoDB; Supabase is used for file
 
 The 30-second length is read by the app from the picked file (the app refuses longer videos) and sent as a
 declared value (the server rejects anything over 30 s). The server cannot measure a video's real duration without a
-media tool, so the 5 MB size limit, the content check and moderation are the real guards. The app does not compress
-videos: one over 5 MB is refused with a message; pictures are shrunk automatically to fit 2 MB.
+media tool, so the 20 MB size limit, the content check and moderation are the real guards. The app does not compress
+videos: one over 20 MB is refused with a message; pictures are shrunk automatically.
 
 ## Not built
 

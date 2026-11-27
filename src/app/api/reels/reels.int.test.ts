@@ -184,13 +184,13 @@ describe("posting", () => {
     const { token } = await member("a@example.com");
     const bad = async (body: object) =>
       create(apiRequest("/api/reels", "POST", { token, body: { ...photo, ...body } }));
-    expect((await bad({ sizeBytes: 2 * 1024 * 1024 + 1 })).status).toBe(400);
+    expect((await bad({ sizeBytes: 20 * 1024 * 1024 + 1 })).status).toBe(400);
     expect(
       (
         await bad({
           kind: "video",
           contentType: "video/mp4",
-          sizeBytes: 5 * 1024 * 1024 + 1,
+          sizeBytes: 20 * 1024 * 1024 + 1,
           durationMs: 10_000,
         })
       ).status,
@@ -216,10 +216,34 @@ describe("posting", () => {
     const ok = await bad({
       kind: "video",
       contentType: "video/mp4",
-      sizeBytes: 5 * 1024 * 1024,
+      sizeBytes: 20 * 1024 * 1024,
       durationMs: 30_000,
     });
     expect(ok.status).toBe(201);
+  });
+
+  it("accepts what real phones send: a fractional length, a true 16:9 and a 20 MB file", async () => {
+    const { token } = await member("a@example.com");
+    const go = (body: object) =>
+      create(apiRequest("/api/reels", "POST", { token, body: { ...photo, ...body } }));
+    const video = { kind: "video", contentType: "video/mp4" };
+    expect(
+      (await go({ ...video, sizeBytes: 3_000_000, durationMs: 3041.6, aspectRatio: 9 / 16 }))
+        .status,
+    ).toBe(201);
+    expect(
+      (
+        await go({
+          ...video,
+          sizeBytes: 20 * 1024 * 1024,
+          durationMs: 29_999.9,
+          aspectRatio: 1920 / 1080,
+        })
+      ).status,
+    ).toBe(201);
+    expect((await go({ sizeBytes: 12 * 1024 * 1024, aspectRatio: 4 / 9 })).status).toBe(201);
+    const stored = await Reel.findOne({ kind: "video" }).sort({ _id: 1 }).lean();
+    expect(Number.isInteger(stored?.durationMs)).toBe(true);
   });
 
   it("refuses unknown linked products and blocks cross-site requests", async () => {
@@ -259,7 +283,7 @@ describe("posting", () => {
     const second = await create(apiRequest("/api/reels", "POST", { token, body: photo }));
     const id2 = (await json(second)).data.id;
     const reel2 = await Reel.findById(id2).lean();
-    storage.objects.set(reel2?.storagePath ?? "", { size: 3 * 1024 * 1024, head: JPEG });
+    storage.objects.set(reel2?.storagePath ?? "", { size: 21 * 1024 * 1024, head: JPEG });
     expect(
       (await complete(apiRequest(`/api/reels/${id2}/complete`, "POST", { token }))).status,
     ).toBe(422);

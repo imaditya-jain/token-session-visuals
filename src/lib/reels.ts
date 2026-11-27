@@ -2,8 +2,8 @@ import { z } from "zod";
 
 /** Hard limits of the Reels feature. The app and the server read the same numbers. */
 export const REEL_LIMITS = {
-  imageBytes: 2 * 1024 * 1024,
-  videoBytes: 5 * 1024 * 1024,
+  imageBytes: 20 * 1024 * 1024,
+  videoBytes: 20 * 1024 * 1024,
   videoMaxMs: 30_000,
   captionChars: 300,
   commentChars: 300,
@@ -17,7 +17,7 @@ export const REEL_LIMITS = {
  * Shapes allowed for pictures and videos, as width / height: from 4:9 (tall) to 16:9 (wide). 1:1, 4:5, 7:11, 9:16
  * and 16:9 all fit. Wider or taller files are refused so nothing is stretched or cropped to an odd sliver.
  */
-export const REEL_ASPECT = { min: 4 / 9, max: 16 / 9 } as const;
+export const REEL_ASPECT = { min: 0.44, max: 1.8 } as const;
 
 export const REEL_TOPICS = ["gardening", "home-planting", "landscaping"] as const;
 export type ReelTopic = (typeof REEL_TOPICS)[number];
@@ -53,7 +53,13 @@ export const createReelSchema = z
     kind: z.enum(["image", "video"]),
     contentType: z.string().max(40),
     sizeBytes: z.number().int().positive(),
-    durationMs: z.number().int().positive().max(REEL_LIMITS.videoMaxMs).optional(),
+    // Phones report fractions of a millisecond; the length is stored as whole milliseconds.
+    durationMs: z
+      .number()
+      .positive()
+      .max(REEL_LIMITS.videoMaxMs)
+      .transform((value) => Math.max(1, Math.round(value)))
+      .optional(),
     aspectRatio: z.number().min(REEL_ASPECT.min).max(REEL_ASPECT.max),
     caption: text(REEL_LIMITS.captionChars).default(""),
     topic: z.enum(REEL_TOPICS),
