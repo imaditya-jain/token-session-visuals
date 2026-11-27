@@ -196,3 +196,27 @@ export function aiEnv(): AiEnv {
   cachedAi = parsed.data;
   return cachedAi;
 }
+
+const supabaseSchema = z.object({
+  SUPABASE_URL: z.string().url("SUPABASE_URL must be the project URL"),
+  SUPABASE_SERVICE_ROLE_KEY: z.string().min(20, "SUPABASE_SERVICE_ROLE_KEY is required"),
+  SUPABASE_REELS_BUCKET: z.preprocess(
+    (v) => (v === "" ? undefined : v),
+    z
+      .string()
+      .regex(/^[a-z0-9][a-z0-9-]{1,61}$/)
+      .default("reels"),
+  ),
+});
+
+export type SupabaseEnv = z.infer<typeof supabaseSchema>;
+
+/**
+ * Reels storage. Optional: without these the Reels feature reports itself switched off and nothing else
+ * changes. The service-role key stays on the server; browsers and the app only ever get one-time signed URLs.
+ */
+export function supabaseEnv(): SupabaseEnv | null {
+  const parsed = supabaseSchema.safeParse(process.env);
+  if (!parsed.success) return null;
+  return { ...parsed.data, SUPABASE_URL: parsed.data.SUPABASE_URL.replace(/\/+$/, "") };
+}

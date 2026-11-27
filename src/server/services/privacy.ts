@@ -9,6 +9,7 @@ import { PushDevice } from "@/server/db/models/push-device";
 import { ShopifyOrder } from "@/server/db/models/shopify-mirror";
 import { Subscriber } from "@/server/db/models/subscriber";
 import { User } from "@/server/db/models/user";
+import { eraseUserReels } from "@/server/services/reels";
 import { Wishlist } from "@/server/db/models/wishlist";
 import { enqueueEmail } from "@/server/email/outbox";
 import { forbidden, unauthorized } from "@/server/http/errors";
@@ -113,6 +114,7 @@ export async function deleteAccount(userId: string, password: string): Promise<v
     PushDevice.deleteMany({ userId: user._id }),
     Notification.deleteMany({ userId: user._id }),
     PlantDiagnosis.deleteMany({ userId: user._id }),
+    eraseUserReels(userId),
   ]);
   await User.deleteOne({ _id: user._id });
 

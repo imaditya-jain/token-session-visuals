@@ -871,6 +871,7 @@ test.describe("operational endpoints", () => {
       // Scheduled blog posts that came due in this pass (none exist here).
       postsPublished: 0,
       campaignsSent: 0,
+      reelsSwept: 0,
       jobs: { attempted: 0, done: 0 },
     });
   });
@@ -1286,6 +1287,57 @@ test.describe("notifications API", () => {
     const api = await client();
     expect((await api.post("/api/notifications", { data: {} })).status()).toBe(405);
     expect((await api.get("/api/notifications/read")).status()).toBe(405);
+  });
+});
+
+test.describe("reels API", () => {
+  test("every endpoint needs a valid session, and admin ones an admin", async () => {
+    const api = await client();
+    const anyId = "a".repeat(24);
+    for (const path of [
+      "/api/reels",
+      "/api/reels/mine",
+      `/api/reels/${anyId}`,
+      `/api/reels/${anyId}/comments`,
+      "/api/admin/reels",
+      `/api/admin/reels/${anyId}/comments`,
+    ]) {
+      expect((await api.get(path)).status(), path).toBe(401);
+    }
+    for (const path of [
+      "/api/reels",
+      `/api/reels/${anyId}/complete`,
+      `/api/reels/${anyId}/like`,
+      `/api/reels/${anyId}/comments`,
+      `/api/reels/${anyId}/report`,
+    ]) {
+      expect((await json(api, path, {})).status(), path).toBe(401);
+    }
+    expect((await api.delete(`/api/reels/${anyId}`)).status()).toBe(401);
+    expect(
+      (await json(api, `/api/admin/reels/${anyId}`, { status: "approved" }, "patch")).status(),
+    ).toBe(401);
+  });
+
+  test("a customer cannot reach moderation, and reels report themselves off without storage", async () => {
+    const api = await client();
+    const registered = await json(api, "/api/auth/register", {
+      email: uniqueEmail("reel"),
+      password,
+      firstName: "R",
+      lastName: "L",
+      acceptsMarketing: false,
+    });
+    const auth = { authorization: `Bearer ${(await body(registered)).data.accessToken}` };
+    expect((await api.get("/api/admin/reels", { headers: auth })).status()).toBe(403);
+    const feed = await api.get("/api/reels", { headers: auth });
+    expect(feed.status()).toBe(503);
+    expect((await body(feed)).error.code).toBe("reels_not_configured");
+
+    const foreign = await client({ origin: "https://evil.example" });
+    expect((await json(foreign, "/api/reels", {}, "post", auth)).status()).toBe(403);
+    expect((await json(api, "/api/reels", { kind: { $ne: 1 } }, "post", auth)).status()).toBe(400);
+    expect((await api.put("/api/reels", { headers: auth })).status()).toBe(405);
   });
 });
 
