@@ -124,14 +124,14 @@ export default function ReelDialog({ reel, onClose }: { reel: ReelDto; onClose: 
               muted
               loop
               playsInline
-              className="max-h-[60vh] w-full object-contain"
+              className="h-full w-full object-cover"
             />
           ) : (
             // eslint-disable-next-line @next/next/no-img-element -- community pictures come from our storage, not the Shopify image loader
             <img
               src={reel.mediaUrl}
               alt={reel.caption || `Photo by ${reel.author}`}
-              className="max-h-[60vh] w-full object-contain"
+              className="h-full w-full object-cover"
             />
           )}
         </div>
