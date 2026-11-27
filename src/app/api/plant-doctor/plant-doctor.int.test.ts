@@ -69,6 +69,7 @@ const answer = (over: Record<string, unknown> = {}) => ({
     avoid: ["Standing water"],
   },
   watchFor: ["New yellow leaves"],
+  prevention: ["Let the top inch of soil dry between waterings."],
   questions: ["How often do you water?"],
   whenToGetHelp: null,
   productPicks: [

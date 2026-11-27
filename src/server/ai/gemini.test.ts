@@ -16,6 +16,7 @@ const answer = {
   findings: [],
   carePlan: { rightNow: [], thisWeek: [], ongoing: ["Water when the top inch is dry."], avoid: [] },
   watchFor: [],
+  prevention: ["Water only when the top inch is dry."],
   questions: [],
   whenToGetHelp: null,
   productPicks: [],

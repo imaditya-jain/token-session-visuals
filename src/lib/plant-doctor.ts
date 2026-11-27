@@ -52,6 +52,8 @@ export type Diagnosis = {
   findings: Finding[];
   carePlan: { rightNow: string[]; thisWeek: string[]; ongoing: string[]; avoid: string[] };
   watchFor: string[];
+  /** How to stop it coming back. Checks made before this existed have none. */
+  prevention?: string[];
   /** Questions whose answers would sharpen the diagnosis. */
   questions: string[];
   whenToGetHelp: string | null;

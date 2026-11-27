@@ -159,6 +159,11 @@ function Result({ record, onAgain }: { record: DiagnosisRecord; onAgain: () => v
               </summary>
               <p className="mt-3 text-sm leading-relaxed text-foreground/90">{finding.evidence}</p>
               {finding.likelyCauses.length > 0 ? (
+                <p className="mt-3 text-xs font-medium uppercase tracking-wider text-forest">
+                  Why this happens
+                </p>
+              ) : null}
+              {finding.likelyCauses.length > 0 ? (
                 <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
                   {finding.likelyCauses.map((cause) => (
                     <li key={cause}>{cause}</li>
@@ -187,6 +192,9 @@ function Result({ record, onAgain }: { record: DiagnosisRecord; onAgain: () => v
         </section>
       ) : null}
 
+      {(d.prevention ?? []).length > 0 ? (
+        <Steps title="How to prevent it" items={d.prevention ?? []} />
+      ) : null}
       {d.watchFor.length > 0 ? <Steps title="Watch for" items={d.watchFor} /> : null}
       {d.questions.length > 0 ? <Steps title="Helpful to know" items={d.questions} /> : null}
       {d.whenToGetHelp ? (

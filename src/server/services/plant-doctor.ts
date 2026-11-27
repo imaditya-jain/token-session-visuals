@@ -102,6 +102,7 @@ export function toStored(output: ModelOutput, catalog: Product[]): StoredDiagnos
       avoid: list(output.carePlan.avoid, 5, 220),
     },
     watchFor: list(output.watchFor, 5, 200),
+    prevention: list(output.prevention, 5, 200),
     questions: list(output.questions, 4, 200),
     whenToGetHelp: output.whenToGetHelp ? short(output.whenToGetHelp, 300) : null,
     products: noPlant ? [] : picks,
