@@ -206,13 +206,15 @@ describe("posting", () => {
     expect((await bad({ topic: "cooking" })).status).toBe(400);
     expect((await bad({ productHandles: ["a", "b", "c", "d", "e"] })).status).toBe(400);
     expect((await bad({ caption: "bad\u0000text" })).status).toBe(400);
-    for (const aspectRatio of [0.3, 2.5, 0, -1])
+    for (const aspectRatio of [0.1, 6, 0, -1])
       expect((await bad({ aspectRatio })).status, String(aspectRatio)).toBe(400);
     expect((await bad({ aspectRatio: undefined })).status).toBe(400);
+    // Videos keep the 4:9..16:9 range; photos may be any shape.
+    const video = { kind: "video", contentType: "video/mp4", sizeBytes: 1000, durationMs: 5000 };
+    expect((await bad({ ...video, aspectRatio: 0.3 })).status).toBe(400);
+    expect((await bad({ ...video, aspectRatio: 2.5 })).status).toBe(400);
     expect((await bad({ extra: true })).status).toBe(400);
     expect(await Reel.countDocuments()).toBe(0);
-    for (const aspectRatio of [1, 0.8, 7 / 11, 9 / 16, 16 / 9])
-      expect((await bad({ aspectRatio })).status, String(aspectRatio)).toBe(201);
     const ok = await bad({
       kind: "video",
       contentType: "video/mp4",
@@ -220,6 +222,17 @@ describe("posting", () => {
       durationMs: 30_000,
     });
     expect(ok.status).toBe(201);
+  });
+
+  it("photos of any shape are accepted; only absurd slivers are not", async () => {
+    const { token } = await member("shapes@example.com");
+    const go = (aspectRatio: number) =>
+      create(apiRequest("/api/reels", "POST", { token, body: { ...photo, aspectRatio } }));
+    for (const aspectRatio of [1, 9 / 16, 16 / 9, 3, 0.3]) {
+      expect((await go(aspectRatio)).status, String(aspectRatio)).toBe(201);
+    }
+    expect((await go(0.1)).status).toBe(400);
+    expect((await go(6)).status).toBe(400);
   });
 
   it("accepts what real phones send: a fractional length, a true 16:9 and a 20 MB file", async () => {
@@ -369,6 +382,7 @@ describe("approval and the feed", () => {
   it("pages newest first and filters by topic", async () => {
     const author = await member("a@example.com");
     const coauthor = await member("a2@example.com");
+    const viewer = await member("viewer@example.com");
     const admin = await adminSession("boss@example.com", "super_admin");
     const ids: string[] = [];
     for (let i = 0; i < 12; i += 1) {
@@ -379,22 +393,22 @@ describe("approval and the feed", () => {
       await approve(admin.token, id);
       ids.push(id);
     }
-    const first = await json(await feed(apiRequest("/api/reels", "GET", { token: author.token })));
+    const first = await json(await feed(apiRequest("/api/reels", "GET", { token: viewer.token })));
     expect(first.data.reels.map((r: { id: string }) => r.id)).toEqual(ids.slice(2).reverse());
     expect(first.data.nextCursor).toBeTruthy();
     const second = await json(
       await feed(
-        apiRequest(`/api/reels?cursor=${first.data.nextCursor}`, "GET", { token: author.token }),
+        apiRequest(`/api/reels?cursor=${first.data.nextCursor}`, "GET", { token: viewer.token }),
       ),
     );
     expect(second.data.reels).toHaveLength(2);
     expect(second.data.nextCursor).toBeNull();
     const topic = await json(
-      await feed(apiRequest("/api/reels?topic=gardening", "GET", { token: author.token })),
+      await feed(apiRequest("/api/reels?topic=gardening", "GET", { token: viewer.token })),
     );
     expect(topic.data.reels.every((r: { topic: string }) => r.topic === "gardening")).toBe(true);
     expect(
-      (await feed(apiRequest("/api/reels?cursor=zzz", "GET", { token: author.token }))).status,
+      (await feed(apiRequest("/api/reels?cursor=zzz", "GET", { token: viewer.token }))).status,
     ).toBe(400);
   });
 
@@ -821,7 +835,8 @@ describe("following, privacy and isolation", () => {
       "following",
       "none",
     ]);
-    expect(await ids(ann.token)).toEqual([bobPost, annPost]);
+    // Ann follows nobody, but her own post ranks with the people she follows: it comes first for her.
+    expect(await ids(ann.token)).toEqual([annPost, bobPost]);
     expect(await ids()).toEqual([bobPost, annPost]);
     // Cat now follows the OLDER author: that author's items must jump ahead of newer ones.
     await unfollowRoute(apiRequest(`/api/follows/${bobKey}`, "DELETE", { token: cat.token }));
@@ -1116,5 +1131,32 @@ describe("editing your own post", () => {
       }),
     );
     expect((await patch(ann.token, id, { caption: "again" })).status).toBe(404);
+  });
+});
+
+describe("what you just posted", () => {
+  it("is at the top of your own feed even when you follow people with many posts, and in your profile with the counts", async () => {
+    const me = await member("me@example.com");
+    const other = await member("other@example.com");
+    const otherKey = (
+      await json(await privacyGet(apiRequest("/api/reels/privacy", "GET", { token: other.token })))
+    ).data.key as string;
+    for (let i = 0; i < 9; i += 1) await post(other.token, { caption: `theirs ${i}` });
+    await followRoute(apiRequest(`/api/follows/${otherKey}`, "POST", { token: me.token }));
+    const mine = await post(me.token, { caption: "mine" });
+
+    const feedNow = await json(await feed(apiRequest("/api/reels", "GET", { token: me.token })));
+    expect(feedNow.data.reels.map((r: { id: string }) => r.id)).toContain(mine);
+    // Followed authors and you share the first group, newest first: your newest post leads.
+    expect(feedNow.data.reels[0].id).toBe(mine);
+
+    const myKey = (
+      await json(await privacyGet(apiRequest("/api/reels/privacy", "GET", { token: me.token })))
+    ).data.key as string;
+    const profile = await json(
+      await authorRoute(apiRequest(`/api/reels/authors/${myKey}`, "GET", { token: me.token })),
+    );
+    expect(profile.data.profile.items).toBe(1);
+    expect(profile.data.reels.map((r: { id: string }) => r.id)).toEqual([mine]);
   });
 });

@@ -301,10 +301,12 @@ export async function listFeed(
 ): Promise<ReelPage> {
   assertReelsOn();
   await connectDb();
-  const [hidden, followed] = await Promise.all([
+  const [hidden, following] = await Promise.all([
     hiddenAuthorIds(viewerId),
     followedAuthorIds(viewerId),
   ]);
+  // Your own posts rank with the people you follow, so what you just shared is right there at the top.
+  const followed = viewerId ? [...following, oid(viewerId)] : following;
   const base = {
     ...liveFilter(new Date()),
     ...(options.topic ? { topic: options.topic } : {}),
