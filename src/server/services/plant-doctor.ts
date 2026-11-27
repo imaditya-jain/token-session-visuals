@@ -19,7 +19,7 @@ import {
   type ResearchOutput,
 } from "@/server/ai/plant-doctor";
 import { prepareImage } from "@/server/ai/image";
-import { aiEnv } from "@/server/config/env";
+import { aiEnv, aiProvider } from "@/server/config/env";
 import { connectDb } from "@/server/db/connection";
 import { PlantDiagnosis } from "@/server/db/models/plant-diagnosis";
 import { AppError, notFound } from "@/server/http/errors";
@@ -102,6 +102,7 @@ export function toStored(output: ModelOutput, catalog: Product[]): StoredDiagnos
       avoid: list(output.carePlan.avoid, 5, 220),
     },
     watchFor: list(output.watchFor, 5, 200),
+    prevention: list(output.prevention, 5, 200),
     questions: list(output.questions, 4, 200),
     whenToGetHelp: output.whenToGetHelp ? short(output.whenToGetHelp, 300) : null,
     products: noPlant ? [] : picks,
@@ -179,13 +180,25 @@ const catalogLines = (products: Product[]): CatalogLine[] =>
 
 /** Whether the feature can run at all, for the screens to show "coming soon" instead of a broken form. */
 export function plantDoctorEnabled(): boolean {
-  return Boolean(aiEnv().ANTHROPIC_API_KEY);
+  return aiProvider() !== null;
 }
 
 async function enforceLimits(userId: string, ip: string): Promise<void> {
   const { PLANT_DOCTOR_PER_USER_DAILY, PLANT_DOCTOR_DAILY_CAP } = aiEnv();
   await enforceRateLimit(`plant-doctor:burst:${userId}`, 3, 60);
-  await enforceRateLimit(`plant-doctor:user:${userId}`, PLANT_DOCTOR_PER_USER_DAILY, DAY);
+  const daily = await rateLimiter.consume(
+    `plant-doctor:user:${userId}`,
+    PLANT_DOCTOR_PER_USER_DAILY,
+    DAY,
+  );
+  if (!daily.allowed) {
+    throw new AppError(
+      429,
+      "plant_doctor_daily_limit",
+      `You've used your ${PLANT_DOCTOR_PER_USER_DAILY} free plant checks for today. Please come back tomorrow.`,
+      { "Retry-After": String(daily.retryAfterSeconds) },
+    );
+  }
   await enforceRateLimit(`plant-doctor:ip:${ip}`, 40, DAY);
   // A site-wide ceiling: a bug or an attack can never run up an unlimited bill.
   const global = await rateLimiter.consume("plant-doctor:global", PLANT_DOCTOR_DAILY_CAP, DAY);

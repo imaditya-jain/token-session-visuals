@@ -12,6 +12,14 @@ import { Job } from "@/server/db/models/job";
 import { OtpChallenge } from "@/server/db/models/otp-challenge";
 import { RateLimit } from "@/server/db/models/rate-limit";
 import { ShopifyCollection, ShopifyOrder, ShopifyProduct } from "@/server/db/models/shopify-mirror";
+import {
+  Follow,
+  Reel,
+  ReelComment,
+  ReelLike,
+  ReelProfile,
+  ReelReport,
+} from "@/server/db/models/reel";
 import { Role } from "@/server/db/models/role";
 import { SiteSetting } from "@/server/db/models/site-setting";
 import { Subscriber } from "@/server/db/models/subscriber";
@@ -37,6 +45,12 @@ export async function ensureIndexes(): Promise<void> {
     PushDevice.createIndexes(),
     PlantDiagnosis.createIndexes(),
     Wishlist.createIndexes(),
+    Reel.createIndexes(),
+    ReelComment.createIndexes(),
+    ReelLike.createIndexes(),
+    ReelReport.createIndexes(),
+    ReelProfile.createIndexes(),
+    Follow.createIndexes(),
     Subscriber.createIndexes(),
     ShopifyProduct.createIndexes(),
     ShopifyCollection.createIndexes(),

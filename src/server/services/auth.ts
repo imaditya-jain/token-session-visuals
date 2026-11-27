@@ -299,6 +299,15 @@ export async function logoutAllSessions(userId: string): Promise<void> {
 
 export type AuthContext = { userId: string; sid: string; role: Role; adminRole?: string };
 
+/**
+ * For endpoints anyone may read: no Authorization header means an anonymous visitor (null); a header that is
+ * present must still be valid, so a stale token is told to refresh instead of silently losing "liked" state.
+ */
+export async function authenticateOptional(authorization: string | null): Promise<string | null> {
+  if (!authorization) return null;
+  return (await authenticate(authorization)).userId;
+}
+
 /** Verifies the Bearer access token AND that its session still exists (revocation is immediate). */
 export async function authenticate(authorization: string | null): Promise<AuthContext> {
   if (!authorization?.startsWith("Bearer ")) throw unauthorized();

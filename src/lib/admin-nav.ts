@@ -110,6 +110,18 @@ export const ADMIN_NAV_GROUPS: readonly AdminNavGroup[] = [
     ],
   },
   {
+    id: "community",
+    label: "Community",
+    items: [
+      {
+        href: "/admin/reels",
+        label: "Reels",
+        description: "Approve, reject and remove customer photos and videos",
+        permission: "reels:moderate",
+      },
+    ],
+  },
+  {
     id: "marketing",
     label: "Marketing",
     items: [

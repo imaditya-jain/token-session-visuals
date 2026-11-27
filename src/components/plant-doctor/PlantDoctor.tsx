@@ -159,6 +159,11 @@ function Result({ record, onAgain }: { record: DiagnosisRecord; onAgain: () => v
               </summary>
               <p className="mt-3 text-sm leading-relaxed text-foreground/90">{finding.evidence}</p>
               {finding.likelyCauses.length > 0 ? (
+                <p className="mt-3 text-xs font-medium uppercase tracking-wider text-forest">
+                  Why this happens
+                </p>
+              ) : null}
+              {finding.likelyCauses.length > 0 ? (
                 <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
                   {finding.likelyCauses.map((cause) => (
                     <li key={cause}>{cause}</li>
@@ -187,6 +192,9 @@ function Result({ record, onAgain }: { record: DiagnosisRecord; onAgain: () => v
         </section>
       ) : null}
 
+      {(d.prevention ?? []).length > 0 ? (
+        <Steps title="How to prevent it" items={d.prevention ?? []} />
+      ) : null}
       {d.watchFor.length > 0 ? <Steps title="Watch for" items={d.watchFor} /> : null}
       {d.questions.length > 0 ? <Steps title="Helpful to know" items={d.questions} /> : null}
       {d.whenToGetHelp ? (
@@ -376,7 +384,8 @@ export default function PlantDoctor({ enabled }: { enabled: boolean }) {
       <div className="rounded-2xl bg-sage-light/60 p-8 text-center">
         <p className="font-display text-2xl text-forest">Plant Doctor is coming soon</p>
         <p className="mt-2 text-sm text-muted-foreground">
-          Soon you will be able to photograph a struggling plant and get a care plan. We will tell you when it is ready.
+          Soon you will be able to photograph a struggling plant and get a care plan. We will tell
+          you when it is ready.
         </p>
       </div>
     );

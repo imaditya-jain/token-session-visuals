@@ -31,6 +31,7 @@ export const PERMISSIONS = {
   "enquiries:write": "Change status, assign, add notes to and archive enquiries",
   "enquiries:delete": "Permanently delete archived enquiries",
   "enquiries:export": "Export enquiries to CSV",
+  "reels:moderate": "Approve, reject and remove customer reels and comments",
   "site:write": "Edit the header, footer, social links and website pages (drafts)",
   "site:publish": "Publish changes to the header, footer, social links and website pages",
   "users:manage": "Invite, change and disable admin users",
