@@ -771,7 +771,10 @@ describe("following, privacy and isolation", () => {
     expect((await follow(cat.token, bobKey)).status).toBe(200);
     expect(await ids(cat.token)).toEqual([bobPost, annPost]);
     const withState = await json(await feed(apiRequest("/api/reels", "GET", { token: cat.token })));
-    expect(withState.data.reels.map((r: { followStatus: string }) => r.followStatus)).toEqual(["following", "none"]);
+    expect(withState.data.reels.map((r: { followStatus: string }) => r.followStatus)).toEqual([
+      "following",
+      "none",
+    ]);
     expect(await ids(ann.token)).toEqual([bobPost, annPost]);
     expect(await ids()).toEqual([bobPost, annPost]);
     // Cat now follows the OLDER author: that author's items must jump ahead of newer ones.
