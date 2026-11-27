@@ -74,7 +74,13 @@ vi.mock("@/data/catalog", () => {
   };
 });
 
-const VIDEO = { kind: "video", contentType: "video/mp4", sizeBytes: 4_000_000, durationMs: 20_000 };
+const VIDEO = {
+  aspectRatio: 9 / 16,
+  kind: "video",
+  contentType: "video/mp4",
+  sizeBytes: 4_000_000,
+  durationMs: 20_000,
+};
 const JPEG = Uint8Array.from([0xff, 0xd8, 0xff, 0xe0, ...new Array(60).fill(0)]);
 const MP4 = Uint8Array.from([0, 0, 0, 0x18, 0x66, 0x74, 0x79, 0x70, ...new Array(56).fill(0)]);
 const HTML = new TextEncoder().encode("<!doctype html><script>alert(1)</script>".padEnd(64, " "));
@@ -130,6 +136,7 @@ async function member(email: string, verified = true) {
 
 const json = async (r: Response) => r.json();
 const photo = {
+  aspectRatio: 0.8,
   kind: "image",
   contentType: "image/jpeg",
   sizeBytes: 100_000,
@@ -199,8 +206,13 @@ describe("posting", () => {
     expect((await bad({ topic: "cooking" })).status).toBe(400);
     expect((await bad({ productHandles: ["a", "b", "c", "d", "e"] })).status).toBe(400);
     expect((await bad({ caption: "bad\u0000text" })).status).toBe(400);
+    for (const aspectRatio of [0.3, 2.5, 0, -1])
+      expect((await bad({ aspectRatio })).status, String(aspectRatio)).toBe(400);
+    expect((await bad({ aspectRatio: undefined })).status).toBe(400);
     expect((await bad({ extra: true })).status).toBe(400);
     expect(await Reel.countDocuments()).toBe(0);
+    for (const aspectRatio of [1, 0.8, 7 / 11, 9 / 16, 16 / 9])
+      expect((await bad({ aspectRatio })).status, String(aspectRatio)).toBe(201);
     const ok = await bad({
       kind: "video",
       contentType: "video/mp4",

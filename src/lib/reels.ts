@@ -13,6 +13,12 @@ export const REEL_LIMITS = {
   lifetimeHours: 24,
 } as const;
 
+/**
+ * Shapes allowed for pictures and videos, as width / height: from 4:9 (tall) to 16:9 (wide). 1:1, 4:5, 7:11, 9:16
+ * and 16:9 all fit. Wider or taller files are refused so nothing is stretched or cropped to an odd sliver.
+ */
+export const REEL_ASPECT = { min: 4 / 9, max: 16 / 9 } as const;
+
 export const REEL_TOPICS = ["gardening", "home-planting", "landscaping"] as const;
 export type ReelTopic = (typeof REEL_TOPICS)[number];
 
@@ -48,6 +54,7 @@ export const createReelSchema = z
     contentType: z.string().max(40),
     sizeBytes: z.number().int().positive(),
     durationMs: z.number().int().positive().max(REEL_LIMITS.videoMaxMs).optional(),
+    aspectRatio: z.number().min(REEL_ASPECT.min).max(REEL_ASPECT.max),
     caption: text(REEL_LIMITS.captionChars).default(""),
     topic: z.enum(REEL_TOPICS),
     productHandles: z
@@ -118,6 +125,8 @@ export type ReelDto = {
   followStatus: FollowStatus;
   mediaUrl: string;
   durationMs: number | null;
+  /** Width divided by height, so the picture is shown in its own shape. */
+  aspectRatio: number;
   caption: string;
   topic: ReelTopic;
   author: string;

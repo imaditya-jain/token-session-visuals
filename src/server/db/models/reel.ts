@@ -14,6 +14,7 @@ export type ReelRecord = {
   contentType: string;
   sizeBytes: number;
   durationMs?: number;
+  aspectRatio?: number;
   caption: string;
   topic: ReelTopic;
   /** Product handles only; names, prices and stock are read live from the catalogue. */
@@ -36,6 +37,7 @@ const reelSchema = new Schema<ReelRecord>({
   contentType: { type: String, required: true },
   sizeBytes: { type: Number, required: true },
   durationMs: { type: Number },
+  aspectRatio: { type: Number },
   caption: { type: String, default: "", maxlength: 300 },
   topic: { type: String, enum: REEL_TOPICS, required: true },
   productHandles: { type: [String], default: [] },

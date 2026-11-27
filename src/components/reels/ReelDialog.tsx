@@ -112,7 +112,10 @@ export default function ReelDialog({ reel, onClose }: { reel: ReelDto; onClose: 
           Picture or video, comments and linked products
         </SheetDescription>
 
-        <div className="mt-4 overflow-hidden rounded-xl bg-muted">
+        <div
+          className="mx-auto mt-4 max-h-[60vh] overflow-hidden rounded-xl bg-muted"
+          style={{ aspectRatio: reel.aspectRatio }}
+        >
           {reel.kind === "video" ? (
             <video
               src={reel.mediaUrl}

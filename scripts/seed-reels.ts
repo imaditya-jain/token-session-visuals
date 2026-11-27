@@ -49,6 +49,9 @@ const POSTS = [
   { caption: "Watering day rituals.", topic: "gardening" },
 ] as const;
 
+/** Shapes cycled through the demo posts so the feed shows every supported ratio. */
+const SHAPES = ["original", "square", "wide", "original", "square", "tall"] as const;
+
 const REELS = [
   { caption: "Slow walk through the plant corner.", topic: "home-planting", seconds: 8 },
   { caption: "Garden bed makeover in 8 seconds.", topic: "gardening", seconds: 8 },
@@ -112,6 +115,37 @@ async function removeFiles(paths: string[]): Promise<void> {
     headers: { Authorization: `Bearer ${key}`, apikey: key, "Content-Type": "application/json" },
     body: JSON.stringify({ prefixes: paths }),
   });
+}
+
+function dimensions(ffmpeg: string, file: string): { width: number; height: number } {
+  let text = "";
+  try {
+    execFileSync(ffmpeg, ["-i", file], { stdio: ["ignore", "ignore", "pipe"], encoding: "utf8" });
+  } catch (error) {
+    text = String((error as { stderr?: unknown }).stderr ?? "");
+  }
+  const match = /, (\d{2,5})x(\d{2,5})/.exec(text);
+  return { width: Number(match?.[1] ?? 1080), height: Number(match?.[2] ?? 1350) };
+}
+
+/** Crops a picture to one of the supported shapes and returns the new file and its width / height. */
+function shaped(
+  ffmpeg: string,
+  file: string,
+  shape: (typeof SHAPES)[number],
+  out: string,
+): { file: string; ratio: number } {
+  const { width, height } = dimensions(ffmpeg, file);
+  if (shape === "original") return { file, ratio: width / height };
+  const crop =
+    shape === "square"
+      ? "crop='min(iw,ih)':'min(iw,ih)'"
+      : shape === "wide"
+        ? "crop=iw:'min(ih,iw*9/16)'"
+        : "crop='min(iw,ih*7/11)':'min(ih,iw*11/7)'";
+  execFileSync(ffmpeg, ["-y", "-i", file, "-vf", crop, "-q:v", "3", out], { stdio: "ignore" });
+  const made = dimensions(ffmpeg, out);
+  return { file: out, ratio: made.width / made.height };
 }
 
 const mongo = new MongoClient(need("MONGODB_URI"));
@@ -199,6 +233,7 @@ try {
         file: string,
         meta: { caption: string; topic: string },
         extra: Record<string, unknown>,
+        aspectRatio: number,
       ) => {
         const author = authors[n % authors.length] as { userId: ObjectId; key: string };
         const ext = kind === "image" ? "jpg" : "mp4";
@@ -221,6 +256,7 @@ try {
           likeCount: 8 + ((n * 37) % 140),
           commentCount: 0,
           reportCount: 0,
+          aspectRatio,
           createdAt: new Date(now.getTime() - n * 40 * 60_000),
           approvedAt: now,
           ...extra,
@@ -229,7 +265,13 @@ try {
       };
 
       for (const [n, post] of POSTS.entries()) {
-        await insert(n, "image", pictures[n % pictures.length] as string, post, {});
+        const picture = shaped(
+          ffmpeg,
+          pictures[n % pictures.length] as string,
+          SHAPES[n % SHAPES.length] ?? "original",
+          join(work, `s${n}.jpg`),
+        );
+        await insert(n, "image", picture.file, post, {}, picture.ratio);
       }
       for (const [n, reel] of REELS.entries()) {
         const source = pictures[(n + 2) % pictures.length] as string;
@@ -260,10 +302,17 @@ try {
           ],
           { stdio: "ignore" },
         );
-        await insert(n + POSTS.length, "video", out, reel, {
-          durationMs: reel.seconds * 1000,
-          expiresAt: new Date(now.getTime() + 7 * 24 * 3600_000),
-        });
+        await insert(
+          n + POSTS.length,
+          "video",
+          out,
+          reel,
+          {
+            durationMs: reel.seconds * 1000,
+            expiresAt: new Date(now.getTime() + 7 * 24 * 3600_000),
+          },
+          9 / 16,
+        );
       }
       rmSync(work, { recursive: true, force: true });
       console.log(
