@@ -2,8 +2,7 @@
 
 Customers post a **photo** (a *post*, up to 20 MB, stays up) or a **video** (a *reel*, up to 30 seconds and 20 MB,
 **deleted 24 hours after it goes live, file included**) about gardening, home planting or landscaping, link up to
-four products from the shop, and other customers like, comment and follow. An admin approves everything before it
-appears. The creator lives in the Expo app (`fernwood-app`); the website has the public `/reels` page, the API and
+four products from the shop, and other customers like, comment and follow. Posts go live **automatically** (owner decision: no manual review) as soon as the server has checked the file. The creator lives in the Expo app (`fernwood-app`); the website has the public `/reels` page, the API and
 the moderation page (`/admin/reels`).
 
 ## Who can see what
@@ -28,8 +27,9 @@ the moderation page (`/admin/reels`).
 3. `POST /api/reels/:id/complete` measures the stored file and reads its first bytes. The declared size and type are
    only claims: a wrong size or a file that isn't really a JPEG/PNG/WebP/MP4/MOV is deleted and refused. A good file
    moves the reel to `pending`.
-4. (Admin) An admin with `reels:moderate` approves, rejects or removes it (every decision is audited). Three different
-   people reporting a live reel pull it back to `pending`.
+4. The reel is live at once (a video's 24 hours start then). Safety net instead of review: mailbox-verified accounts only,
+   10 posts a day, file sniffing, and **three different people reporting a live reel hide it** (`pending`) until an admin
+   with `reels:moderate` restores or removes it (every decision is audited).
 5. Abandoned uploads (no `complete` within an hour) are removed by the cron sweep, with their files. Deleting an
    account removes its reels, likes, comments and files.
 

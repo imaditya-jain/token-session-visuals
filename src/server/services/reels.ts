@@ -223,8 +223,8 @@ export async function createReel(userId: string, input: CreateReelInput): Promis
 
 /**
  * Called by the client after the upload. The declared size and type are claims, so the stored file is
- * measured and its first bytes inspected here; anything that doesn't match is deleted. Then the reel waits
- * for a moderator.
+ * measured and its first bytes inspected here; anything that doesn't match is deleted. A good file is published
+ * immediately (no manual review).
  */
 export async function completeReel(userId: string, reelId: string): Promise<ReelDto> {
   assertReelsOn();
@@ -255,7 +255,18 @@ export async function completeReel(userId: string, reelId: string): Promise<Reel
 
   const updated = await Reel.findOneAndUpdate(
     { _id: id, status: "uploading" },
-    { $set: { status: "pending", sizeBytes: probe.size } },
+    {
+      // Owner decision: no manual review. A file that passed the automatic checks goes live at once, and a
+      // video's 24 hour clock starts now. Reports, the daily limit and the admin console are the safety net.
+      $set: {
+        status: "approved",
+        sizeBytes: probe.size,
+        approvedAt: new Date(),
+        ...(reel.kind === "video"
+          ? { expiresAt: new Date(Date.now() + REEL_LIMITS.lifetimeHours * 60 * 60 * 1000) }
+          : {}),
+      },
+    },
     { returnDocument: "after" },
   ).lean();
   return (await toDtos([updated ?? reel], userId))[0] as ReelDto;

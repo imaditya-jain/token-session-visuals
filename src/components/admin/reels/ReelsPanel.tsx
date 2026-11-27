@@ -14,7 +14,7 @@ import { REEL_TOPIC_LABELS, type ReelCommentDto, type ReelDto, type ReelStatus }
 type Page = { reels: ReelDto[]; nextCursor: string | null; counts: Record<string, number> };
 
 const TABS: { id: ReelStatus; label: string }[] = [
-  { id: "pending", label: "Waiting for review" },
+  { id: "pending", label: "Held (reported)" },
   { id: "approved", label: "Live" },
   { id: "rejected", label: "Rejected" },
   { id: "removed", label: "Removed" },
@@ -222,7 +222,7 @@ export default function ReelsPanel() {
     <>
       <PageHeader
         title="Reels"
-        lead="Photos and short videos from customers. Nothing goes live until you approve it."
+        lead="Photos and short videos from customers go live automatically. Reels that people report are held here until you restore or remove them."
       />
       <div role="tablist" aria-label="Reel views" className="mb-4 flex flex-wrap gap-2">
         {TABS.map((tab) => (

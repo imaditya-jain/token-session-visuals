@@ -320,12 +320,20 @@ describe("posting", () => {
 });
 
 describe("approval and the feed", () => {
-  it("keeps a new reel private until a moderator approves it", async () => {
+  it("publishes straight away, with no review; a reel held after reports is private until an admin restores it", async () => {
     const author = await member("a@example.com");
     const viewer = await member("b@example.com");
     const admin = await adminSession("boss@example.com", "super_admin");
     const id = await post(author.token);
 
+    // Live the moment its file passed the checks.
+    expect((await Reel.findById(id).lean())?.status).toBe("approved");
+    const live = await json(await feed(apiRequest("/api/reels", "GET", { token: viewer.token })));
+    expect(live.data.reels.map((r: { id: string }) => r.id)).toEqual([id]);
+    expect((await getOne(apiRequest(`/api/reels/${id}`, "GET"))).status).toBe(200);
+
+    // Held (for example after reports): hidden from everyone but its author, and listed for an admin.
+    await Reel.updateOne({ _id: id }, { $set: { status: "pending" } });
     const before = await json(await feed(apiRequest("/api/reels", "GET", { token: viewer.token })));
     expect(before.data.reels).toHaveLength(0);
     expect(
@@ -338,7 +346,6 @@ describe("approval and the feed", () => {
       await mine(apiRequest("/api/reels/mine", "GET", { token: author.token })),
     );
     expect(ownList.data.reels[0].status).toBe("pending");
-
     const queue = await json(
       await adminList(apiRequest("/api/admin/reels?status=pending", "GET", { token: admin.token })),
     );
@@ -510,6 +517,8 @@ describe("public viewing and the 24 hour life", () => {
     const author = await member("a@example.com");
     const old = await post(author.token);
     const fresh = await post(author.token);
+    // Held reels (not live) are what the sweep clears; live ones are left to their own clock.
+    await Reel.updateMany({ _id: { $in: [old, fresh] } }, { $set: { status: "pending" } });
     await Reel.updateOne(
       { _id: old },
       { $set: { createdAt: new Date(Date.now() - 8 * 24 * 3600_000) } },
@@ -625,10 +634,11 @@ describe("engagement", () => {
     expect((await Reel.findById(id).lean())?.commentCount).toBe(0);
   });
 
-  it("an unapproved reel cannot be liked or commented on by others", async () => {
+  it("a held reel cannot be liked or commented on by others", async () => {
     const author = await member("a@example.com");
     const fan = await member("b@example.com");
     const id = await post(author.token);
+    await Reel.updateOne({ _id: id }, { $set: { status: "pending" } });
     expect(
       (await like(apiRequest(`/api/reels/${id}/like`, "POST", { token: fan.token }))).status,
     ).toBe(404);
@@ -714,7 +724,7 @@ describe("video reels", () => {
       MP4,
     );
     const reel = await Reel.findById(id).lean();
-    expect(reel).toMatchObject({ kind: "video", status: "pending", durationMs: 20_000 });
+    expect(reel).toMatchObject({ kind: "video", status: "approved", durationMs: 20_000 });
   });
 
   it("refuses a picture file declared as a video", async () => {
@@ -1044,7 +1054,7 @@ describe("editing your own post", () => {
     });
     expect(res.status).toBe(200);
     const reel = (await json(res)).data.reel;
-    expect(reel).toMatchObject({ caption: "New words", topic: "landscaping", status: "pending" });
+    expect(reel).toMatchObject({ caption: "New words", topic: "landscaping", status: "approved" });
     expect(reel.products.map((p: { handle: string }) => p.handle).sort()).toEqual([
       "fern",
       "monstera",
