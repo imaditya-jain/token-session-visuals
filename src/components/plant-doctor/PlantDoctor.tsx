@@ -376,7 +376,8 @@ export default function PlantDoctor({ enabled }: { enabled: boolean }) {
       <div className="rounded-2xl bg-sage-light/60 p-8 text-center">
         <p className="font-display text-2xl text-forest">Plant Doctor is coming soon</p>
         <p className="mt-2 text-sm text-muted-foreground">
-          Soon you will be able to photograph a struggling plant and get a care plan. We will tell you when it is ready.
+          Soon you will be able to photograph a struggling plant and get a care plan. We will tell
+          you when it is ready.
         </p>
       </div>
     );
