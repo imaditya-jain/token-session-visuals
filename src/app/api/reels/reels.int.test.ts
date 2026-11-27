@@ -1156,7 +1156,25 @@ describe("what you just posted", () => {
     const profile = await json(
       await authorRoute(apiRequest(`/api/reels/authors/${myKey}`, "GET", { token: me.token })),
     );
-    expect(profile.data.profile.items).toBe(1);
+    expect(profile.data.profile).toMatchObject({ items: 1, posts: 1, reels: 0 });
     expect(profile.data.reels.map((r: { id: string }) => r.id)).toEqual([mine]);
+
+    // A reel adds to "reels"; deleting the photo takes the post count back down.
+    const clip = await post(me.token, VIDEO, MP4);
+    const afterClip = await json(
+      await authorRoute(apiRequest(`/api/reels/authors/${myKey}`, "GET", { token: me.token })),
+    );
+    expect(afterClip.data.profile).toMatchObject({ items: 2, posts: 1, reels: 1 });
+    await remove(apiRequest(`/api/reels/${mine}`, "DELETE", { token: me.token }));
+    const afterDelete = await json(
+      await authorRoute(apiRequest(`/api/reels/authors/${myKey}`, "GET", { token: me.token })),
+    );
+    expect(afterDelete.data.profile).toMatchObject({ items: 1, posts: 0, reels: 1 });
+    // The reel disappears from the count once its 24 hours are over, while photos would not.
+    await Reel.updateOne({ _id: clip }, { $set: { expiresAt: new Date(Date.now() - 1000) } });
+    const expired = await json(
+      await authorRoute(apiRequest(`/api/reels/authors/${myKey}`, "GET", { token: me.token })),
+    );
+    expect(expired.data.profile).toMatchObject({ items: 0, posts: 0, reels: 0 });
   });
 });

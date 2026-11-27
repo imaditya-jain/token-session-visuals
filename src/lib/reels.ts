@@ -196,6 +196,10 @@ export type AuthorProfileDto = {
   following: number;
   /** Live posts and reels this person can see (0 when the account is private and not followed). */
   items: number;
+  /** Photo posts: they stay until the author deletes them. */
+  posts: number;
+  /** Video reels that are still inside their 24 hours. */
+  reels: number;
   followStatus: FollowStatus;
   canView: boolean;
 };

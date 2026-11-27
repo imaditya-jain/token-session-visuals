@@ -371,16 +371,22 @@ export async function getAuthor(
     : [];
   const page = rows.slice(0, AUTHOR_PAGE_SIZE);
   const last = page.at(-1);
-  const items = allowed
-    ? await Reel.countDocuments({ ...liveFilter(new Date()), userId: target.userId })
-    : 0;
+  // Photos stay until their author deletes them; reels count only while their 24 hours last.
+  const [posts, reels] = allowed
+    ? await Promise.all([
+        Reel.countDocuments({ ...liveFilter(new Date()), userId: target.userId, kind: "image" }),
+        Reel.countDocuments({ ...liveFilter(new Date()), userId: target.userId, kind: "video" }),
+      ])
+    : [0, 0];
   return {
     profile: {
       key: target.publicId,
       name: user ? `${user.firstName} ${user.lastName.charAt(0)}.`.trim() : "Fernwood member",
       isPrivate: target.isPrivate,
       ...social,
-      items,
+      items: posts + reels,
+      posts,
+      reels,
       followStatus: status,
       canView: allowed,
     },
