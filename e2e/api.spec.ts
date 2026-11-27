@@ -1291,18 +1291,27 @@ test.describe("notifications API", () => {
 });
 
 test.describe("reels API", () => {
-  test("every endpoint needs a valid session, and admin ones an admin", async () => {
+  test("writing needs a valid session, admin needs an admin, and a bad token is never a guest", async () => {
     const api = await client();
     const anyId = "a".repeat(24);
+    const key = "a".repeat(16);
     for (const path of [
-      "/api/reels",
       "/api/reels/mine",
-      `/api/reels/${anyId}`,
-      `/api/reels/${anyId}/comments`,
+      "/api/reels/privacy",
+      "/api/follows/requests",
       "/api/admin/reels",
       `/api/admin/reels/${anyId}/comments`,
     ]) {
       expect((await api.get(path)).status(), path).toBe(401);
+    }
+    // Watching is public: with no storage configured the answer is "not switched on", not "sign in".
+    for (const path of ["/api/reels", `/api/reels/${anyId}`, `/api/reels/${anyId}/comments`]) {
+      expect((await api.get(path)).status(), path).toBe(503);
+    }
+    expect((await api.get(`/api/reels/authors/${key}`)).status()).toBe(503);
+    for (const path of ["/api/reels", `/api/reels/${anyId}`, `/api/reels/authors/${key}`]) {
+      const stale = await api.get(path, { headers: { authorization: "Bearer nope" } });
+      expect(stale.status(), path).toBe(401);
     }
     for (const path of [
       "/api/reels",
@@ -1310,10 +1319,14 @@ test.describe("reels API", () => {
       `/api/reels/${anyId}/like`,
       `/api/reels/${anyId}/comments`,
       `/api/reels/${anyId}/report`,
+      `/api/follows/${key}`,
+      `/api/follows/requests/${key}`,
     ]) {
       expect((await json(api, path, {})).status(), path).toBe(401);
     }
+    expect((await json(api, "/api/reels/privacy", { isPrivate: true }, "put")).status()).toBe(401);
     expect((await api.delete(`/api/reels/${anyId}`)).status()).toBe(401);
+    expect((await api.delete(`/api/follows/${key}`)).status()).toBe(401);
     expect(
       (await json(api, `/api/admin/reels/${anyId}`, { status: "approved" }, "patch")).status(),
     ).toBe(401);

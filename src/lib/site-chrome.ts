@@ -166,6 +166,7 @@ export const DEFAULT_CHROME: SiteChrome = {
       { label: "Shop Plants", href: "/shop", children: [] },
       { label: "Collections", href: "/collections", children: [] },
       { label: "Journal", href: "/blog", children: [] },
+      { label: "Reels", href: "/reels", children: [] },
       { label: "About us", href: "/about", children: [] },
     ],
   },

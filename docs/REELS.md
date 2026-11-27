@@ -1,9 +1,23 @@
 # Reels (customer photos and short videos)
 
-Customers post a photo (up to 2 MB) or a video (up to 30 seconds and 5 MB) about gardening, home planting or
-landscaping, link up to four products from the shop, and other customers like and comment. Posts are approved by
-an admin before anyone else sees them. The viewer and creator live in the Expo app (`fernwood-app`); the website
-only has the API and the moderation page (`/admin/reels`).
+Customers post a **photo** (a *post*, up to 2 MB, stays up) or a **video** (a *reel*, up to 30 seconds and 5 MB,
+**deleted 24 hours after it goes live, file included**) about gardening, home planting or landscaping, link up to
+four products from the shop, and other customers like, comment and follow. An admin approves everything before it
+appears. The creator lives in the Expo app (`fernwood-app`); the website has the public `/reels` page, the API and
+the moderation page (`/admin/reels`).
+
+## Who can see what
+
+- **Everyone, signed in or not**, can watch live posts and reels of **public** accounts (app and website). Liking,
+  commenting, following and posting need an account.
+- Each account is **public or private** (Account > Private account). A private account's posts and reels are
+  invisible (a plain 404, nothing reveals they exist) to everyone it has not accepted as a follower. Following a
+  private account sends a request the owner accepts or declines; switching to public accepts waiting requests.
+- **Feed order (Instagram style):** items from people you follow first, newest first, then everyone else's.
+- Authors are named in the API by a random public handle (`authorKey`), never the account id, and files are filed
+  under that handle too, so a public file address cannot be linked to an account.
+- Accounts are isolated: every write is scoped to the caller's own account taken from the token; follow requests can
+  only be answered by the account they were addressed to; reports, likes and follows are per person.
 
 ## How it works
 
@@ -14,7 +28,7 @@ only has the API and the moderation page (`/admin/reels`).
 3. `POST /api/reels/:id/complete` measures the stored file and reads its first bytes. The declared size and type are
    only claims: a wrong size or a file that isn't really a JPEG/PNG/WebP/MP4/MOV is deleted and refused. A good file
    moves the reel to `pending`.
-4. An admin with `reels:moderate` approves, rejects or removes it (every decision is audited). Three different
+4. (Admin) An admin with `reels:moderate` approves, rejects or removes it (every decision is audited). Three different
    people reporting a live reel pull it back to `pending`.
 5. Abandoned uploads (no `complete` within an hour) are removed by the cron sweep, with their files. Deleting an
    account removes its reels, likes, comments and files.

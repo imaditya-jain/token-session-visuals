@@ -24,6 +24,8 @@ export type ReelRecord = {
   reportCount: number;
   createdAt: Date;
   approvedAt?: Date;
+  /** Set once, when the reel first goes live: after this it is hidden and then deleted. */
+  expiresAt?: Date;
   moderatedBy?: Types.ObjectId;
 };
 
@@ -43,6 +45,7 @@ const reelSchema = new Schema<ReelRecord>({
   reportCount: { type: Number, default: 0, min: 0 },
   createdAt: { type: Date, required: true, default: () => new Date() },
   approvedAt: { type: Date },
+  expiresAt: { type: Date },
   moderatedBy: { type: Schema.Types.ObjectId },
 });
 // Feed: approved reels, newest first. Moderation queue: by status.
@@ -50,6 +53,7 @@ reelSchema.index({ status: 1, _id: -1 });
 reelSchema.index({ status: 1, topic: 1, _id: -1 });
 // "My reels" list.
 reelSchema.index({ userId: 1, createdAt: -1 });
+reelSchema.index({ expiresAt: 1 });
 
 export const Reel = defineModel<ReelRecord>("Reel", reelSchema);
 
@@ -103,3 +107,41 @@ const reportSchema = new Schema<ReelReportRecord>({
 reportSchema.index({ reelId: 1, commentId: 1, userId: 1 }, { unique: true });
 
 export const ReelReport = defineModel<ReelReportRecord>("ReelReport", reportSchema);
+
+export type ReelProfileRecord = {
+  userId: Types.ObjectId;
+  /** Public, random handle used in URLs and API calls instead of the account id. */
+  publicId: string;
+  /** A private account's reels and posts are visible only to people it accepted as followers. */
+  isPrivate: boolean;
+  createdAt: Date;
+};
+
+const profileSchema = new Schema<ReelProfileRecord>({
+  userId: { type: Schema.Types.ObjectId, required: true, unique: true },
+  publicId: { type: String, required: true, unique: true },
+  isPrivate: { type: Boolean, required: true, default: false },
+  createdAt: { type: Date, required: true, default: () => new Date() },
+});
+profileSchema.index({ isPrivate: 1 });
+
+export const ReelProfile = defineModel<ReelProfileRecord>("ReelProfile", profileSchema);
+
+export type FollowRecord = {
+  followerId: Types.ObjectId;
+  followeeId: Types.ObjectId;
+  status: "requested" | "accepted";
+  createdAt: Date;
+};
+
+const followSchema = new Schema<FollowRecord>({
+  followerId: { type: Schema.Types.ObjectId, required: true },
+  followeeId: { type: Schema.Types.ObjectId, required: true },
+  status: { type: String, enum: ["requested", "accepted"], required: true },
+  createdAt: { type: Date, required: true, default: () => new Date() },
+});
+followSchema.index({ followerId: 1, followeeId: 1 }, { unique: true });
+followSchema.index({ followeeId: 1, status: 1 });
+followSchema.index({ followerId: 1, status: 1 });
+
+export const Follow = defineModel<FollowRecord>("Follow", followSchema);

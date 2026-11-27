@@ -9,6 +9,7 @@ import {
   type CreateReelInput,
   REEL_LIMITS,
   type ReelCommentDto,
+  type AuthorProfileDto,
   type ReelDto,
   type ReelProductDto,
   type ReelStatus,
@@ -16,10 +17,22 @@ import {
 } from "@/lib/reels";
 import { connectDb } from "@/server/db/connection";
 import {
+  canViewAuthor,
+  counts,
+  eraseSocial,
+  ensureProfile,
+  followedAuthorIds,
+  followStatusFor,
+  hiddenAuthorIds,
+  profileByKey,
+} from "@/server/services/reel-social";
+import {
+  Follow,
   Reel,
   ReelComment,
   type ReelCommentRecord,
   ReelLike,
+  ReelProfile,
   ReelReport,
   type ReelRecord,
 } from "@/server/db/models/reel";
@@ -103,26 +116,52 @@ async function productMap(handles: string[]): Promise<Map<string, ReelProductDto
   );
 }
 
-async function toDtos(reels: ReelRecord[], viewerId: string): Promise<ReelDto[]> {
+async function toDtos(reels: ReelRecord[], viewerId: string | null): Promise<ReelDto[]> {
   if (reels.length === 0) return [];
-  const viewer = oid(viewerId);
-  const [names, likes, products] = await Promise.all([
+  const [names, keys, follows, likes, products] = await Promise.all([
     authorNames(reels.map((reel) => reel.userId)),
-    ReelLike.find({ userId: viewer, reelId: { $in: reels.map((reel) => reel._id) } })
-      .select("reelId")
+    ReelProfile.find({
+      userId: { $in: [...new Set(reels.map((reel) => String(reel.userId)))].map(oid) },
+    })
+      .select("userId publicId")
       .lean(),
+    viewerId
+      ? Follow.find({
+          followerId: oid(viewerId),
+          followeeId: { $in: [...new Set(reels.map((reel) => String(reel.userId)))].map(oid) },
+        })
+          .select("followeeId status")
+          .lean()
+      : Promise.resolve([]),
+    viewerId
+      ? ReelLike.find({ userId: oid(viewerId), reelId: { $in: reels.map((reel) => reel._id) } })
+          .select("reelId")
+          .lean()
+      : Promise.resolve([]),
     productMap(reels.flatMap((reel) => reel.productHandles)),
   ]);
   const liked = new Set(likes.map((like) => String(like.reelId)));
+  const followOf = new Map(follows.map((row) => [String(row.followeeId), row.status]));
+  const keyOf = new Map(keys.map((row) => [String(row.userId), row.publicId]));
   return reels.map((reel) => ({
     id: String(reel._id),
     kind: reel.kind,
+    format: reel.kind === "video" ? "reel" : "post",
+    authorKey: keyOf.get(String(reel.userId)) ?? "",
+    followStatus:
+      viewerId !== null && String(reel.userId) === viewerId
+        ? "self"
+        : followOf.get(String(reel.userId)) === "accepted"
+          ? "following"
+          : followOf.get(String(reel.userId)) === "requested"
+            ? "requested"
+            : "none",
     mediaUrl: publicUrl(reel.storagePath),
     durationMs: reel.durationMs ?? null,
     caption: reel.caption,
     topic: reel.topic,
     author: names.get(String(reel.userId)) ?? "Fernwood member",
-    mine: String(reel.userId) === viewerId,
+    mine: viewerId !== null && String(reel.userId) === viewerId,
     likes: reel.likeCount,
     comments: reel.commentCount,
     liked: liked.has(String(reel._id)),
@@ -133,6 +172,7 @@ async function toDtos(reels: ReelRecord[], viewerId: string): Promise<ReelDto[]>
     }),
     status: reel.status,
     createdAt: reel.createdAt.toISOString(),
+    expiresAt: reel.expiresAt?.toISOString() ?? null,
   }));
 }
 
@@ -159,7 +199,9 @@ export async function createReel(userId: string, input: CreateReelInput): Promis
     );
   }
 
-  const storagePath = `${userId}/${randomUUID()}.${EXTENSIONS[input.contentType] ?? "bin"}`;
+  // Files are filed under the author's random public handle, never the account id: the address is public.
+  const profile = await ensureProfile(userId);
+  const storagePath = `${profile.publicId}/${randomUUID()}.${EXTENSIONS[input.contentType] ?? "bin"}`;
   const upload = await createSignedUpload(storagePath, input.contentType);
   const reel = await Reel.create({
     userId: oid(userId),
@@ -218,27 +260,116 @@ export async function completeReel(userId: string, reelId: string): Promise<Reel
 
 export type ReelPage = { reels: ReelDto[]; nextCursor: string | null };
 
+/** Live = approved and, for a video reel, still inside its 24 hours. Photo posts never expire. */
+const liveFilter = (now: Date) => ({
+  status: "approved" as const,
+  $or: [{ kind: "image" as const }, { expiresAt: { $gt: now } }],
+});
+
+const parseCursor = (
+  cursor: string | undefined,
+  fallback: "f" | "o",
+): { phase: "f" | "o"; id?: Types.ObjectId } => {
+  if (!cursor) return { phase: fallback };
+  const match = /^([fo]):([a-f0-9]{24})$/.exec(cursor);
+  if (!match) throw new AppError(400, "bad_cursor", "Invalid page marker.");
+  return { phase: match[1] as "f" | "o", id: oid(match[2] as string) };
+};
+
+/**
+ * The home feed, ranked like Instagram's: reels and posts from people you follow come first (newest first), then
+ * everyone else's. Private accounts you are not accepted by never appear. The cursor remembers which of the two
+ * groups it is in, so paging never repeats or skips an item.
+ */
 export async function listFeed(
-  viewerId: string,
+  viewerId: string | null,
   options: { cursor?: string | undefined; topic?: ReelTopic | undefined },
 ): Promise<ReelPage> {
   assertReelsOn();
   await connectDb();
-  const filter: Record<string, unknown> = { status: "approved" };
-  if (options.topic) filter["topic"] = options.topic;
-  if (options.cursor) {
-    if (!isObjectId(options.cursor)) throw new AppError(400, "bad_cursor", "Invalid page marker.");
-    filter["_id"] = { $lt: oid(options.cursor) };
+  const [hidden, followed] = await Promise.all([
+    hiddenAuthorIds(viewerId),
+    followedAuthorIds(viewerId),
+  ]);
+  const base = {
+    ...liveFilter(new Date()),
+    ...(options.topic ? { topic: options.topic } : {}),
+  };
+  const start = parseCursor(options.cursor, followed.length > 0 ? "f" : "o");
+
+  const collected: ReelRecord[] = [];
+  let phase = start.phase;
+  let after = start.id;
+  while (collected.length < FEED_PAGE_SIZE + 1) {
+    const authors = phase === "f" ? { $in: followed } : { $nin: [...hidden, ...followed] };
+    const rows = await Reel.find({
+      ...base,
+      userId: authors,
+      ...(after ? { _id: { $lt: after } } : {}),
+    })
+      .sort({ _id: -1 })
+      .limit(FEED_PAGE_SIZE + 1 - collected.length)
+      .lean();
+    collected.push(...(rows.map((row) => ({ ...row, __phase: phase })) as ReelRecord[]));
+    if (rows.length > 0 && collected.length >= FEED_PAGE_SIZE + 1) break;
+    if (phase === "o") break;
+    phase = "o";
+    after = undefined;
   }
-  const rows = await Reel.find(filter)
-    .sort({ _id: -1 })
-    .limit(FEED_PAGE_SIZE + 1)
-    .lean();
-  const page = rows.slice(0, FEED_PAGE_SIZE);
-  const last = page.at(-1);
+  const page = collected.slice(0, FEED_PAGE_SIZE);
+  const more = collected.length > FEED_PAGE_SIZE;
+  const last = page.at(-1) as (ReelRecord & { __phase?: "f" | "o" }) | undefined;
   return {
     reels: await toDtos(page, viewerId),
-    nextCursor: rows.length > FEED_PAGE_SIZE && last ? String(last._id) : null,
+    nextCursor: more && last ? `${last.__phase ?? phase}:${String(last._id)}` : null,
+  };
+}
+
+export const AUTHOR_PAGE_SIZE = 24;
+
+/** One person's profile and their live posts and reels. A private account shows only the counts to outsiders. */
+export async function getAuthor(
+  viewerId: string | null,
+  key: string,
+  cursor?: string,
+): Promise<{ profile: AuthorProfileDto; reels: ReelDto[]; nextCursor: string | null }> {
+  assertReelsOn();
+  const target = await profileByKey(key);
+  if (cursor !== undefined && !isObjectId(cursor))
+    throw new AppError(400, "bad_cursor", "Invalid page marker.");
+  const [user, social, status, allowed] = await Promise.all([
+    User.findById(target.userId).select("firstName lastName").lean(),
+    counts(target.userId),
+    followStatusFor(viewerId, target.userId),
+    canViewAuthor(viewerId, target.userId),
+  ]);
+  const rows = allowed
+    ? await Reel.find({
+        ...liveFilter(new Date()),
+        userId: target.userId,
+        ...(cursor ? { _id: { $lt: oid(cursor) } } : {}),
+      })
+        .sort({ _id: -1 })
+        .limit(AUTHOR_PAGE_SIZE + 1)
+        .lean()
+    : [];
+  const page = rows.slice(0, AUTHOR_PAGE_SIZE);
+  const last = page.at(-1);
+  const items = allowed
+    ? await Reel.countDocuments({ ...liveFilter(new Date()), userId: target.userId })
+    : 0;
+  return {
+    profile: {
+      key: target.publicId,
+      name: user ? `${user.firstName} ${user.lastName.charAt(0)}.`.trim() : "Fernwood member",
+      isPrivate: target.isPrivate,
+      ...social,
+      items,
+      followStatus: status,
+      canView: allowed,
+    },
+    reels: await toDtos(page, viewerId),
+    nextCursor: rows.length > AUTHOR_PAGE_SIZE && last ? String(last._id) : null,
   };
 }
 
@@ -253,33 +384,41 @@ export async function listMine(userId: string): Promise<ReelDto[]> {
   return toDtos(rows, userId);
 }
 
-/** Visible to everyone once approved; before that only to the author. Everyone else gets a plain 404. */
-async function visibleReel(userId: string, reelId: string): Promise<ReelRecord> {
+/**
+ * Visible to everyone (signed in or not) while live; before that, and once removed, only to the author.
+ * An expired reel is gone for everyone, its author included. Anyone else gets a plain 404.
+ */
+async function visibleReel(userId: string | null, reelId: string): Promise<ReelRecord> {
   await connectDb();
   const reel = await Reel.findById(parseId(reelId)).lean();
-  const own = reel && String(reel.userId) === userId && reel.status !== "removed";
-  if (!reel || (reel.status !== "approved" && !own)) {
+  const own =
+    reel !== null && reel !== undefined && userId !== null && String(reel.userId) === userId;
+  const live =
+    reel?.status === "approved" &&
+    (reel.kind === "image" || (reel.expiresAt?.getTime() ?? 0) > Date.now());
+  const awaiting =
+    own && (reel.status === "pending" || reel.status === "rejected" || reel.status === "uploading");
+  if (!reel || (!live && !awaiting))
+    throw notFound("We couldn't find that reel.", "reel_not_found");
+  // A private account's content is "not found" to everyone it hasn't accepted: nothing reveals that it exists.
+  if (!own && !(await canViewAuthor(userId, reel.userId))) {
     throw notFound("We couldn't find that reel.", "reel_not_found");
   }
   return reel;
 }
 
-export async function getReel(userId: string, reelId: string): Promise<ReelDto> {
+export async function getReel(userId: string | null, reelId: string): Promise<ReelDto> {
   assertReelsOn();
   return (await toDtos([await visibleReel(userId, reelId)], userId))[0] as ReelDto;
 }
 
 export async function deleteOwnReel(userId: string, reelId: string): Promise<void> {
   await connectDb();
-  const id = parseId(reelId);
-  const reel = await Reel.findOneAndDelete({ _id: id, userId: oid(userId) }).lean();
+  const reel = await Reel.findOne({ _id: parseId(reelId), userId: oid(userId) })
+    .select("storagePath")
+    .lean();
   if (!reel) throw notFound("We couldn't find that reel.", "reel_not_found");
-  await Promise.all([
-    ReelLike.deleteMany({ reelId: id }),
-    ReelComment.deleteMany({ reelId: id }),
-    ReelReport.deleteMany({ reelId: id }),
-    removeObjects([reel.storagePath]),
-  ]);
+  await purgeReels([reel]);
 }
 
 export async function setLike(
@@ -314,14 +453,14 @@ export async function setLike(
 
 async function toCommentDtos(
   rows: ReelCommentRecord[],
-  viewerId: string,
+  viewerId: string | null,
 ): Promise<ReelCommentDto[]> {
   const names = await authorNames(rows.map((row) => row.userId));
   return rows.map((row) => ({
     id: String(row._id),
     text: row.text,
     author: names.get(String(row.userId)) ?? "Fernwood member",
-    mine: String(row.userId) === viewerId,
+    mine: viewerId !== null && String(row.userId) === viewerId,
     createdAt: row.createdAt.toISOString(),
   }));
 }
@@ -329,7 +468,7 @@ async function toCommentDtos(
 export const COMMENT_PAGE_SIZE = 20;
 
 export async function listComments(
-  userId: string,
+  userId: string | null,
   reelId: string,
   cursor?: string,
 ): Promise<{ comments: ReelCommentDto[]; nextCursor: string | null }> {
@@ -479,15 +618,25 @@ export async function moderateReel(
 ): Promise<ReelDto> {
   await connectDb();
   const id = parseId(reelId);
+  const existing = await Reel.findOne({ _id: id, status: { $ne: "uploading" } })
+    .select("expiresAt kind")
+    .lean();
+  if (!existing) throw notFound("We couldn't find that reel.", "reel_not_found");
+  // The clock starts when the reel first goes live and is never extended by a later re-approval.
+  const expiresAt =
+    existing.kind === "image"
+      ? undefined
+      : (existing.expiresAt ?? new Date(Date.now() + REEL_LIMITS.lifetimeHours * 60 * 60 * 1000));
   const reel = await Reel.findOneAndUpdate(
     { _id: id, status: { $ne: "uploading" } },
     {
       $set: {
         status,
         moderatedBy: oid(adminId),
-        ...(status === "approved" ? { approvedAt: new Date(), reportCount: 0 } : {}),
+        ...(status === "approved"
+          ? { approvedAt: new Date(), reportCount: 0, ...(expiresAt ? { expiresAt } : {}) }
+          : {}),
       },
-      ...(status === "approved" ? {} : { $unset: { approvedAt: 1 } }),
     },
     { returnDocument: "after" },
   ).lean();
@@ -518,20 +667,47 @@ export async function removeCommentAsAdmin(reelId: string, commentId: string): P
 
 // ---- Housekeeping ----
 
-/** Uploads that were never completed: the reservation and any half-sent file are removed. */
-export async function sweepAbandonedReels(): Promise<number> {
+/** Removes reels completely: files first, then every record that points at them. */
+async function purgeReels(reels: { _id: Types.ObjectId; storagePath: string }[]): Promise<void> {
+  if (reels.length === 0) return;
+  const ids = reels.map((reel) => reel._id);
+  await removeObjects(reels.map((reel) => reel.storagePath));
+  await Promise.all([
+    ReelLike.deleteMany({ reelId: { $in: ids } }),
+    ReelComment.deleteMany({ reelId: { $in: ids } }),
+    ReelReport.deleteMany({ reelId: { $in: ids } }),
+  ]);
+  await Reel.deleteMany({ _id: { $in: ids } });
+}
+
+const SWEEP_BATCH = 200;
+/** Reels that never went live (waiting, declined, removed) are cleared after this long. */
+const UNPUBLISHED_KEEP_MS = 7 * 24 * 60 * 60 * 1000;
+
+/**
+ * Housekeeping, run by the cron: uploads never completed, reels whose 24 hours are over, and unpublished
+ * reels that have sat for a week. Expired reels are already invisible the moment they expire (reads check the
+ * time), so a late sweep only delays freeing storage.
+ */
+export async function sweepReels(): Promise<number> {
   if (!reelsConfigured()) return 0;
   await connectDb();
+  const now = Date.now();
   const stale = await Reel.find({
-    status: "uploading",
-    createdAt: { $lt: new Date(Date.now() - ABANDONED_AFTER_MS) },
+    $or: [
+      { status: "uploading", createdAt: { $lt: new Date(now - ABANDONED_AFTER_MS) } },
+      { expiresAt: { $lt: new Date(now) } },
+      {
+        status: { $in: ["pending", "rejected", "removed"] },
+        expiresAt: { $exists: false },
+        createdAt: { $lt: new Date(now - UNPUBLISHED_KEEP_MS) },
+      },
+    ],
   })
     .select("storagePath")
-    .limit(200)
+    .limit(SWEEP_BATCH)
     .lean();
-  if (stale.length === 0) return 0;
-  await removeObjects(stale.map((reel) => reel.storagePath));
-  await Reel.deleteMany({ _id: { $in: stale.map((reel) => reel._id) }, status: "uploading" });
+  await purgeReels(stale);
   return stale.length;
 }
 
@@ -564,4 +740,5 @@ export async function eraseUserReels(userId: string): Promise<void> {
   const operations = [...bump(likes, "likeCount"), ...bump(comments, "commentCount")];
   if (operations.length > 0) await Reel.bulkWrite(operations);
   await removeObjects(mine.map((reel) => reel.storagePath));
+  await eraseSocial(userId);
 }

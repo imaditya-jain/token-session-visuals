@@ -4,7 +4,7 @@ import { drainDueEmailJobs } from "@/server/email/outbox";
 import { drainDueJobs } from "@/server/queue/jobs";
 import { enqueueMirrorBackfill } from "@/server/queue/producers";
 import { revalidateBlog } from "@/server/blog/revalidate";
-import { sweepAbandonedReels } from "@/server/services/reels";
+import { sweepReels } from "@/server/services/reels";
 import { sendDueCampaigns } from "@/server/services/campaigns";
 import { publishDuePosts } from "@/server/services/blog-admin";
 import { route } from "@/server/http/handler";
@@ -31,7 +31,7 @@ export const GET = route(async ({ request }) => {
   if (published > 0) revalidateBlog();
   // Campaigns scheduled for now (or interrupted mid-send): queue their emails, then deliver what is due.
   const campaignsSent = await sendDueCampaigns();
-  const reelsSwept = await sweepAbandonedReels();
+  const reelsSwept = await sweepReels();
   return NextResponse.json({
     data: { ...emails, jobs, postsPublished: published, campaignsSent, reelsSwept },
   });

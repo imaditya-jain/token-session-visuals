@@ -2,9 +2,9 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { createReelSchema, REEL_TOPICS } from "@/lib/reels";
-import { assertSameOrigin, readJson, route } from "@/server/http/handler";
+import { assertSameOrigin, clientIp, readJson, route } from "@/server/http/handler";
 import { enforceRateLimit } from "@/server/ratelimit/enforce";
-import { authenticate } from "@/server/services/auth";
+import { authenticate, authenticateOptional } from "@/server/services/auth";
 import { createReel, listFeed } from "@/server/services/reels";
 
 export const dynamic = "force-dynamic";
@@ -14,10 +14,10 @@ const querySchema = z.object({
   topic: z.enum(REEL_TOPICS).optional(),
 });
 
-/** Approved reels, newest first. Signed-in only, like every other API. */
+/** Live reels, newest first. Public: anyone may watch; liking and commenting need an account. */
 export const GET = route(async ({ request }) => {
-  const { userId } = await authenticate(request.headers.get("authorization"));
-  await enforceRateLimit(`reels:read:${userId}`, 240, 60);
+  const userId = await authenticateOptional(request.headers.get("authorization"));
+  await enforceRateLimit(`reels:read:${userId ?? clientIp(request)}`, 240, 60);
   const query = querySchema.parse(Object.fromEntries(request.nextUrl.searchParams));
   return NextResponse.json({ data: await listFeed(userId, query) });
 });

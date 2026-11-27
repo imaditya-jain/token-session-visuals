@@ -7,11 +7,18 @@ import { AuditLog } from "@/server/db/models/audit-log";
 import { EmailJob } from "@/server/db/models/email-job";
 import { OtpChallenge } from "@/server/db/models/otp-challenge";
 import { RateLimit } from "@/server/db/models/rate-limit";
-import { Reel, ReelComment, ReelLike, ReelReport } from "@/server/db/models/reel";
+import {
+  Follow,
+  Reel,
+  ReelComment,
+  ReelLike,
+  ReelProfile,
+  ReelReport,
+} from "@/server/db/models/reel";
 import { Role } from "@/server/db/models/role";
 import { User } from "@/server/db/models/user";
 import { registerUser } from "@/server/services/auth";
-import { eraseUserReels, sweepAbandonedReels } from "@/server/services/reels";
+import { eraseUserReels, sweepReels } from "@/server/services/reels";
 import { adminSession, apiRequest } from "@/test/admin-session";
 import { startTestDatabase } from "@/test/mongo";
 
@@ -26,6 +33,11 @@ import { DELETE as unlike, POST as like } from "./[id]/like/route";
 import { POST as report } from "./[id]/report/route";
 import { DELETE as remove, GET as getOne } from "./[id]/route";
 import { GET as mine } from "./mine/route";
+import { DELETE as unfollowRoute, POST as followRoute } from "../follows/[key]/route";
+import { GET as requestsRoute } from "../follows/requests/route";
+import { DELETE as declineRoute, POST as approveRoute } from "../follows/requests/[key]/route";
+import { GET as authorRoute } from "./authors/[key]/route";
+import { GET as privacyGet, PUT as privacyPut } from "./privacy/route";
 import { GET as feed, POST as create } from "./route";
 
 const storage = vi.hoisted(() => ({
@@ -62,6 +74,7 @@ vi.mock("@/data/catalog", () => {
   };
 });
 
+const VIDEO = { kind: "video", contentType: "video/mp4", sizeBytes: 4_000_000, durationMs: 20_000 };
 const JPEG = Uint8Array.from([0xff, 0xd8, 0xff, 0xe0, ...new Array(60).fill(0)]);
 const MP4 = Uint8Array.from([0, 0, 0, 0x18, 0x66, 0x74, 0x79, 0x70, ...new Array(56).fill(0)]);
 const HTML = new TextEncoder().encode("<!doctype html><script>alert(1)</script>".padEnd(64, " "));
@@ -93,6 +106,8 @@ beforeEach(async () => {
       ReelComment,
       ReelLike,
       ReelReport,
+      ReelProfile,
+      Follow,
     ].map((m) => (m as unknown as { deleteMany: (f: object) => Promise<unknown> }).deleteMany({})),
   );
 });
@@ -386,6 +401,89 @@ describe("approval and the feed", () => {
   });
 });
 
+describe("public viewing and the 24 hour life", () => {
+  async function live() {
+    const author = await member("a@example.com");
+    const admin = await adminSession("boss@example.com", "super_admin");
+    const id = await post(author.token, VIDEO, MP4);
+    await approve(admin.token, id);
+    return { author, admin, id };
+  }
+
+  it("anyone can watch without signing in, but not like, comment or report", async () => {
+    const { id } = await live();
+    const list = await json(await feed(apiRequest("/api/reels", "GET")));
+    expect(list.data.reels).toHaveLength(1);
+    expect(list.data.reels[0]).toMatchObject({ mine: false, liked: false });
+    expect((await getOne(apiRequest(`/api/reels/${id}`, "GET"))).status).toBe(200);
+    expect((await listComments(apiRequest(`/api/reels/${id}/comments`, "GET"))).status).toBe(200);
+    expect((await like(apiRequest(`/api/reels/${id}/like`, "POST"))).status).toBe(401);
+    expect(
+      (await addComment(apiRequest(`/api/reels/${id}/comments`, "POST", { body: { text: "hi" } })))
+        .status,
+    ).toBe(401);
+    expect((await mine(apiRequest("/api/reels/mine", "GET"))).status).toBe(401);
+  });
+
+  it("a stale token is still refused rather than treated as a guest", async () => {
+    expect((await feed(apiRequest("/api/reels", "GET", { token: "nope" }))).status).toBe(401);
+  });
+
+  it("starts the 24 hour clock at approval and never extends it", async () => {
+    const { admin, id } = await live();
+    const first = (await Reel.findById(id).lean())?.expiresAt?.getTime() ?? 0;
+    expect(first - Date.now()).toBeGreaterThan(23.9 * 3600_000);
+    expect(first - Date.now()).toBeLessThanOrEqual(24 * 3600_000);
+    await moderate(
+      apiRequest(`/api/admin/reels/${id}`, "PATCH", {
+        token: admin.token,
+        body: { status: "removed" },
+      }),
+    );
+    await approve(admin.token, id);
+    expect((await Reel.findById(id).lean())?.expiresAt?.getTime()).toBe(first);
+  });
+
+  it("hides an expired reel at once and the sweep deletes it with its file, likes and comments", async () => {
+    const { author, id } = await live();
+    const fan = await member("b@example.com");
+    await like(apiRequest(`/api/reels/${id}/like`, "POST", { token: fan.token }));
+    await addComment(
+      apiRequest(`/api/reels/${id}/comments`, "POST", { token: fan.token, body: { text: "nice" } }),
+    );
+    const path = (await Reel.findById(id).lean())?.storagePath;
+    await Reel.updateOne({ _id: id }, { $set: { expiresAt: new Date(Date.now() - 1000) } });
+
+    expect((await json(await feed(apiRequest("/api/reels", "GET")))).data.reels).toHaveLength(0);
+    expect((await getOne(apiRequest(`/api/reels/${id}`, "GET"))).status).toBe(404);
+    expect(
+      (await getOne(apiRequest(`/api/reels/${id}`, "GET", { token: author.token }))).status,
+    ).toBe(404);
+    expect(
+      (await like(apiRequest(`/api/reels/${id}/like`, "POST", { token: fan.token }))).status,
+    ).toBe(404);
+
+    expect(await sweepReels()).toBe(1);
+    expect(await Reel.countDocuments()).toBe(0);
+    expect(await ReelLike.countDocuments()).toBe(0);
+    expect(await ReelComment.countDocuments()).toBe(0);
+    expect(storage.removed).toContain(path);
+  });
+
+  it("clears reels that never went live after a week, but keeps fresh waiting ones", async () => {
+    const author = await member("a@example.com");
+    const old = await post(author.token);
+    const fresh = await post(author.token);
+    await Reel.updateOne(
+      { _id: old },
+      { $set: { createdAt: new Date(Date.now() - 8 * 24 * 3600_000) } },
+    );
+    expect(await sweepReels()).toBe(1);
+    expect(await Reel.findById(old)).toBeNull();
+    expect(await Reel.findById(fresh)).not.toBeNull();
+  });
+});
+
 describe("engagement", () => {
   async function livePost() {
     const author = await member("a@example.com");
@@ -543,7 +641,7 @@ describe("removal and housekeeping", () => {
       await json(await create(apiRequest("/api/reels", "POST", { token, body: photo })))
     ).data;
     await Reel.updateOne({ _id: id }, { $set: { createdAt: new Date(Date.now() - 2 * 3600_000) } });
-    expect(await sweepAbandonedReels()).toBe(1);
+    expect(await sweepReels()).toBe(1);
     expect(await Reel.countDocuments()).toBe(0);
     expect(storage.removed).toHaveLength(1);
   });
@@ -603,5 +701,291 @@ describe("video reels", () => {
     expect(
       (await complete(apiRequest(`/api/reels/${id}/complete`, "POST", { token }))).status,
     ).toBe(422);
+  });
+});
+
+describe("posts stay, reels expire", () => {
+  it("a photo post never expires and the sweep leaves it alone", async () => {
+    const author = await member("a@example.com");
+    const admin = await adminSession("boss@example.com", "super_admin");
+    const id = await post(author.token);
+    await approve(admin.token, id);
+    const reel = await Reel.findById(id).lean();
+    expect(reel?.expiresAt).toBeUndefined();
+    await Reel.updateOne(
+      { _id: id },
+      { $set: { approvedAt: new Date(Date.now() - 30 * 24 * 3600_000) } },
+    );
+    expect(await sweepReels()).toBe(0);
+    const list = await json(await feed(apiRequest("/api/reels", "GET")));
+    expect(list.data.reels[0]).toMatchObject({ format: "post", expiresAt: null });
+  });
+
+  it("a video is a reel with a 24 hour clock", async () => {
+    const author = await member("a@example.com");
+    const admin = await adminSession("boss@example.com", "super_admin");
+    const id = await post(author.token, VIDEO, MP4);
+    await approve(admin.token, id);
+    const list = await json(await feed(apiRequest("/api/reels", "GET")));
+    expect(list.data.reels[0].format).toBe("reel");
+    expect(list.data.reels[0].expiresAt).toBeTruthy();
+  });
+});
+
+describe("following, privacy and isolation", () => {
+  const keyOf = async (token: string) =>
+    (await json(await privacyGet(apiRequest("/api/reels/privacy", "GET", { token })))).data
+      .key as string;
+  const follow = (token: string, key: string) =>
+    followRoute(apiRequest(`/api/follows/${key}`, "POST", { token }));
+  const setPrivate = (token: string, isPrivate: boolean) =>
+    privacyPut(apiRequest("/api/reels/privacy", "PUT", { token, body: { isPrivate } }));
+
+  async function setup() {
+    const admin = await adminSession("boss@example.com", "super_admin");
+    const ann = await member("ann@example.com");
+    const bob = await member("bob@example.com");
+    const cat = await member("cat@example.com");
+    const annPost = await post(ann.token);
+    const bobPost = await post(bob.token);
+    await approve(admin.token, annPost);
+    await approve(admin.token, bobPost);
+    return {
+      admin,
+      ann,
+      bob,
+      cat,
+      annPost,
+      bobPost,
+      annKey: await keyOf(ann.token),
+      bobKey: await keyOf(bob.token),
+    };
+  }
+  const ids = async (token?: string, query = "") =>
+    (
+      await json(await feed(apiRequest(`/api/reels${query}`, "GET", token ? { token } : {})))
+    ).data.reels.map((r: { id: string }) => r.id) as string[];
+
+  it("people you follow come first, then everyone else, with no repeats across pages", async () => {
+    const { ann, bob, cat, annPost, bobPost, bobKey } = await setup();
+    expect((await follow(cat.token, bobKey)).status).toBe(200);
+    expect(await ids(cat.token)).toEqual([bobPost, annPost]);
+    const withState = await json(await feed(apiRequest("/api/reels", "GET", { token: cat.token })));
+    expect(withState.data.reels.map((r: { followStatus: string }) => r.followStatus)).toEqual(["following", "none"]);
+    expect(await ids(ann.token)).toEqual([bobPost, annPost]);
+    expect(await ids()).toEqual([bobPost, annPost]);
+    // Cat now follows the OLDER author: that author's items must jump ahead of newer ones.
+    await unfollowRoute(apiRequest(`/api/follows/${bobKey}`, "DELETE", { token: cat.token }));
+    await follow(cat.token, await keyOf(ann.token));
+    expect(await ids(cat.token)).toEqual([annPost, bobPost]);
+    expect(bob.id).toBeTruthy();
+  });
+
+  it("pages through followed then other items without duplicates", async () => {
+    const { admin, ann, cat, annKey } = await setup();
+    await follow(cat.token, annKey);
+    const extra: string[] = [];
+    for (let i = 0; i < 12; i += 1) {
+      const author = i % 2 === 0 ? ann : await member(`x${i}@example.com`);
+      const id = await post(author.token);
+      await approve(admin.token, id);
+      extra.push(id);
+    }
+    const first = await json(await feed(apiRequest("/api/reels", "GET", { token: cat.token })));
+    const second = await json(
+      await feed(
+        apiRequest(`/api/reels?cursor=${first.data.nextCursor}`, "GET", { token: cat.token }),
+      ),
+    );
+    const third = second.data.nextCursor
+      ? await json(
+          await feed(
+            apiRequest(`/api/reels?cursor=${second.data.nextCursor}`, "GET", { token: cat.token }),
+          ),
+        )
+      : { data: { reels: [] } };
+    const all = [...first.data.reels, ...second.data.reels, ...third.data.reels].map(
+      (r: { id: string }) => r.id,
+    );
+    expect(new Set(all).size).toBe(all.length);
+    expect(all).toHaveLength(14);
+    const followedFirst = [...first.data.reels, ...second.data.reels, ...third.data.reels].map(
+      (r: { authorKey: string }) => r.authorKey === annKey,
+    );
+    expect(followedFirst.indexOf(false)).toBeGreaterThanOrEqual(followedFirst.lastIndexOf(true));
+  });
+
+  it("a private account is invisible to strangers and guests until it accepts them", async () => {
+    const { ann, bob, cat, annPost, bobPost, annKey } = await setup();
+    expect((await setPrivate(ann.token, true)).status).toBe(200);
+
+    for (const viewer of [undefined, bob.token]) {
+      expect(await ids(viewer)).not.toContain(annPost);
+      const one = await getOne(
+        apiRequest(`/api/reels/${annPost}`, "GET", viewer ? { token: viewer } : {}),
+      );
+      expect(one.status).toBe(404);
+      const comments = await listComments(
+        apiRequest(`/api/reels/${annPost}/comments`, "GET", viewer ? { token: viewer } : {}),
+      );
+      expect(comments.status).toBe(404);
+      const profile = await json(
+        await authorRoute(
+          apiRequest(`/api/reels/authors/${annKey}`, "GET", viewer ? { token: viewer } : {}),
+        ),
+      );
+      expect(profile.data.profile).toMatchObject({ isPrivate: true, canView: false, items: 0 });
+      expect(profile.data.reels).toEqual([]);
+    }
+    expect(
+      (await like(apiRequest(`/api/reels/${annPost}/like`, "POST", { token: bob.token }))).status,
+    ).toBe(404);
+
+    const asked = await json(await follow(bob.token, annKey));
+    expect(asked.data.status).toBe("requested");
+    expect(await ids(bob.token)).not.toContain(annPost);
+
+    const pending = await json(
+      await requestsRoute(apiRequest("/api/follows/requests", "GET", { token: ann.token })),
+    );
+    expect(pending.data.requests).toHaveLength(1);
+    expect(
+      (
+        await approveRoute(
+          apiRequest(`/api/follows/requests/${pending.data.requests[0].key}`, "POST", {
+            token: ann.token,
+          }),
+        )
+      ).status,
+    ).toBe(204);
+
+    expect(await ids(bob.token)).toContain(annPost);
+    expect(
+      (await getOne(apiRequest(`/api/reels/${annPost}`, "GET", { token: bob.token }))).status,
+    ).toBe(200);
+    expect(await ids(cat.token)).not.toContain(annPost);
+    expect(await ids(cat.token)).toContain(bobPost);
+  });
+
+  it("declining or unfollowing removes access, and going public accepts the waiting requests", async () => {
+    const { ann, bob, cat, annPost, annKey } = await setup();
+    await setPrivate(ann.token, true);
+    await follow(bob.token, annKey);
+    await follow(cat.token, annKey);
+    const pending = (
+      await json(
+        await requestsRoute(apiRequest("/api/follows/requests", "GET", { token: ann.token })),
+      )
+    ).data.requests;
+    expect(pending).toHaveLength(2);
+    const bobKey = await keyOf(bob.token);
+    expect(
+      (
+        await declineRoute(
+          apiRequest(`/api/follows/requests/${bobKey}`, "DELETE", { token: ann.token }),
+        )
+      ).status,
+    ).toBe(204);
+    expect(await ids(bob.token)).not.toContain(annPost);
+    await setPrivate(ann.token, false);
+    expect(await ids(cat.token)).toContain(annPost);
+    expect(await ids(bob.token)).toContain(annPost);
+    await unfollowRoute(apiRequest(`/api/follows/${annKey}`, "DELETE", { token: cat.token }));
+    expect(await Follow.countDocuments({ followerId: cat.id })).toBe(0);
+  });
+
+  it("accounts cannot touch each other's follows, requests or settings", async () => {
+    const { ann, bob, cat, annKey, bobKey } = await setup();
+    await setPrivate(ann.token, true);
+    await follow(bob.token, annKey);
+    const bobAsksAnn = (
+      await json(
+        await requestsRoute(apiRequest("/api/follows/requests", "GET", { token: ann.token })),
+      )
+    ).data.requests[0].key;
+    // Cat cannot approve a request that was addressed to Ann, and sees none of Ann's requests.
+    expect(
+      (
+        await approveRoute(
+          apiRequest(`/api/follows/requests/${bobAsksAnn}`, "POST", { token: cat.token }),
+        )
+      ).status,
+    ).toBe(404);
+    expect(
+      (
+        await json(
+          await requestsRoute(apiRequest("/api/follows/requests", "GET", { token: cat.token })),
+        )
+      ).data.requests,
+    ).toEqual([]);
+    // Bob cannot approve himself.
+    expect(
+      (
+        await approveRoute(
+          apiRequest(`/api/follows/requests/${bobAsksAnn}`, "POST", { token: bob.token }),
+        )
+      ).status,
+    ).toBe(404);
+    expect(await Follow.countDocuments({ status: "accepted" })).toBe(0);
+    // Cat's unfollow only removes Cat's own edge.
+    await unfollowRoute(apiRequest(`/api/follows/${annKey}`, "DELETE", { token: cat.token }));
+    expect(await Follow.countDocuments({ status: "requested" })).toBe(1);
+    // Privacy changes only ever apply to the caller.
+    await setPrivate(cat.token, true);
+    expect((await ReelProfile.findOne({ publicId: bobKey }).lean())?.isPrivate).toBe(false);
+    expect((await ReelProfile.findOne({ publicId: annKey }).lean())?.isPrivate).toBe(true);
+  });
+
+  it("rejects bad handles, following yourself, strangers and anonymous callers", async () => {
+    const { ann, annKey } = await setup();
+    expect((await follow(ann.token, annKey)).status).toBe(400);
+    expect((await follow(ann.token, "0".repeat(16))).status).toBe(404);
+    expect((await follow(ann.token, "not-a-key")).status).toBe(404);
+    expect((await followRoute(apiRequest(`/api/follows/${annKey}`, "POST"))).status).toBe(401);
+    expect(
+      (
+        await followRoute(
+          apiRequest(`/api/follows/${annKey}`, "POST", {
+            token: ann.token,
+            origin: "https://evil.example",
+          }),
+        )
+      ).status,
+    ).toBe(403);
+    expect(
+      (
+        await privacyPut(
+          apiRequest("/api/reels/privacy", "PUT", { token: ann.token, body: { isPrivate: "yes" } }),
+        )
+      ).status,
+    ).toBe(400);
+    expect(
+      (
+        await privacyPut(
+          apiRequest("/api/reels/privacy", "PUT", {
+            token: ann.token,
+            body: { isPrivate: true, userId: "x" },
+          }),
+        )
+      ).status,
+    ).toBe(400);
+  });
+
+  it("never exposes account ids, emails or follower lists to the public", async () => {
+    const { ann, annKey } = await setup();
+    const json_ = JSON.stringify(
+      await json(await authorRoute(apiRequest(`/api/reels/authors/${annKey}`, "GET"))),
+    );
+    expect(json_).not.toMatch(new RegExp(`${ann.id}|@example\\.com`));
+  });
+
+  it("erasing an account removes its follows and profile", async () => {
+    const { ann, bob, annKey, bobKey } = await setup();
+    await follow(bob.token, annKey);
+    await follow(ann.token, bobKey);
+    await eraseUserReels(ann.id);
+    expect(await Follow.countDocuments({})).toBe(0);
+    expect(await ReelProfile.findOne({ publicId: annKey })).toBeNull();
+    expect(await ReelProfile.findOne({ publicId: bobKey })).not.toBeNull();
   });
 });

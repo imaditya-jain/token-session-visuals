@@ -31,10 +31,11 @@ describe("defaults keep the storefront exactly as it was", () => {
 
   it("keep the original menu in order, with the journal added", () => {
     const labels = DEFAULT_CHROME.header.nav.map((item) => item.label);
-    expect(labels.filter((label) => label !== "Journal")).toEqual(
+    expect(labels.filter((label) => label !== "Journal" && label !== "Reels")).toEqual(
       navLinks.map((link) => link.label),
     );
     expect(DEFAULT_CHROME.header.nav.find((item) => item.label === "Journal")?.href).toBe("/blog");
+    expect(DEFAULT_CHROME.header.nav.find((item) => item.label === "Reels")?.href).toBe("/reels");
     expect(
       DEFAULT_CHROME.footer.columns.find((c) => c.heading === "Company")?.links.map((l) => l.href),
     ).toContain("/blog");

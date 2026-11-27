@@ -9,6 +9,8 @@ export const REEL_LIMITS = {
   commentChars: 300,
   productLinks: 4,
   perUserDaily: 10,
+  /** A video reel disappears this long after it goes live, like a story. Photo posts stay. */
+  lifetimeHours: 24,
 } as const;
 
 export const REEL_TOPICS = ["gardening", "home-planting", "landscaping"] as const;
@@ -108,6 +110,12 @@ export type ReelProductDto = {
 export type ReelDto = {
   id: string;
   kind: "image" | "video";
+  /** Photos are permanent "posts"; videos are "reels" that disappear after 24 hours. */
+  format: "post" | "reel";
+  /** Opaque public handle of the author (never the account id). */
+  authorKey: string;
+  /** The viewer's relationship to this author ("none" for guests). */
+  followStatus: FollowStatus;
   mediaUrl: string;
   durationMs: number | null;
   caption: string;
@@ -120,6 +128,8 @@ export type ReelDto = {
   products: ReelProductDto[];
   status: ReelStatus;
   createdAt: string;
+  /** When it will disappear; absent until it goes live. */
+  expiresAt: string | null;
 };
 
 export type ReelCommentDto = {
@@ -129,3 +139,21 @@ export type ReelCommentDto = {
   mine: boolean;
   createdAt: string;
 };
+
+export const privacySchema = z.object({ isPrivate: z.boolean() }).strict();
+
+export type FollowStatus = "none" | "requested" | "following" | "self";
+
+export type AuthorProfileDto = {
+  key: string;
+  name: string;
+  isPrivate: boolean;
+  followers: number;
+  following: number;
+  /** Live posts and reels this person can see (0 when the account is private and not followed). */
+  items: number;
+  followStatus: FollowStatus;
+  canView: boolean;
+};
+
+export type FollowRequestDto = { key: string; name: string; createdAt: string };
