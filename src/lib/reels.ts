@@ -19,6 +19,9 @@ export const REEL_LIMITS = {
  */
 export const REEL_ASPECT = { min: 0.44, max: 1.8 } as const;
 
+/** Photos may be any shape (a panorama, a tall screenshot); only absurd slivers are refused. */
+export const PHOTO_ASPECT = { min: 0.2, max: 5 } as const;
+
 export const REEL_TOPICS = ["gardening", "home-planting", "landscaping"] as const;
 export type ReelTopic = (typeof REEL_TOPICS)[number];
 
@@ -60,7 +63,7 @@ export const createReelSchema = z
       .max(REEL_LIMITS.videoMaxMs)
       .transform((value) => Math.max(1, Math.round(value)))
       .optional(),
-    aspectRatio: z.number().min(REEL_ASPECT.min).max(REEL_ASPECT.max),
+    aspectRatio: z.number().min(PHOTO_ASPECT.min).max(PHOTO_ASPECT.max),
     caption: text(REEL_LIMITS.captionChars).default(""),
     topic: z.enum(REEL_TOPICS),
     productHandles: z
@@ -85,6 +88,17 @@ export const createReelSchema = z
         code: "custom",
         path: ["sizeBytes"],
         message: `${value.kind === "image" ? "Pictures" : "Videos"} can be up to ${limit / 1024 / 1024} MB.`,
+      });
+    }
+    // Only videos are held to the 4:9 to 16:9 range (they fill a vertical player); photos keep their own shape.
+    if (
+      value.kind === "video" &&
+      (value.aspectRatio < REEL_ASPECT.min || value.aspectRatio > REEL_ASPECT.max)
+    ) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["aspectRatio"],
+        message: "Videos should be between 4:9 (tall) and 16:9 (wide).",
       });
     }
     if (value.kind === "video" && value.durationMs === undefined) {
@@ -182,6 +196,10 @@ export type AuthorProfileDto = {
   following: number;
   /** Live posts and reels this person can see (0 when the account is private and not followed). */
   items: number;
+  /** Photo posts: they stay until the author deletes them. */
+  posts: number;
+  /** Video reels that are still inside their 24 hours. */
+  reels: number;
   followStatus: FollowStatus;
   canView: boolean;
 };

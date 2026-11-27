@@ -301,10 +301,12 @@ export async function listFeed(
 ): Promise<ReelPage> {
   assertReelsOn();
   await connectDb();
-  const [hidden, followed] = await Promise.all([
+  const [hidden, following] = await Promise.all([
     hiddenAuthorIds(viewerId),
     followedAuthorIds(viewerId),
   ]);
+  // Your own posts rank with the people you follow, so what you just shared is right there at the top.
+  const followed = viewerId ? [...following, oid(viewerId)] : following;
   const base = {
     ...liveFilter(new Date()),
     ...(options.topic ? { topic: options.topic } : {}),
@@ -369,16 +371,22 @@ export async function getAuthor(
     : [];
   const page = rows.slice(0, AUTHOR_PAGE_SIZE);
   const last = page.at(-1);
-  const items = allowed
-    ? await Reel.countDocuments({ ...liveFilter(new Date()), userId: target.userId })
-    : 0;
+  // Photos stay until their author deletes them; reels count only while their 24 hours last.
+  const [posts, reels] = allowed
+    ? await Promise.all([
+        Reel.countDocuments({ ...liveFilter(new Date()), userId: target.userId, kind: "image" }),
+        Reel.countDocuments({ ...liveFilter(new Date()), userId: target.userId, kind: "video" }),
+      ])
+    : [0, 0];
   return {
     profile: {
       key: target.publicId,
       name: user ? `${user.firstName} ${user.lastName.charAt(0)}.`.trim() : "Fernwood member",
       isPrivate: target.isPrivate,
       ...social,
-      items,
+      items: posts + reels,
+      posts,
+      reels,
       followStatus: status,
       canView: allowed,
     },
