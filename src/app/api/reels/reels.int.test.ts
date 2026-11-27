@@ -31,7 +31,7 @@ import { DELETE as removeComment } from "./[id]/comments/[commentId]/route";
 import { GET as listComments, POST as addComment } from "./[id]/comments/route";
 import { DELETE as unlike, POST as like } from "./[id]/like/route";
 import { POST as report } from "./[id]/report/route";
-import { DELETE as remove, GET as getOne } from "./[id]/route";
+import { DELETE as remove, GET as getOne, PATCH as edit } from "./[id]/route";
 import { GET as mine } from "./mine/route";
 import { DELETE as unfollowRoute, POST as followRoute } from "../follows/[key]/route";
 import { GET as requestsRoute } from "../follows/requests/route";
@@ -1026,5 +1026,85 @@ describe("following, privacy and isolation", () => {
     expect(await Follow.countDocuments({})).toBe(0);
     expect(await ReelProfile.findOne({ publicId: annKey })).toBeNull();
     expect(await ReelProfile.findOne({ publicId: bobKey })).not.toBeNull();
+  });
+});
+
+describe("editing your own post", () => {
+  const patch = (token: string, id: string, body: unknown) =>
+    edit(apiRequest(`/api/reels/${id}`, "PATCH", { token, body }));
+
+  it("the author can change caption, topic and linked products, but nothing else", async () => {
+    const ann = await member("ann@example.com");
+    const id = await post(ann.token);
+    const before = await Reel.findById(id).lean();
+    const res = await patch(ann.token, id, {
+      caption: "New words",
+      topic: "landscaping",
+      productHandles: ["fern", "fern", "monstera"],
+    });
+    expect(res.status).toBe(200);
+    const reel = (await json(res)).data.reel;
+    expect(reel).toMatchObject({ caption: "New words", topic: "landscaping", status: "pending" });
+    expect(reel.products.map((p: { handle: string }) => p.handle).sort()).toEqual([
+      "fern",
+      "monstera",
+    ]);
+    const after = await Reel.findById(id).lean();
+    expect(after?.storagePath).toBe(before?.storagePath);
+    expect(after?.userId).toEqual(before?.userId);
+    expect(after?.likeCount).toBe(before?.likeCount);
+  });
+
+  it("refuses other people's posts, bad values, unknown products and fields it does not own", async () => {
+    const ann = await member("ann@example.com");
+    const bob = await member("bob@example.com");
+    const id = await post(ann.token);
+    expect((await patch(bob.token, id, { caption: "mine now" })).status).toBe(404);
+    expect((await Reel.findById(id).lean())?.caption).toBe("My balcony");
+    expect((await patch(ann.token, id, {})).status).toBe(400);
+    expect((await patch(ann.token, id, { caption: "x".repeat(301) })).status).toBe(400);
+    expect((await patch(ann.token, id, { caption: "a\u0000b" })).status).toBe(400);
+    expect((await patch(ann.token, id, { topic: "cooking" })).status).toBe(400);
+    expect((await patch(ann.token, id, { productHandles: ["nope"] })).status).toBe(404);
+    for (const forbidden of [
+      { status: "approved" },
+      { userId: bob.id },
+      { storagePath: "x" },
+      { likeCount: 99 },
+      { expiresAt: "2099-01-01" },
+    ]) {
+      expect((await patch(ann.token, id, { caption: "ok", ...forbidden })).status).toBe(400);
+    }
+    expect(
+      (await edit(apiRequest(`/api/reels/${id}`, "PATCH", { body: { caption: "x" } }))).status,
+    ).toBe(401);
+    expect(
+      (
+        await edit(
+          apiRequest(`/api/reels/${id}`, "PATCH", {
+            token: ann.token,
+            body: { caption: "x" },
+            origin: "https://evil.example",
+          }),
+        )
+      ).status,
+    ).toBe(403);
+    expect((await patch(ann.token, "not-an-id", { caption: "x" })).status).toBe(404);
+  });
+
+  it("a live post stays live after an edit and a removed one cannot be edited", async () => {
+    const ann = await member("ann@example.com");
+    const admin = await adminSession("boss@example.com", "super_admin");
+    const id = await post(ann.token);
+    await approve(admin.token, id);
+    expect((await patch(ann.token, id, { caption: "Fresh caption" })).status).toBe(200);
+    expect((await Reel.findById(id).lean())?.status).toBe("approved");
+    await moderate(
+      apiRequest(`/api/admin/reels/${id}`, "PATCH", {
+        token: admin.token,
+        body: { status: "removed" },
+      }),
+    );
+    expect((await patch(ann.token, id, { caption: "again" })).status).toBe(404);
   });
 });

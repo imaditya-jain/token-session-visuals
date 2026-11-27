@@ -96,6 +96,21 @@ export const createReelSchema = z
   });
 export type CreateReelInput = z.infer<typeof createReelSchema>;
 
+/** What the author may change after posting. The picture or video itself is fixed, as on Instagram. */
+export const updateReelSchema = z
+  .object({
+    caption: text(REEL_LIMITS.captionChars).optional(),
+    topic: z.enum(REEL_TOPICS).optional(),
+    productHandles: z
+      .array(z.string().max(120).regex(HANDLE))
+      .max(REEL_LIMITS.productLinks)
+      .transform((handles) => [...new Set(handles)])
+      .optional(),
+  })
+  .strict()
+  .refine((value) => Object.keys(value).length > 0, "Nothing to change");
+export type UpdateReelInput = z.infer<typeof updateReelSchema>;
+
 export const commentSchema = z.object({ text: text(REEL_LIMITS.commentChars).min(1) }).strict();
 
 export const reportSchema = z

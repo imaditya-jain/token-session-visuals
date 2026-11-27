@@ -1326,6 +1326,7 @@ test.describe("reels API", () => {
     }
     expect((await json(api, "/api/reels/privacy", { isPrivate: true }, "put")).status()).toBe(401);
     expect((await api.delete(`/api/reels/${anyId}`)).status()).toBe(401);
+    expect((await json(api, `/api/reels/${anyId}`, { caption: "x" }, "patch")).status()).toBe(401);
     expect((await api.delete(`/api/follows/${key}`)).status()).toBe(401);
     expect(
       (await json(api, `/api/admin/reels/${anyId}`, { status: "approved" }, "patch")).status(),

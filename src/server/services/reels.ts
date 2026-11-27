@@ -7,6 +7,7 @@ import { Types } from "mongoose";
 import { getProduct, getProducts } from "@/data/catalog";
 import {
   type CreateReelInput,
+  type UpdateReelInput,
   REEL_LIMITS,
   type ReelCommentDto,
   type AuthorProfileDto,
@@ -412,6 +413,39 @@ async function visibleReel(userId: string | null, reelId: string): Promise<ReelR
 export async function getReel(userId: string | null, reelId: string): Promise<ReelDto> {
   assertReelsOn();
   return (await toDtos([await visibleReel(userId, reelId)], userId))[0] as ReelDto;
+}
+
+/**
+ * The author edits the caption, topic or linked products of their own post or reel. Nobody else can: the lookup is
+ * scoped to the caller's account, so another person's id is simply "not found". The media never changes, and a
+ * removed or still-uploading reel cannot be edited.
+ */
+export async function updateOwnReel(
+  userId: string,
+  reelId: string,
+  patch: UpdateReelInput,
+): Promise<ReelDto> {
+  assertReelsOn();
+  await connectDb();
+  const id = parseId(reelId);
+  if (patch.productHandles) {
+    for (const handle of patch.productHandles) {
+      if (!(await getProduct(handle))) {
+        throw new AppError(
+          404,
+          "product_not_found",
+          "One of the linked products no longer exists.",
+        );
+      }
+    }
+  }
+  const reel = await Reel.findOneAndUpdate(
+    { _id: id, userId: oid(userId), status: { $in: ["pending", "approved", "rejected"] } },
+    { $set: patch },
+    { returnDocument: "after" },
+  ).lean();
+  if (!reel) throw notFound("We couldn't find that reel.", "reel_not_found");
+  return (await toDtos([reel], userId))[0] as ReelDto;
 }
 
 export async function deleteOwnReel(userId: string, reelId: string): Promise<void> {
