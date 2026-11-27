@@ -36,6 +36,10 @@ const env = {
   SUPABASE_URL: "",
   SUPABASE_SERVICE_ROLE_KEY: "",
   SUPABASE_PUBLISHABLE_KEY: "",
+  // The Plant Doctor must be "not set up" in the suite: it never spends a real AI quota.
+  GEMINI_API_KEY: "",
+  GEMINI_APIKEY: "",
+  ANTHROPIC_API_KEY: "",
   // Seal Subscriptions is switched off too: tests must never reach the real billing provider.
   SEAL_API_TOKEN: "",
   SEAL_API_SECRET: "",
