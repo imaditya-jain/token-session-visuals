@@ -192,3 +192,21 @@ test.describe("new pages", () => {
     await expect(page.getByText("Gift cards are coming soon")).toBeVisible();
   });
 });
+
+test.describe("reels page", () => {
+  test("opens for a guest, shows the switched-off state and stays clean apart from the expected 503", async ({
+    page,
+  }) => {
+    const errors: string[] = [];
+    page.on("pageerror", (error) => errors.push(error.message));
+    page.on("console", (message) => {
+      // With storage not configured (as in this suite) the feed answers 503: the only message allowed.
+      if (message.type() === "error" && !message.text().includes("503"))
+        errors.push(message.text());
+    });
+    await page.goto("/reels");
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Reels");
+    await expect(page.getByRole("status")).toContainText("almost here");
+    expect(errors).toEqual([]);
+  });
+});

@@ -16,6 +16,7 @@ const PAGES = [
   "/about",
   "/care-guide",
   "/faq",
+  "/reels",
   "/contact",
   "/gift-cards",
   "/careers",

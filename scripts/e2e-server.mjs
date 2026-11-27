@@ -32,6 +32,10 @@ const env = {
   SHOPIFY_STORE_URL: "",
   SHOPIFY_STOREFRONT_API_ACCESS_TOKEN: "",
   SHOPIFY_ADMIN_API_ACCESS_TOKEN: "",
+  // Reels storage is switched off so the suite never touches (or depends on) a real Supabase project.
+  SUPABASE_URL: "",
+  SUPABASE_SERVICE_ROLE_KEY: "",
+  SUPABASE_PUBLISHABLE_KEY: "",
   // Seal Subscriptions is switched off too: tests must never reach the real billing provider.
   SEAL_API_TOKEN: "",
   SEAL_API_SECRET: "",

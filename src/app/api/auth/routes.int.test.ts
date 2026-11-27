@@ -529,6 +529,7 @@ describe("GET /api/cron/jobs", () => {
       jobs: { attempted: 0, done: 0 },
       postsPublished: 0,
       campaignsSent: 0,
+      reelsSwept: 0,
     });
     expect(sendMail).toHaveBeenCalledTimes(1);
     setTransportForTests(undefined);

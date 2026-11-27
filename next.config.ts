@@ -15,11 +15,26 @@ const isDev = process.env["NODE_ENV"] === "development";
  * protection. `upgrade-insecure-requests` is omitted: production is HTTPS-only via HSTS, and it would
  * break the plain-http e2e server. Revisit nonces (CLAUDE.md §7) if pages ever become dynamic anyway.
  */
+/**
+ * Reels are stored in Supabase Storage and played straight from its public address, so that one origin (taken
+ * from `SUPABASE_URL` at build time) may serve images and video. Nothing else, and never scripts or connections.
+ */
+const reelsOrigin = (() => {
+  try {
+    const url = process.env["SUPABASE_URL"];
+    return url ? new URL(url).origin : "";
+  } catch {
+    return "";
+  }
+})();
+const mediaSources = ["'self'", ...(reelsOrigin ? [reelsOrigin] : [])].join(" ");
+
 const contentSecurityPolicy = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob:",
+  `img-src ${mediaSources} data: blob:`,
+  `media-src ${mediaSources} blob:`,
   "font-src 'self'",
   "connect-src 'self'",
   "object-src 'none'",
